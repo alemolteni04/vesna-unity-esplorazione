@@ -171,6 +171,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -360,6 +364,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -621,6 +629,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (13)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -792,6 +804,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -853,6 +869,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -924,6 +944,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -948,7 +972,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &123910290
 Transform:
@@ -1028,6 +1052,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (19)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1351,6 +1379,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1442,8 +1474,8 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
 --- !u!114 &213257247
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1542,6 +1574,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1929,9 +1965,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 635579332150926983, guid: 7d45465e74ec0af4db1acca06cd50b30, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 3880745837177232539, guid: 7d45465e74ec0af4db1acca06cd50b30, type: 3}
       propertyPath: m_Name
       value: moldulo-porta-1m (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 3880745837177232539, guid: 7d45465e74ec0af4db1acca06cd50b30, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2056,6 +2100,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2259,6 +2307,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2329,6 +2381,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2395,6 +2451,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (14)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2456,6 +2516,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (18)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2796,6 +2860,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2820,7 +2888,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &463576335
 Transform:
@@ -2909,6 +2977,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3113,6 +3185,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3315,6 +3391,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3447,6 +3527,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3508,6 +3592,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3674,6 +3762,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (16)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3735,6 +3827,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3859,6 +3955,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4174,6 +4274,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (11)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4505,6 +4609,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (17)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4810,6 +4918,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4945,6 +5057,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5135,6 +5251,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5334,6 +5454,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5435,6 +5559,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (13)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5774,6 +5902,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6100,6 +6232,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6372,6 +6508,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6433,6 +6573,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6912,6 +7056,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (14)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7006,6 +7154,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7067,6 +7219,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7162,6 +7318,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7319,6 +7479,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7389,6 +7553,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7454,6 +7622,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7851,6 +8023,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (15)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8172,6 +8348,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8196,7 +8376,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &1318642227
 Transform:
@@ -8273,6 +8453,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (15)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8397,6 +8581,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8643,7 +8831,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &1395617283
 Transform:
@@ -8798,6 +8986,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8864,6 +9056,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8886,17 +9082,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: Scala
       objectReference: {fileID: 0}
+    - target: {fileID: 6712812236035611883, guid: 045454488baf20d4b96414c77d60347d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8314635117935985061, guid: 045454488baf20d4b96414c77d60347d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.6999998
+      value: 2.3500001
       objectReference: {fileID: 0}
     - target: {fileID: 8314635117935985061, guid: 045454488baf20d4b96414c77d60347d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.5300001
+      value: -1.5
       objectReference: {fileID: 0}
     - target: {fileID: 8314635117935985061, guid: 045454488baf20d4b96414c77d60347d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.8000001
+      value: -0.9000001
       objectReference: {fileID: 0}
     - target: {fileID: 8314635117935985061, guid: 045454488baf20d4b96414c77d60347d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9048,6 +9248,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9755,6 +9959,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9886,6 +10094,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10081,6 +10293,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10271,6 +10487,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10332,6 +10552,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10403,6 +10627,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10464,6 +10692,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10618,9 +10850,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 635579332150926983, guid: 7d45465e74ec0af4db1acca06cd50b30, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 3880745837177232539, guid: 7d45465e74ec0af4db1acca06cd50b30, type: 3}
       propertyPath: m_Name
       value: moldulo-porta-1m (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 3880745837177232539, guid: 7d45465e74ec0af4db1acca06cd50b30, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10754,6 +10994,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10815,6 +11059,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10944,6 +11192,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11006,6 +11258,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11067,6 +11323,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11137,6 +11397,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (20)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11332,6 +11596,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11398,6 +11666,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11422,7 +11694,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &1804362237
 Transform:
@@ -11505,6 +11777,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11529,7 +11805,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &1839443699
 Transform:
@@ -11581,7 +11857,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &1846189256
 Transform:
@@ -11728,6 +12004,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11851,6 +12131,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12046,6 +12330,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12173,6 +12461,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12302,6 +12594,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Moquette (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12363,6 +12659,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12491,6 +12791,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12669,7 +12973,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.43
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_LocalScale.z
@@ -12718,6 +13022,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12780,6 +13088,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12912,6 +13224,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (12)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -13106,6 +13422,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (11)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -13311,7 +13631,7 @@ Transform:
   m_GameObject: {fileID: 2096362389}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.3000002, y: -1.53, z: 0}
+  m_LocalPosition: {x: -2.5500002, y: -1.45, z: -0.099999726}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -13679,6 +13999,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
       propertyPath: m_Name
       value: Moquette (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f4ae2cd4b7023a94195057af27cd40a9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
