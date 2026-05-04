@@ -33,7 +33,7 @@ public class ConeCollider : MonoBehaviour
     {
         
         GameObject obj = other.gameObject;
-        Debug.Log($"OnTriggerEnter: {obj.name}, tag: {obj.tag}");
+       // Debug.Log($"OnTriggerEnter: {obj.name}, tag: {obj.tag}");
         if (obj.CompareTag("Artifact"))
         {
             Debug.Log("Agent " + root.name + " has seen the artifact " + other.name);

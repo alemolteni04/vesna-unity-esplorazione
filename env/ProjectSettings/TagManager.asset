@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Artifact
   - JacamoAgent
+  - Agent
   layers:
   - Default
   - TransparentFX
@@ -13,9 +14,9 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
-  - 
+  - doors
+  - corridors
+  - Agent
   - 
   - 
   - 

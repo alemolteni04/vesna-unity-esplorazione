@@ -1,0 +1,228 @@
+using UnityEngine;
+using UnityEngine.AI;
+
+// ============================================================
+// DoorVarcoScript.cs
+// ============================================================
+// Script UNICO per porte fisiche e varchi aperti.
+//
+// AGGIORNAMENTO — gestione lato porta:
+// Una porta ha DUE facce. roomNameFront è il luogo sul lato
+// dove punta la normale (transform.forward) della porta.
+// roomNameBack è il lato opposto.
+//
+// CONVENZIONE nell'Inspector:
+//   Orienta il GameObject porta in modo che transform.forward
+//   punti verso la stanza (non il corridoio).
+//   Front = stanza, Back = corridoio/esterno.
+//
+//   Esempio: porta tra corridoio_1 e stanza_101
+//     roomNameFront = "stanza_101"   (forward punta in stanza)
+//     roomNameBack  = "corridoio_1"  (back è il corridoio)
+//
+// GetRoomNameFromAgentPosition(agentPos):
+//   Restituisce il roomName del luogo OLTRE la porta rispetto
+//   a dove si trova l'agente. ExplorationManager la chiama
+//   prima di EnterThroughEdge() per sapere quale nodo creare.
+// ============================================================
+
+public class DoorVarcoScript : MonoBehaviour
+{
+    public enum ElementType { Door, Varco }
+
+    [Header("Tipo fisico")]
+    public ElementType elementType = ElementType.Door;
+
+    [Header("Stato fisico")]
+    public bool isOpen   = false;
+    public bool isLocked = false;
+
+    // ---> AGGIUNGI QUESTA RIGA <---
+    [Header("Modello 3D (Da disattivare all'apertura)")]
+    public GameObject physicalModel;
+
+    [Header("Stanze collegate")]
+    [Tooltip("Luogo sul lato FRONT (dove punta transform.forward).\n" +
+             "Orienta la porta in modo che forward punti verso la stanza.\n" +
+             "Esempio: 'stanza_101'")]
+    public string roomNameFront;
+
+    [Tooltip("Luogo sul lato BACK (opposto al forward).\n" +
+             "Tipicamente il corridoio o l'ambiente esterno.\n" +
+             "Esempio: 'corridoio_1'")]
+    public string roomNameBack;
+
+    // --------------------------------------------------------
+    // PROPRIETÀ DERIVATE
+    // --------------------------------------------------------
+    public bool IsTraversable =>
+        elementType == ElementType.Varco || (isOpen && !isLocked);
+
+    public bool IsBlocked =>
+        elementType != ElementType.Varco && isLocked;
+
+    // --------------------------------------------------------
+    // DATI GEOMETRICI — calcolati da ExplorationManager a runtime
+    // --------------------------------------------------------
+    [HideInInspector] public float  distFromA  = -1f;
+    [HideInInspector] public float  distFromB  = -1f;
+    [HideInInspector] public string side       = "";
+    [HideInInspector] public int    orderFW    = -1;
+    [HideInInspector] public bool   discovered = false;
+
+    // --------------------------------------------------------
+    // METODO CHIAVE: roomName del luogo OLTRE la porta
+    //
+    // dot = dot(transform.forward, (agentPos - doorPos))
+    //   dot > 0: agente è sul lato FRONT → entra nel BACK
+    //   dot < 0: agente è sul lato BACK  → entra nel FRONT
+    //   dot = 0: perpendicolare, default FRONT
+    // --------------------------------------------------------
+    public string GetRoomNameBeyondDoor(Vector3 agentPos)
+    {
+        Vector3 toAgent = (agentPos - transform.position).normalized;
+        float   dot     = Vector3.Dot(transform.forward, toAgent);
+        return dot >= 0f ? roomNameBack : roomNameFront;
+    }
+
+    // roomName del lato da cui proviene l'agente
+    // (il nodo "from" nell'arco del grafo)
+    public string GetRoomNameAgentSide(Vector3 agentPos)
+    {
+        Vector3 toAgent = (agentPos - transform.position).normalized;
+        float   dot     = Vector3.Dot(transform.forward, toAgent);
+        return dot >= 0f ? roomNameFront : roomNameBack;
+    }
+
+    // --------------------------------------------------------
+    // AZIONE FISICA: APRI PORTA
+    // --------------------------------------------------------
+   // --------------------------------------------------------
+    // AZIONE FISICA: APRI PORTA
+    // --------------------------------------------------------
+    public bool TryOpen()
+    {
+        if (elementType == ElementType.Varco) return true;
+        
+        if (isLocked)
+        {
+            Debug.Log($"[DoorVarco] {gameObject.name} è bloccata.");
+            return false;
+        }
+
+        isOpen = true;
+        
+        // ---> AGGIUNGI QUESTO BLOCCO <---
+        // Se c'è un modello fisico, disattivalo per far passare l'agente
+        if (physicalModel != null)
+        {
+            physicalModel.SetActive(false);
+            Debug.Log($"[DoorVarco] {gameObject.name} APERTA FISICAMENTE!");
+        }
+
+        NotifyPhysicalStateChanged();
+        return true;
+    }
+
+    public void Close()
+    {
+        if (elementType == ElementType.Varco) return;
+        
+        isOpen = false;
+        
+        // ---> AGGIUNGI QUESTO BLOCCO <---
+        if (physicalModel != null)
+        {
+            physicalModel.SetActive(true);
+        }
+
+        NotifyPhysicalStateChanged();
+    }
+
+    private void NotifyPhysicalStateChanged()
+    {
+        // Il DoorVarcoArtifactBridge fa polling ogni frame su isOpen/isLocked
+        // e notifica JaCaMo automaticamente quando rileva un cambio.
+        // Non serve fare nulla qui — il bridge se ne occupa.
+        // Questo metodo esiste solo come hook per future estensioni.
+    }
+
+    // --------------------------------------------------------
+    // RESET
+    // --------------------------------------------------------
+    public void ResetExplorationData()
+    {
+        distFromA  = -1f;
+        distFromB  = -1f;
+        side       = "";
+        orderFW    = -1;
+        discovered = false;
+    }
+
+    // --------------------------------------------------------
+    // DISTANZA NAVMESH
+    // --------------------------------------------------------
+    public float NavMeshDistanceTo(Vector3 from)
+    {
+        var path = new NavMeshPath();
+        if (NavMesh.CalculatePath(from, transform.position, NavMesh.AllAreas, path)
+            && path.status == NavMeshPathStatus.PathComplete)
+        {
+            float d = 0f;
+            for (int i = 1; i < path.corners.Length; i++)
+                d += Vector3.Distance(path.corners[i-1], path.corners[i]);
+            return d;
+        }
+        return Vector3.Distance(from, transform.position);
+    }
+
+    // --------------------------------------------------------
+    // EDITOR — Gizmo visivo per front/back
+    // Mostra frecce colorate nella scena Unity:
+    //   VERDE  → lato FRONT (transform.forward) = roomNameFront
+    //   ROSSO  → lato BACK  (opposto)            = roomNameBack
+    // Orienta il GameObject finché la freccia verde punta
+    // verso la stanza che vuoi come "front".
+    // --------------------------------------------------------
+    private void OnDrawGizmos()
+    {
+        Vector3 pos = transform.position;
+
+        // Freccia VERDE = front
+        Gizmos.color = Color.green;
+        Gizmos.DrawRay(pos, transform.forward * 1.2f);
+        Gizmos.DrawSphere(pos + transform.forward * 1.2f, 0.08f);
+
+        // Freccia ROSSA = back
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(pos, -transform.forward * 1.2f);
+        Gizmos.DrawSphere(pos + -transform.forward * 1.2f, 0.08f);
+
+#if UNITY_EDITOR
+        // Label con i nomi delle stanze
+        UnityEditor.Handles.color = Color.green;
+        UnityEditor.Handles.Label(
+            pos + transform.forward * 1.4f,
+            string.IsNullOrEmpty(roomNameFront) ? "front?" : roomNameFront);
+
+        UnityEditor.Handles.color = Color.red;
+        UnityEditor.Handles.Label(
+            pos + -transform.forward * 1.4f,
+            string.IsNullOrEmpty(roomNameBack) ? "back?" : roomNameBack);
+#endif
+    }
+
+    private void OnValidate()
+    {
+        if (elementType == ElementType.Varco)
+        {
+            isOpen   = true;
+            isLocked = false;
+        }
+        // Non sovrascrivere se l'utente ha già scritto qualcosa
+        if (string.IsNullOrEmpty(roomNameFront))
+            roomNameFront = gameObject.name + "_front";
+        if (string.IsNullOrEmpty(roomNameBack))
+            roomNameBack  = gameObject.name + "_back";
+    }
+}
