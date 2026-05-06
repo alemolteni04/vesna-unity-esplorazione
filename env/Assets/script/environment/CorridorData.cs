@@ -64,8 +64,7 @@ public class CorridorData : MonoBehaviour
         Pole1Position = Pole1.transform.position;
         Pole2Position = Pole2.transform.position;
 
-        // Le porte NON sono nel prefab corridoio.
-        // Le trova ExplorationManager tramite DoorSensor durante il transito.
+        
 
         Debug.Log($"[CorridorData] {corridorId} configurato: P1={Pole1Position} P2={Pole2Position}");
     }

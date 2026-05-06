@@ -15,12 +15,7 @@ MonoBehaviour:
   floors:
   - floorIndex: 0
     floorName: piano terra
-    spawnPosition: {x: -2, y: 0.523, z: -3}
+    spawnObject: {fileID: 0}
+    roomObjects: []
     explored: 0
-    roomIds:
-    - soggiorno
-    - camera2
-    - corridoio1
-    - corridoio2
-    - bagno1
   connectors: []

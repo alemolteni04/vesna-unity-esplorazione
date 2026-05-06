@@ -1,25 +1,47 @@
 using UnityEngine;
 
+// ============================================================
+// TestAvvio.cs
+// ============================================================
+// Avvia ExplorationManager dopo un breve delay.
+// NON scrivere stringhe a mano per il nodo di partenza:
+// il punto di partenza si configura trascinando il GameObject
+// nel campo "startRoomObject" dell'ExplorationManager
+// nell'Inspector. Questo script non fa altro che aspettare
+// e invocare StartExploration() con i dati gia' configurati.
+// ============================================================
 public class TestAvvio : MonoBehaviour
 {
+    [Tooltip("Delay in secondi prima di avviare l'esplorazione")]
+    public float startDelay = 1f;
+
     void Start()
     {
-        // Aspetta 1 secondo dopo aver premuto Play, poi avvia l'agente
-        Invoke("AvviaAgente", 1f); 
+        Invoke(nameof(AvviaAgente), startDelay);
     }
 
     void AvviaAgente()
     {
-        ExplorationManager manager = GetComponent<ExplorationManager>();
-        if (manager != null)
+        var manager = GetComponent<ExplorationManager>();
+        if (manager == null)
         {
-            // Avvia l'esplorazione, dicendo all'agente da dove parte
-            manager.StartExploration("punto_di_partenza", transform.position);
-            Debug.Log("Comando di avvio inviato all'agente!");
+            UnityEngine.Debug.LogError("[TestAvvio] Nessun ExplorationManager su questo GameObject!");
+            return;
         }
-        else
+        if (manager.startRoomObject == null)
         {
-            Debug.LogError("Non trovo l'ExplorationManager su questo oggetto!");
+            UnityEngine.Debug.LogError("[TestAvvio] startRoomObject non assegnato! " +
+                           "Trascina il GO della stanza di partenza nel campo " +
+                           "'Start Room Object' dell'Inspector di ExplorationManager.");
+            return;
         }
+
+        // Nome nodo e posizione letti dal GameObject trascinato — niente stringhe a mano.
+        manager.StartExploration(
+            manager.startRoomObject.name,
+            manager.startRoomObject.transform.position
+        );
+
+        UnityEngine.Debug.Log($"[TestAvvio] Esplorazione avviata da '{manager.startRoomObject.name}'");
     }
 }

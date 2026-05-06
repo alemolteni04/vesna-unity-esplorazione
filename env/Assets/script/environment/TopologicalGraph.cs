@@ -11,30 +11,27 @@ using UnityEngine;
 //
 // LIVELLO 2 (Stanza): nodo stanza con archi verso porte/varchi.
 //   roomNode ──[room_porta]──► porta      (navMeshDist, greedy)
-//   Se archi > 3 → NodeType.Complex
 // ============================================================
 
-public enum NodeType  { Unknown, CorridorPoleA, CorridorPoleB, Room, Complex }
+public enum NodeType  { Unknown, CorridorPoleA, CorridorPoleB, Room }
 public enum EdgeState { Discovered, Explored }
 public enum DoorState { Open, Closed, Locked }
 public enum EdgeType  { Central, DoorFW, DoorBW, RoomDoor, Segment }
 
 // ─────────────────────────────────────────────────────────────
-// NODO
+// NODO BASE (astratto)
 // ─────────────────────────────────────────────────────────────
 [System.Serializable]
-public class GraphNode
+public abstract class GraphNode
 {
     public string   id;
     public NodeType type;
     public Vector3  position;
     public bool     fullyExplored;
-    public string   corridorId;   // valorizzato solo per poli corridoio
-    public string   poleLabel;    // "A" o "B"
 
     public List<GraphEdge> edges = new List<GraphEdge>();
 
-    public GraphNode(string id, NodeType type, Vector3 position)
+    protected GraphNode(string id, NodeType type, Vector3 position)
     {
         this.id       = id;
         this.type     = type;
@@ -50,6 +47,34 @@ public class GraphNode
     }
 
     public int EdgeCount => edges.Count;
+}
+
+// ─────────────────────────────────────────────────────────────
+// NODO STANZA
+// ─────────────────────────────────────────────────────────────
+[System.Serializable]
+public class RoomNode : GraphNode
+{
+    public RoomNode(string id, Vector3 position)
+        : base(id, NodeType.Room, position) { }
+}
+
+// ─────────────────────────────────────────────────────────────
+// NODO POLO CORRIDOIO
+// ─────────────────────────────────────────────────────────────
+[System.Serializable]
+public class CorridorPoleNode : GraphNode
+{
+    public string corridorId;
+    public string poleLabel;  // "A" o "B"
+
+    public CorridorPoleNode(string id, NodeType type, Vector3 position,
+                             string corridorId, string poleLabel)
+        : base(id, type, position)
+    {
+        this.corridorId = corridorId;
+        this.poleLabel  = poleLabel;
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -101,6 +126,25 @@ public class TopologicalGraph
     // AGGIUNTA NODI
     // =========================================================
 
+    // Aggiunge un nodo stanza (RoomNode)
+    public RoomNode AddRoomNode(string id, Vector3 position)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            Debug.LogWarning("[Graph] AddRoomNode: id nullo/vuoto ignorato.");
+            return null;
+        }
+        if (nodes.ContainsKey(id))
+            return nodes[id] as RoomNode;
+
+        var node = new RoomNode(id, position);
+        nodes[id] = node;
+        Debug.Log($"[Graph] Nodo aggiunto: {id} (Room)");
+        return node;
+    }
+
+    // Compatibilità: AddNode ora crea sempre un RoomNode
+    // (i poli corridoio vengono creati da AddCorridorPoles)
     public GraphNode AddNode(string id, NodeType type, Vector3 position)
     {
         if (string.IsNullOrEmpty(id))
@@ -108,16 +152,8 @@ public class TopologicalGraph
             Debug.LogWarning("[Graph] AddNode: id nullo/vuoto ignorato.");
             return null;
         }
-        if (nodes.ContainsKey(id))
-        {
-            if (nodes[id].type == NodeType.Unknown && type != NodeType.Unknown)
-                nodes[id].type = type;
-            return nodes[id];
-        }
-        var node = new GraphNode(id, type, position);
-        nodes[id] = node;
-        Debug.Log($"[Graph] Nodo aggiunto: {id} ({type})");
-        return node;
+        if (nodes.ContainsKey(id)) return nodes[id];
+        return AddRoomNode(id, position);
     }
 
     // Crea coppia polo A + polo B + arco centrale (idempotente)
@@ -127,11 +163,24 @@ public class TopologicalGraph
         string idA = $"{corridorId}_A";
         string idB = $"{corridorId}_B";
 
-        var nodeA = AddNode(idA, NodeType.CorridorPoleA, posA);
-        if (nodeA != null) { nodeA.corridorId = corridorId; nodeA.poleLabel = "A"; }
+        GraphNode nodeA, nodeB;
+        if (!nodes.ContainsKey(idA))
+        {
+            var poleA = new CorridorPoleNode(idA, NodeType.CorridorPoleA, posA, corridorId, "A");
+            nodes[idA] = poleA;
+            nodeA = poleA;
+            Debug.Log($"[Graph] Nodo aggiunto: {idA} (CorridorPoleA)");
+        }
+        else nodeA = nodes[idA];
 
-        var nodeB = AddNode(idB, NodeType.CorridorPoleB, posB);
-        if (nodeB != null) { nodeB.corridorId = corridorId; nodeB.poleLabel = "B"; }
+        if (!nodes.ContainsKey(idB))
+        {
+            var poleB = new CorridorPoleNode(idB, NodeType.CorridorPoleB, posB, corridorId, "B");
+            nodes[idB] = poleB;
+            nodeB = poleB;
+            Debug.Log($"[Graph] Nodo aggiunto: {idB} (CorridorPoleB)");
+        }
+        else nodeB = nodes[idB];
 
         string centralId = $"central_{corridorId}";
         if (nodeA != null && nodeA.edges.Find(e => e?.id == centralId) == null)
@@ -212,13 +261,30 @@ public class TopologicalGraph
         };
         node.edges.Add(edge);
 
-        if (node.type == NodeType.Room && node.EdgeCount > 3)
-        {
-            node.type = NodeType.Complex;
-            Debug.Log($"[Graph] {fromNodeId} → Complex (archi={node.EdgeCount})");
-        }
-
         Debug.Log($"[Graph] RoomDoor: {fromNodeId}→{doorId} navDist={navMeshDist:F1}");
+        return edge;
+    }
+
+    // Arco segmento tra fine corridoio N e inizio corridoio N+1
+    // Creato automaticamente quando l'agente passa da un corridoio all'altro.
+    // Distanza default 0.5m (configurabile).
+    public GraphEdge AddSegmentArc(string fromNodeId, string toNodeId, float distance = 0.5f)
+    {
+        if (!nodes.ContainsKey(fromNodeId)) return null;
+        var fromNode = nodes[fromNodeId];
+        string segId = $"seg_{fromNodeId}_to_{toNodeId}";
+        if (fromNode.edges.Find(e => e?.id == segId) != null) return null;
+
+        var toNode = nodes.ContainsKey(toNodeId) ? nodes[toNodeId] : null;
+        var edge = new GraphEdge(segId, fromNodeId, false, EdgeType.Segment,
+                                 toNode?.position ?? Vector3.zero)
+        {
+            toNodeId  = toNodeId,
+            distFromA = distance,
+            state     = EdgeState.Explored // segmento già percorso
+        };
+        fromNode.edges.Add(edge);
+        Debug.Log($"[Graph] Segmento: {fromNodeId}→{toNodeId} dist={distance:F2}m");
         return edge;
     }
 
@@ -303,6 +369,10 @@ public class TopologicalGraph
         return n;
     }
 
+    // Helper tipizzati
+    public RoomNode GetRoomNode(string id) => GetNode(id) as RoomNode;
+    public CorridorPoleNode GetCorridorPoleNode(string id) => GetNode(id) as CorridorPoleNode;
+
     public IEnumerable<GraphNode> AllNodes() => nodes.Values;
 
     // ── Prossimo arco in corridoio (polo B, orderBW) ──
@@ -337,7 +407,7 @@ public class TopologicalGraph
         if (string.IsNullOrEmpty(nodeId) || !nodes.ContainsKey(nodeId)) return null;
         var node = nodes[nodeId];
         if (node.type == NodeType.CorridorPoleB) return NextCorridorEdgeToInspect(nodeId);
-        if (node.type == NodeType.Room || node.type == NodeType.Complex)
+        if (node.type == NodeType.Room)
             return NextRoomEdgeToInspect(nodeId);
         var any = node.edges.FindAll(e => e != null && e.state == EdgeState.Discovered);
         if (any.Count == 0) return null;
@@ -370,5 +440,17 @@ public class TopologicalGraph
         foreach (var node in nodes.Values)
             if (node != null && node.HasUndiscoveredEdges()) return false;
         return true;
+    }
+    // Aggiungi questo metodo in fondo a TopologicalGraph.cs
+    public bool IsCorridorFullyTransited(string corridorId)
+    {
+        string idA = $"{corridorId}_A";
+        if (!nodes.ContainsKey(idA)) return false;
+
+        // Cerca l'arco centrale del corridoio
+        var centralEdge = nodes[idA].edges.Find(e => e != null && e.edgeType == EdgeType.Central);
+        
+        // Se esiste ed è già stato esplorato, il corridoio è completamente transitato
+        return centralEdge != null && centralEdge.state == EdgeState.Explored;
     }
 }

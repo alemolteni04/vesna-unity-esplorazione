@@ -35,7 +35,7 @@ public class CorridorPoleScript : MonoBehaviour
         // Aggiunge SphereCollider trigger se non esiste
         var col = GetComponent<SphereCollider>();
         if (col == null) col = gameObject.AddComponent<SphereCollider>();
-        col.radius    = 0.6f;
+        col.radius    = 0.4f;
         col.isTrigger = true;
     }
 

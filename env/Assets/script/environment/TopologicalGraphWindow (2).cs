@@ -39,7 +39,6 @@ public class TopologicalGraphWindow : EditorWindow
     private static readonly Color ColPoleA    = new Color(1f,   0.85f, 0f,   1f);
     private static readonly Color ColPoleB    = new Color(1f,   0.50f, 0f,   1f);
     private static readonly Color ColRoom     = new Color(0.2f, 0.85f, 0.3f, 1f);
-    private static readonly Color ColComplex  = new Color(0.85f,0.2f,  0.85f,1f);
     private static readonly Color ColUnknown  = new Color(0.55f,0.55f, 0.55f,1f);
     private static readonly Color ColCurrent  = new Color(0f,   0.95f, 1f,   1f);
     private static readonly Color ColSelected = new Color(1f,   1f,    1f,   1f);
@@ -152,7 +151,26 @@ public class TopologicalGraphWindow : EditorWindow
     {
         nodePositions.Clear();
 
+        // Raggruppa i nodi per tipo per un layout ordinato
+        var poleAs   = new List<GraphNode>();
+        var poleBs   = new List<GraphNode>();
+        var rooms    = new List<GraphNode>();
+        var others   = new List<GraphNode>();
+
+        foreach (var node in graph.AllNodes())
+        {
+            if (node == null) continue;
+            switch (node.type)
+            {
+                case NodeType.CorridorPoleA: poleAs.Add(node);  break;
+                case NodeType.CorridorPoleB: poleBs.Add(node);  break;
+                case NodeType.Room:
+                default:                     others.Add(node);  break;
+            }
+        }
+
         // Usa le posizioni X/Z reali di Unity scalate per il layout 2D
+        // Questo mantiene la topologia spaziale reale
         float minX = float.MaxValue, maxX = float.MinValue;
         float minZ = float.MaxValue, maxZ = float.MinValue;
 
@@ -168,67 +186,21 @@ public class TopologicalGraphWindow : EditorWindow
         float rangeX = Mathf.Max(maxX - minX, 1f);
         float rangeZ = Mathf.Max(maxZ - minZ, 1f);
 
-        float canvasW = position.width  * 0.7f;
-        float canvasH = position.height * 0.7f;
+        float canvasW = position.width  * 1.4f;
+        float canvasH = position.height * 1.4f;
         float scale   = Mathf.Min(canvasW / rangeX, canvasH / rangeZ) * 0.8f;
-        scale = Mathf.Clamp(scale, 40f, 120f);
+        scale = Mathf.Clamp(scale, 150f, 500f);
 
         float centerX = (minX + maxX) * 0.5f;
         float centerZ = (minZ + maxZ) * 0.5f;
 
-        foreach (var node in graph.AllNodes())
+       foreach (var node in graph.AllNodes())
         {
             if (node == null) continue;
             float x =  (node.position.x - centerX) * scale;
-            float y = -(node.position.z - centerZ) * scale; // Z → Y (flip per convenzione schermo)
+            float y = -(node.position.z - centerZ) * scale; // Z → Y 
+            
             nodePositions[node.id] = new Vector2(x, y);
-        }
-
-        // ── Separazione anti-sovrapposizione ─────────────────────────────
-        // Minima distanza tra centri per evitare che i rettangoli si tocchino
-        const float minDistX = NODE_W + 20f;
-        const float minDistY = NODE_H + 14f;
-        const int   iterations = 80;
-
-        var ids = new List<string>(nodePositions.Keys);
-        for (int iter = 0; iter < iterations; iter++)
-        {
-            bool moved = false;
-            for (int i = 0; i < ids.Count; i++)
-            {
-                for (int j = i + 1; j < ids.Count; j++)
-                {
-                    Vector2 pi = nodePositions[ids[i]];
-                    Vector2 pj = nodePositions[ids[j]];
-                    float dx = Mathf.Abs(pi.x - pj.x);
-                    float dy = Mathf.Abs(pi.y - pj.y);
-
-                    if (dx < minDistX && dy < minDistY)
-                    {
-                        // Determina l'asse di sovrapposizione minore e spingi su quello
-                        float overlapX = minDistX - dx;
-                        float overlapY = minDistY - dy;
-                        Vector2 push;
-
-                        if (overlapY <= overlapX)
-                        {
-                            // spingere verticalmente costa meno
-                            float sign = (pi.y >= pj.y) ? 1f : -1f;
-                            push = new Vector2(0f, sign * overlapY * 0.5f);
-                        }
-                        else
-                        {
-                            float sign = (pi.x >= pj.x) ? 1f : -1f;
-                            push = new Vector2(sign * overlapX * 0.5f, 0f);
-                        }
-
-                        nodePositions[ids[i]] = pi + push;
-                        nodePositions[ids[j]] = pj - push;
-                        moved = true;
-                    }
-                }
-            }
-            if (!moved) break;
         }
     }
 
@@ -289,6 +261,16 @@ public class TopologicalGraphWindow : EditorWindow
         }
     }
 
+    private static Vector2 ClipToBorder(Vector2 center, Vector2 other, float hw, float hh)
+    {
+        Vector2 dir = (other - center);
+        if (dir.magnitude < 0.001f) return center;
+        dir.Normalize();
+        float tx = dir.x != 0 ? hw / Mathf.Abs(dir.x) : float.MaxValue;
+        float ty = dir.y != 0 ? hh / Mathf.Abs(dir.y) : float.MaxValue;
+        return center + dir * Mathf.Min(tx, ty);
+    }
+
     // ====================================================
     // DISEGNO GRIGLIA
     // ====================================================
@@ -321,25 +303,20 @@ public class TopologicalGraphWindow : EditorWindow
             {
                 if (edge == null) continue;
 
-                // Punto di partenza: centro del nodo
-                Vector2 fromScreen = ToScreen(nodePositions[node.id]);
-
-                // Punto di arrivo: nodo target se esiste, altrimenti posizione edge
-                Vector2 toScreen;
+                Vector2 fromCenter = ToScreen(nodePositions[node.id]);
+                Vector2 toCenter;
                 if (!string.IsNullOrEmpty(edge.toNodeId) &&
                     nodePositions.ContainsKey(edge.toNodeId))
-                {
-                    toScreen = ToScreen(nodePositions[edge.toNodeId]);
-                }
+                    toCenter = ToScreen(nodePositions[edge.toNodeId]);
                 else if (nodePositions.ContainsKey(edge.id))
-                {
-                    toScreen = ToScreen(nodePositions[edge.id]);
-                }
+                    toCenter = ToScreen(nodePositions[edge.id]);
                 else
-                {
-                    // Punto arco non ancora nel grafo → skip
                     continue;
-                }
+
+                float hw = NODE_W * Mathf.Clamp(zoom, 0.5f, 1.5f) * 0.5f;
+                float hh = NODE_H * Mathf.Clamp(zoom, 0.5f, 1.5f) * 0.5f;
+                Vector2 fromScreen = ClipToBorder(fromCenter, toCenter, hw, hh);
+                Vector2 toScreen   = ClipToBorder(toCenter, fromCenter, hw, hh);
 
                 Color c = edge.state == EdgeState.Explored
                     ? ColExplored
@@ -358,12 +335,21 @@ public class TopologicalGraphWindow : EditorWindow
                 Vector2 p1 = fromScreen + perp * curveOff;
                 Vector2 p2 = toScreen   + perp * curveOff;
 
+                // --- INIZIO FIX ARCHI CURVI ---
+                float dist = Vector2.Distance(p1, p2);
+                
+                Vector2 controlP1 = p1 + dir * (dist * 0.25f) + perp * 30f;
+                Vector2 controlP2 = p2 - dir * (dist * 0.25f) + perp * 30f;
+
                 Handles.color = c;
                 Handles.DrawBezier(
                     p1, p2,
-                    p1 + dir * 40f,
-                    p2 - dir * 40f,
+                    controlP1, 
+                    controlP2, 
                     c, null, thickness);
+                // --- FINE FIX ARCHI CURVI ---
+
+                // Archi non direzionali
 
                 // Label arco (opzionale, piccola)
                 if (zoom > 0.7f)
@@ -392,14 +378,50 @@ public class TopologicalGraphWindow : EditorWindow
         };
     }
 
+    private void DrawArrow(Vector2 from, Vector2 to, Color c, float curveOff)
+    {
+        Vector2 dir = (to - from).normalized;
+        if (dir.magnitude < 0.01f) return;
+
+        // Posizione freccia a 65% del percorso
+        Vector2 arrowPos = Vector2.Lerp(from, to, 0.65f);
+
+        float   arrowSize = 10f * zoom;
+        Vector2 left  = Quaternion.Euler(0, 0,  140) * dir * arrowSize;
+        Vector2 right = Quaternion.Euler(0, 0, -140) * dir * arrowSize;
+
+        Handles.color = c;
+        Handles.DrawLine(arrowPos, arrowPos + left,  2f);
+        Handles.DrawLine(arrowPos, arrowPos + right, 2f);
+    }
+
     private string BuildEdgeLabel(GraphEdge edge)
     {
-        var parts = new List<string>();
-        if (edge.orderFW > 0) parts.Add($"fw{edge.orderFW}");
-        if (edge.orderBW > 0) parts.Add($"bw{edge.orderBW}");
-        if (edge.distFromA > 0 && edge.edgeType == EdgeType.DoorFW)
-            parts.Add($"{edge.distFromA:F1}m");
-        return string.Join(" ", parts);
+        string side = string.IsNullOrEmpty(edge.side) ? "" : $" {edge.side}";
+        switch (edge.edgeType)
+        {
+            case EdgeType.Central:
+                return $"central {edge.distFromA:F1}m";
+            case EdgeType.DoorFW:
+            {
+                int fw = edge.orderFW > 0 ? edge.orderFW : 1;
+                return $"fw{fw}{side} dA={edge.distFromA:F1}";
+            }
+            case EdgeType.DoorBW:
+            {
+                int bw = edge.orderBW > 0 ? edge.orderBW : 1;
+                // Lato invertito rispetto a FW: A→B e B→A sono direzioni opposte
+                string bwSide = edge.side == "LEFT" ? " RIGHT" :
+                                edge.side == "RIGHT" ? " LEFT" : side;
+                return $"bw{bw}{bwSide} dB={edge.distFromB:F1}";
+            }
+            case EdgeType.RoomDoor:
+                return $"room {edge.navMeshDist:F1}m";
+            case EdgeType.Segment:
+                return $"seg {edge.distFromA:F1}m";
+            default:
+                return "";
+        }
     }
 
     // ====================================================
@@ -521,7 +543,6 @@ public class TopologicalGraphWindow : EditorWindow
         DrawLegendEntry(ref cx, ref cy, s, ColPoleA,   "Polo A corridoio");
         DrawLegendEntry(ref cx, ref cy, s, ColPoleB,   "Polo B corridoio");
         DrawLegendEntry(ref cx, ref cy, s, ColRoom,    "Stanza");
-        DrawLegendEntry(ref cx, ref cy, s, ColComplex, "Complessa (>3 archi)");
         DrawLegendEntry(ref cx, ref cy, s, ColCurrent, "Posizione corrente");
         cy += 4f;
 
@@ -660,21 +681,14 @@ public class TopologicalGraphWindow : EditorWindow
     // ====================================================
     private TopologicalGraph GetGraph()
     {
-        if (manager == null) return null;
-        if (!Application.isPlaying) return null;
-        var f = typeof(ExplorationManager).GetField("graph",
-            System.Reflection.BindingFlags.NonPublic |
-            System.Reflection.BindingFlags.Instance);
-        return f?.GetValue(manager) as TopologicalGraph;
+        if (manager == null || !Application.isPlaying) return null;
+        return manager.Graph;
     }
 
     private string GetCurrentNodeId()
     {
         if (manager == null) return null;
-        var f = typeof(ExplorationManager).GetField("currentNodeId",
-            System.Reflection.BindingFlags.NonPublic |
-            System.Reflection.BindingFlags.Instance);
-        return f?.GetValue(manager) as string;
+        return manager.CurrentNodeId;
     }
 
     private int CountNodes(TopologicalGraph g)
@@ -692,7 +706,6 @@ public class TopologicalGraphWindow : EditorWindow
         NodeType.CorridorPoleA => ColPoleA,
         NodeType.CorridorPoleB => ColPoleB,
         NodeType.Room          => ColRoom,
-        NodeType.Complex       => ColComplex,
         _                      => ColUnknown
     };
 
@@ -701,7 +714,6 @@ public class TopologicalGraphWindow : EditorWindow
         NodeType.CorridorPoleA => new Color(0.8f, 0.5f, 0f),
         NodeType.CorridorPoleB => new Color(0.7f, 0.3f, 0f),
         NodeType.Room          => new Color(0.1f, 0.6f, 0.1f),
-        NodeType.Complex       => new Color(0.6f, 0.1f, 0.6f),
         _                      => new Color(0.3f, 0.3f, 0.3f)
     };
 

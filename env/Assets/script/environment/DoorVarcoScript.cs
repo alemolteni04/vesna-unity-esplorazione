@@ -41,16 +41,21 @@ public class DoorVarcoScript : MonoBehaviour
     [Header("Modello 3D (Da disattivare all'apertura)")]
     public GameObject physicalModel;
 
-    [Header("Stanze collegate")]
-    [Tooltip("Luogo sul lato FRONT (dove punta transform.forward).\n" +
+    [Header("Stanze collegate — trascina i GameObject dall'Inspector")]
+    [Tooltip("GameObject della stanza/corridoio sul lato FRONT (dove punta transform.forward).\n" +
              "Orienta la porta in modo che forward punti verso la stanza.\n" +
-             "Esempio: 'stanza_101'")]
-    public string roomNameFront;
+             "Il nome del GameObject viene usato come ID nodo nel grafo.")]
+    public GameObject roomFront;
 
-    [Tooltip("Luogo sul lato BACK (opposto al forward).\n" +
+    [Tooltip("GameObject della stanza/corridoio sul lato BACK (opposto al forward).\n" +
              "Tipicamente il corridoio o l'ambiente esterno.\n" +
-             "Esempio: 'corridoio_1'")]
-    public string roomNameBack;
+             "Il nome del GameObject viene usato come ID nodo nel grafo.")]
+    public GameObject roomBack;
+
+    // ── Nomi derivati dai GameObject — usati dal grafo ───────────────────────
+    // Non scrivere mai a mano: trascina roomFront/roomBack nell'Inspector.
+    public string roomNameFront => roomFront != null ? roomFront.name : gameObject.name + "_front";
+    public string roomNameBack  => roomBack  != null ? roomBack.name  : gameObject.name + "_back";
 
     // --------------------------------------------------------
     // PROPRIETÀ DERIVATE
@@ -112,7 +117,7 @@ public class DoorVarcoScript : MonoBehaviour
 
         isOpen = true;
         
-        // ---> AGGIUNGI QUESTO BLOCCO <---
+        
         // Se c'è un modello fisico, disattivalo per far passare l'agente
         if (physicalModel != null)
         {
@@ -130,7 +135,7 @@ public class DoorVarcoScript : MonoBehaviour
         
         isOpen = false;
         
-        // ---> AGGIUNGI QUESTO BLOCCO <---
+        
         if (physicalModel != null)
         {
             physicalModel.SetActive(true);
@@ -199,16 +204,16 @@ public class DoorVarcoScript : MonoBehaviour
         Gizmos.DrawSphere(pos + -transform.forward * 1.2f, 0.08f);
 
 #if UNITY_EDITOR
-        // Label con i nomi delle stanze
+        // Label con i nomi dei GameObject collegati (derivati da roomFront/roomBack)
         UnityEditor.Handles.color = Color.green;
         UnityEditor.Handles.Label(
             pos + transform.forward * 1.4f,
-            string.IsNullOrEmpty(roomNameFront) ? "front?" : roomNameFront);
+            roomFront != null ? roomFront.name : "front? (trascina GO)");
 
         UnityEditor.Handles.color = Color.red;
         UnityEditor.Handles.Label(
             pos + -transform.forward * 1.4f,
-            string.IsNullOrEmpty(roomNameBack) ? "back?" : roomNameBack);
+            roomBack != null ? roomBack.name : "back? (trascina GO)");
 #endif
     }
 
@@ -219,10 +224,7 @@ public class DoorVarcoScript : MonoBehaviour
             isOpen   = true;
             isLocked = false;
         }
-        // Non sovrascrivere se l'utente ha già scritto qualcosa
-        if (string.IsNullOrEmpty(roomNameFront))
-            roomNameFront = gameObject.name + "_front";
-        if (string.IsNullOrEmpty(roomNameBack))
-            roomNameBack  = gameObject.name + "_back";
+        // roomNameFront e roomNameBack sono ora proprietà derivate da roomFront/roomBack.
+        // Non serve più assegnare stringhe di default qui.
     }
 }
