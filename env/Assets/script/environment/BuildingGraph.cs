@@ -89,11 +89,8 @@ public class FloorNode
     // Aggiornato da ExplorationManager quando finisce il piano
     [HideInInspector] public bool explored = false;
 
-    // Lista degli ID dei corridoi presenti in questo piano.
-    // Viene popolata da ExplorationManager durante l'esplorazione
-    // man mano che scopre corridoi (CorridorData.corridorId).
-    // Serve per il check "ho esplorato tutto il piano?".
-    [HideInInspector] public List<string> discoveredCorridorIds = new List<string>();
+  [Tooltip("Stanze presenti in questo piano — configurate nell'Inspector")]
+    public List<string> roomIds = new List<string>();
 }
 
 // ============================================================
