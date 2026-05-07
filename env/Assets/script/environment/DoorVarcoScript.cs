@@ -181,41 +181,7 @@ public class DoorVarcoScript : MonoBehaviour
         return Vector3.Distance(from, transform.position);
     }
 
-    // --------------------------------------------------------
-    // EDITOR — Gizmo visivo per front/back
-    // Mostra frecce colorate nella scena Unity:
-    //   VERDE  → lato FRONT (transform.forward) = roomNameFront
-    //   ROSSO  → lato BACK  (opposto)            = roomNameBack
-    // Orienta il GameObject finché la freccia verde punta
-    // verso la stanza che vuoi come "front".
-    // --------------------------------------------------------
-    private void OnDrawGizmos()
-    {
-        Vector3 pos = transform.position;
-
-        // Freccia VERDE = front
-        Gizmos.color = Color.green;
-        Gizmos.DrawRay(pos, transform.forward * 1.2f);
-        Gizmos.DrawSphere(pos + transform.forward * 1.2f, 0.08f);
-
-        // Freccia ROSSA = back
-        Gizmos.color = Color.red;
-        Gizmos.DrawRay(pos, -transform.forward * 1.2f);
-        Gizmos.DrawSphere(pos + -transform.forward * 1.2f, 0.08f);
-
-#if UNITY_EDITOR
-        // Label con i nomi dei GameObject collegati (derivati da roomFront/roomBack)
-        UnityEditor.Handles.color = Color.green;
-        UnityEditor.Handles.Label(
-            pos + transform.forward * 1.4f,
-            roomFront != null ? roomFront.name : "front? (trascina GO)");
-
-        UnityEditor.Handles.color = Color.red;
-        UnityEditor.Handles.Label(
-            pos + -transform.forward * 1.4f,
-            roomBack != null ? roomBack.name : "back? (trascina GO)");
-#endif
-    }
+  
 
     private void OnValidate()
     {
