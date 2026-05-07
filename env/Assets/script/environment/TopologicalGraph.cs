@@ -1,13 +1,20 @@
-using System.Collections.Generic;
+using System.Collections.Generic;using System.Collections.Generic;using System.Collections.Generic;
 using UnityEngine;
 
 // ============================================================
-// TopologicalGraph.cs  — v2
+// TopologicalGraph.cs  — v3
 // ============================================================
 // LIVELLO 1 (Piano): ogni corridoio ha DUE nodi polo A e B.
 //   corridoioX_A ──[central_corridoioX]──► corridoioX_B
-//   corridoioX_A ──[fw_porta]──► porta    (distFromA, orderFW)
-//   corridoioX_B ──[bw_porta]──► porta    (distFromB, orderBW)
+//   corridoioX_A ──[fw_porta]──► porta    (distFromA, orderFW per lato)
+//   corridoioX_B ──[bw_porta]──► porta    (distFromB, orderBW per lato)
+//
+// NOVITÀ v3:
+//   - orderFW e orderBW sono PER LATO (RIGHT e LEFT scale separate)
+//     es: bagno=fw2R, camera=fw1R, cucina=fw1L  → nessun buco nei numeri
+//   - explorationOrder: sequenza di visita effettiva dal polo B
+//     calcolata da ComputeExplorationOrder (clustering + zigzag R/L)
+//   - NextCorridorEdgeToInspect usa explorationOrder come fonte unica
 //
 // LIVELLO 2 (Stanza): nodo stanza con archi verso porte/varchi.
 //   roomNode ──[room_porta]──► porta      (navMeshDist, greedy)
@@ -93,10 +100,13 @@ public class GraphEdge
     public string    side;
     public float     distFromA;
     public float     distFromB;
-    public int       orderFW;
-    public int       orderBW;
+    public int       orderFW;           // rank per lato da A (1=primo su quel lato)
+    public int       orderBW;           // rank per lato da B (1=primo su quel lato)
+    public int       explorationOrder;  // sequenza visita effettiva dal polo B
     public float     navMeshDist;
     public Vector3   position;
+
+    public bool isCorridorLink; // aggiunto per gestire varchi che sono collegamento di corridoio . se no si alterava la struttura del grafo
 
     public GraphEdge(string id, string fromNodeId, bool isPhysical,
                      EdgeType edgeType, Vector3 position)
@@ -126,7 +136,6 @@ public class TopologicalGraph
     // AGGIUNTA NODI
     // =========================================================
 
-    // Aggiunge un nodo stanza (RoomNode)
     public RoomNode AddRoomNode(string id, Vector3 position)
     {
         if (string.IsNullOrEmpty(id))
@@ -143,8 +152,6 @@ public class TopologicalGraph
         return node;
     }
 
-    // Compatibilità: AddNode ora crea sempre un RoomNode
-    // (i poli corridoio vengono creati da AddCorridorPoles)
     public GraphNode AddNode(string id, NodeType type, Vector3 position)
     {
         if (string.IsNullOrEmpty(id))
@@ -200,11 +207,14 @@ public class TopologicalGraph
 
     // =========================================================
     // AGGIUNTA ARCHI PORTA — doppio FW (da A) e BW (da B)
+    // NOTA: orderFW passato dall'esterno NON viene più usato per
+    //       l'ordinamento — viene ricalcolato internamente per lato
+    //       da ComputeForwardOrders(). Il parametro rimane per
+    //       compatibilità della firma ma viene ignorato.
     // =========================================================
-
     public void AddDoorEdges(string corridorId, string doorId, bool isPhysical,
                              Vector3 doorPos, string side,
-                             float distFromA, float distFromB, int orderFW)
+                             float distFromA, float distFromB, int orderFW, bool isCorridorLink = false)
     {
         string idA = $"{corridorId}_A";
         string idB = $"{corridorId}_B";
@@ -224,8 +234,12 @@ public class TopologicalGraph
         {
             nodeA.edges.Add(new GraphEdge(fwId, idA, isPhysical, EdgeType.DoorFW, doorPos)
             {
-                toNodeId = doorId, side = side,
-                distFromA = distFromA, distFromB = distFromB, orderFW = orderFW
+                toNodeId  = doorId,
+                side      = side,
+                distFromA = distFromA,
+                distFromB = distFromB,
+                orderFW   = 0,   // verrà assegnato da ComputeForwardOrders()
+                 isCorridorLink = isCorridorLink   // ← imposta
             });
         }
 
@@ -235,8 +249,12 @@ public class TopologicalGraph
         {
             nodeB.edges.Add(new GraphEdge(bwId, idB, isPhysical, EdgeType.DoorBW, doorPos)
             {
-                toNodeId = doorId, side = side,
-                distFromA = distFromA, distFromB = distFromB, orderFW = orderFW
+                toNodeId  = doorId,
+                side      = side,
+                distFromA = distFromA,
+                distFromB = distFromB,
+                orderBW   = 0,   // verrà assegnato da ComputeBackwardOrders()
+                 isCorridorLink = isCorridorLink   // ← imposta
             });
         }
 
@@ -266,8 +284,6 @@ public class TopologicalGraph
     }
 
     // Arco segmento tra fine corridoio N e inizio corridoio N+1
-    // Creato automaticamente quando l'agente passa da un corridoio all'altro.
-    // Distanza default 0.5m (configurabile).
     public GraphEdge AddSegmentArc(string fromNodeId, string toNodeId, float distance = 0.5f)
     {
         if (!nodes.ContainsKey(fromNodeId)) return null;
@@ -281,7 +297,7 @@ public class TopologicalGraph
         {
             toNodeId  = toNodeId,
             distFromA = distance,
-            state     = EdgeState.Explored // segmento già percorso
+            state     = EdgeState.Explored
         };
         fromNode.edges.Add(edge);
         Debug.Log($"[Graph] Segmento: {fromNodeId}→{toNodeId} dist={distance:F2}m");
@@ -344,18 +360,159 @@ public class TopologicalGraph
     }
 
     // =========================================================
-    // CALCOLO orderBW al polo B
+    // CALCOLO ORDINI — tre metodi da chiamare IN SEQUENZA
+    // Chiamata corretta (vedi ExplorationManager):
+    //   1. ComputeForwardOrders(corridorId)
+    //   2. ComputeBackwardOrders(corridorId)
+    //   3. ComputeExplorationOrder(corridorId)
     // =========================================================
 
+    // ── 1. orderFW per lato (scala RIGHT separata da LEFT) ──────────────────
+    // Porta più vicina ad A su quel lato = fw1R o fw1L, poi fw2R, fw2L, ecc.
+    // Non ci sono mai buchi nei numeri perché ogni scala è indipendente.
+    public void ComputeForwardOrders(string corridorId)
+    {
+        string idA = $"{corridorId}_A";
+        if (!nodes.ContainsKey(idA)) return;
+
+        var fwEdges = nodes[idA].edges.FindAll(
+    e => e != null && e.edgeType == EdgeType.DoorFW
+                   && !e.isCorridorLink);  
+
+        var fwRight = fwEdges.FindAll(e => e.side == "RIGHT");
+        var fwLeft  = fwEdges.FindAll(e => e.side == "LEFT");
+
+        // Ordine crescente per distFromA: la più vicina ad A è la prima
+        fwRight.Sort((a, b) => a.distFromA.CompareTo(b.distFromA));
+        fwLeft .Sort((a, b) => a.distFromA.CompareTo(b.distFromA));
+
+        for (int i = 0; i < fwRight.Count; i++) fwRight[i].orderFW = i + 1;
+        for (int i = 0; i < fwLeft.Count;  i++) fwLeft[i].orderFW  = i + 1;
+
+        // Propaga orderFW sugli archi BW gemelli (stesso toNodeId)
+        string idB = $"{corridorId}_B";
+        if (nodes.ContainsKey(idB))
+        {
+            foreach (var fw in fwEdges)
+            {
+                var bw = nodes[idB].edges.Find(
+                    e => e != null && e.edgeType == EdgeType.DoorBW
+                                   && e.toNodeId == fw.toNodeId);
+                if (bw != null) bw.orderFW = fw.orderFW;
+            }
+        }
+
+        Debug.Log($"[Graph] FW orders {corridorId} → " +
+                  $"RIGHT:[{string.Join(",", fwRight.ConvertAll(e => $"fw{e.orderFW}R={e.toNodeId}(dA={e.distFromA:F1})"))}] " +
+                  $"LEFT:[{string.Join(",",  fwLeft.ConvertAll( e => $"fw{e.orderFW}L={e.toNodeId}(dA={e.distFromA:F1})"))}]");
+    }
+
+    // ── 2. orderBW per lato (scala RIGHT separata da LEFT) ──────────────────
+    // Porta più vicina a B su quel lato = bw1R o bw1L, poi bw2R, bw2L, ecc.
     public void ComputeBackwardOrders(string corridorId)
     {
         string idB = $"{corridorId}_B";
         if (!nodes.ContainsKey(idB)) return;
-        var bwEdges = nodes[idB].edges.FindAll(e => e != null && e.edgeType == EdgeType.DoorBW);
+
+        var bwEdges = nodes[idB].edges.FindAll(
+    e => e != null && e.edgeType == EdgeType.DoorBW
+                   && !e.isCorridorLink);   // ← escludi
+
+        var bwRight = bwEdges.FindAll(e => e.side == "RIGHT");
+        var bwLeft  = bwEdges.FindAll(e => e.side == "LEFT");
+
+        // Ordine crescente per distFromB: la più vicina a B è la prima
+        bwRight.Sort((a, b) => a.distFromB.CompareTo(b.distFromB));
+        bwLeft .Sort((a, b) => a.distFromB.CompareTo(b.distFromB));
+
+        for (int i = 0; i < bwRight.Count; i++) bwRight[i].orderBW = i + 1;
+        for (int i = 0; i < bwLeft.Count;  i++) bwLeft[i].orderBW  = i + 1;
+
+        // Propaga orderBW sugli archi FW gemelli (stesso toNodeId)
+        string idA = $"{corridorId}_A";
+        if (nodes.ContainsKey(idA))
+        {
+            foreach (var bw in bwEdges)
+            {
+                var fw = nodes[idA].edges.Find(
+                    e => e != null && e.edgeType == EdgeType.DoorFW
+                                   && e.toNodeId == bw.toNodeId);
+                if (fw != null) fw.orderBW = bw.orderBW;
+            }
+        }
+
+        Debug.Log($"[Graph] BW orders {corridorId} → " +
+                  $"RIGHT:[{string.Join(",", bwRight.ConvertAll(e => $"bw{e.orderBW}R={e.toNodeId}(dB={e.distFromB:F1})"))}] " +
+                  $"LEFT:[{string.Join(",",  bwLeft.ConvertAll( e => $"bw{e.orderBW}L={e.toNodeId}(dB={e.distFromB:F1})"))}]");
+    }
+
+    // ── 3. explorationOrder: sequenza visita effettiva dal polo B ────────────
+    // Algoritmo:
+    //   a) Ordina tutti gli archi BW per distFromB crescente (più vicini a B prima)
+    //   b) Raggruppa in cluster spaziali (porte a ≤ clusterEpsilon = stessa posizione logica)
+    //   c) Dentro ogni cluster: RIGHT prima, poi LEFT (zigzag per ridurre rotazioni)
+    //   d) Assegna explorationOrder progressivo
+    //
+    // Esempio con bagno(dB=0.1,R), camera(dB=2.0,L), cucina(dB=2.1,R):
+    //   Cluster1: bagno(R)  → exp=1
+    //   Cluster2: cucina(R) → exp=2,  camera(L) → exp=3
+    //   Visita: bagno → cucina → camera
+    public void ComputeExplorationOrder(string corridorId)
+    {
+        string idB = $"{corridorId}_B";
+        if (!nodes.ContainsKey(idB)) return;
+
+       var bwEdges = nodes[idB].edges.FindAll(
+    e => e != null && e.edgeType == EdgeType.DoorBW
+                   && !e.isCorridorLink);   // ← escludi
+        if (bwEdges.Count == 0) return;
+
+        // a) Ordina per distFromB crescente
         bwEdges.Sort((a, b) => a.distFromB.CompareTo(b.distFromB));
-        for (int i = 0; i < bwEdges.Count; i++)
-            bwEdges[i].orderBW = i + 1;
-        Debug.Log($"[Graph] orderBW calcolati per {idB} ({bwEdges.Count} porte)");
+
+        // b) Clustering spaziale
+        const float clusterEpsilon = 0.25f;
+        var clusters = new List<List<GraphEdge>>();
+        var current  = new List<GraphEdge> { bwEdges[0] };
+
+        for (int i = 1; i < bwEdges.Count; i++)
+        {
+            float gap = bwEdges[i].distFromB - bwEdges[i - 1].distFromB;
+            if (gap <= clusterEpsilon)
+                current.Add(bwEdges[i]);
+            else
+            {
+                clusters.Add(current);
+                current = new List<GraphEdge> { bwEdges[i] };
+            }
+        }
+        clusters.Add(current);
+
+        // c) Dentro ogni cluster: RIGHT prima (0), LEFT dopo (1)
+        int order = 1;
+        foreach (var cluster in clusters)
+        {
+            cluster.Sort((a, b) =>
+            {
+                int sA = (a.side == "RIGHT") ? 0 : 1;
+                int sB = (b.side == "RIGHT") ? 0 : 1;
+                return sA.CompareTo(sB);
+            });
+            foreach (var e in cluster)
+                e.explorationOrder = order++;
+        }
+
+        // Log leggibile con struttura cluster
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"[Graph] explorationOrder {corridorId} — {clusters.Count} cluster:");
+        int ci = 1;
+        foreach (var cluster in clusters)
+        {
+            sb.Append($"  Cluster{ci++}(dB≈{cluster[0].distFromB:F1}): ");
+            sb.AppendLine(string.Join(", ", cluster.ConvertAll(
+                e => $"{e.toNodeId}→exp{e.explorationOrder}({e.side[0]})")));
+        }
+        Debug.Log(sb.ToString());
     }
 
     // =========================================================
@@ -369,28 +526,39 @@ public class TopologicalGraph
         return n;
     }
 
-    // Helper tipizzati
-    public RoomNode GetRoomNode(string id) => GetNode(id) as RoomNode;
+    public RoomNode       GetRoomNode(string id)         => GetNode(id) as RoomNode;
     public CorridorPoleNode GetCorridorPoleNode(string id) => GetNode(id) as CorridorPoleNode;
 
     public IEnumerable<GraphNode> AllNodes() => nodes.Values;
 
-    // ── Prossimo arco in corridoio (polo B, orderBW) ──
+    // ── Prossimo arco in corridoio dal polo B ───────────────────────────────
+    // Usa explorationOrder come unica fonte di verità per la sequenza di visita.
+    // explorationOrder=0 significa che ComputeExplorationOrder non è ancora stato
+    // chiamato → fallback su distFromB grezzo per sicurezza.
     public GraphEdge NextCorridorEdgeToInspect(string poleBNodeId)
+{
+    if (!nodes.ContainsKey(poleBNodeId)) return null;
+    var all = nodes[poleBNodeId].edges.FindAll(
+        e => e != null
+          && e.state    == EdgeState.Discovered
+          && e.edgeType == EdgeType.DoorBW);
+    if (all.Count == 0) return null;
+
+    // Prima le stanze reali (isCorridorLink=false), ordinate per explorationOrder
+    var rooms = all.FindAll(e => !e.isCorridorLink);
+    if (rooms.Count > 0)
     {
-        if (!nodes.ContainsKey(poleBNodeId)) return null;
-        var list = nodes[poleBNodeId].edges.FindAll(
-            e => e != null && e.state == EdgeState.Discovered && e.edgeType == EdgeType.DoorBW);
-        if (list.Count == 0) return null;
-        list.Sort((a, b) =>
-        {
-            if (a.orderBW > 0 && b.orderBW > 0) return a.orderBW.CompareTo(b.orderBW);
-            return a.distFromB.CompareTo(b.distFromB);
-        });
-        return list[0];
+        rooms.Sort((a, b) => a.explorationOrder.CompareTo(b.explorationOrder));
+        return rooms[0];
     }
 
-    // ── Prossimo arco in stanza (greedy NavMesh) ──
+    // Solo se tutte le stanze sono già esplorate → prendi il link corridoio
+    var links = all.FindAll(e => e.isCorridorLink);
+    links.Sort((a, b) => a.distFromB.CompareTo(b.distFromB));
+    return links.Count > 0 ? links[0] : null;
+}
+
+    // ── Prossimo arco in stanza (greedy NavMesh) ────────────────────────────
     public GraphEdge NextRoomEdgeToInspect(string roomNodeId)
     {
         if (!nodes.ContainsKey(roomNodeId)) return null;
@@ -401,25 +569,25 @@ public class TopologicalGraph
         return list[0];
     }
 
-    // ── Fallback: qualsiasi discovered ──
+    // ── Fallback: qualsiasi discovered ──────────────────────────────────────
     public GraphEdge NextEdgeToInspect(string nodeId)
     {
         if (string.IsNullOrEmpty(nodeId) || !nodes.ContainsKey(nodeId)) return null;
         var node = nodes[nodeId];
         if (node.type == NodeType.CorridorPoleB) return NextCorridorEdgeToInspect(nodeId);
-        if (node.type == NodeType.Room)
-            return NextRoomEdgeToInspect(nodeId);
+        if (node.type == NodeType.Room)          return NextRoomEdgeToInspect(nodeId);
         var any = node.edges.FindAll(e => e != null && e.state == EdgeState.Discovered);
         if (any.Count == 0) return null;
         any.Sort((a, b) => a.distFromB.CompareTo(b.distFromB));
         return any[0];
     }
 
-    // ── Conteggio discovered (debug) ──
+    // ── Conteggio discovered (debug) ────────────────────────────────────────
     public int GetDiscoveredEdgesCount(string nodeId)
     {
         if (string.IsNullOrEmpty(nodeId) || !nodes.ContainsKey(nodeId)) return 0;
-        return nodes[nodeId].edges.FindAll(e => e != null && e.state == EdgeState.Discovered).Count;
+        return nodes[nodeId].edges.FindAll(
+            e => e != null && e.state == EdgeState.Discovered).Count;
     }
 
     public string FindNearestNodeWithDiscoveredEdges(Vector3 agentPos)
@@ -441,16 +609,13 @@ public class TopologicalGraph
             if (node != null && node.HasUndiscoveredEdges()) return false;
         return true;
     }
-    // Aggiungi questo metodo in fondo a TopologicalGraph.cs
+
     public bool IsCorridorFullyTransited(string corridorId)
     {
         string idA = $"{corridorId}_A";
         if (!nodes.ContainsKey(idA)) return false;
-
-        // Cerca l'arco centrale del corridoio
-        var centralEdge = nodes[idA].edges.Find(e => e != null && e.edgeType == EdgeType.Central);
-        
-        // Se esiste ed è già stato esplorato, il corridoio è completamente transitato
+        var centralEdge = nodes[idA].edges.Find(
+            e => e != null && e.edgeType == EdgeType.Central);
         return centralEdge != null && centralEdge.state == EdgeState.Explored;
     }
 }

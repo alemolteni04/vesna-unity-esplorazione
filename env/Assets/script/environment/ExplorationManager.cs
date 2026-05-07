@@ -3,16 +3,14 @@ using UnityEngine;
 using UnityEngine.AI;
  
 // ============================================================
-// ExplorationManager.cs  — v2.1
-// FIX:
-//   1. HandleCorridorPoleVisible → sceglie sempre il polo fisicamente
-//      più vicino all'agente, non il primo visto dal cono.
-//      Così l'agente entra sempre da polo A (il più vicino),
-//      non da polo B (il più lontano/visibile).
-//   2. UpdateBacktracking → threshold ridotta + guard pathPending
-//      per evitare falsi "arrivato" immediatamente dopo SetDestination.
-//   3. HandleDoorVisibleInRoom → accettato anche in State.InsideRoom
-//      dopo il 360° (già c'era, ma ora è esplicitato nel commento).
+// ExplorationManager.cs  — v2.2
+// MODIFICHE rispetto a v2.1:
+//   1. ProcessPoleTouched (polo B): chiama ComputeForwardOrders +
+//      ComputeBackwardOrders + ComputeExplorationOrder in sequenza.
+//   2. UpdateRotating360 (dopo 360° al polo B): ricalcola BW e
+//      ExplorationOrder per includere le porte scoperte visivamente.
+//   3. HandleDoorVisibleInRoom (polo B): dopo AddDoorEdges ricalcola
+//      subito BW + ExplorationOrder così il viewer è sempre aggiornato.
 // ============================================================
  
 public class ExplorationManager : MonoBehaviour
@@ -35,11 +33,11 @@ public class ExplorationManager : MonoBehaviour
  
     [Header("Impostazioni")]
     public float arrivalThreshold      = 0.5f;
-    public float poleArrivalThreshold  = 1.2f; // più largo: i poli possono essere vicino ai muri
+    public float poleArrivalThreshold  = 1.2f;
     public float rotationSpeed         = 120f;
     public float inspectionDistance    = 1.2f;
     public float enterOffset           = 1.5f;
-    public float poleTimeoutSeconds    = 4f;   // se dopo X sec non è arrivato, forza ProcessPoleTouched
+    public float poleTimeoutSeconds    = 4f;
  
     // --------------------------------------------------------
     // MACCHINA A STATI
@@ -82,14 +80,12 @@ public class ExplorationManager : MonoBehaviour
  
     private HashSet<string> registeredRoomDoors    = new HashSet<string>();
     private HashSet<string> registeredTransitDoors = new HashSet<string>();
+    private HashSet<string> allCorridorDoors       = new HashSet<string>();
  
     private bool explorationStarted = false;
     private int  currentFloor;
     private VerticalConnector pendingConnector;
 
-    // ── tracking polo in volo ────────────────────────────────────────────────
-    // Quando il cono vede PIÙ poli dello stesso corridoio nello stesso frame,
-    // ricordiamo quello più vicino già scelto per non sovrascriverlo.
     private string movingToPoleCorridorId;
     private float  movingToPoleTimer   = 0f;
     private float  backtrackTimer      = 0f;
@@ -142,7 +138,6 @@ public class ExplorationManager : MonoBehaviour
         graph.AddRoomNode(startNodeId, startPos);
         graph.EnterNode(startNodeId);
  
-        // ri-sottoscrivi (idempotente) solo per sicurezza
         CorridorPoleScript.OnPoleTouched -= HandlePoleTouched;
         CorridorPoleScript.OnPoleTouched += HandlePoleTouched;
  
@@ -171,26 +166,16 @@ public class ExplorationManager : MonoBehaviour
  
     // --------------------------------------------------------
     // HANDLER: VisionCone vede un polo di corridoio
-    //
-    // FIX PRINCIPALE: invece di andare al primo polo visto,
-    // scegliamo sempre il polo FISICAMENTE PIÙ VICINO all'agente
-    // tra tutti i poli dello stesso corridoio.
-    // Questo garantisce che si entri sempre da A (il più prossimo),
-    // indipendentemente da quale polo il cono veda per primo.
     // --------------------------------------------------------
     private void HandleCorridorPoleVisible(string corridorId, string poleId, Vector3 polePos)
     {
-        // Non interrompere transito, avvicinamento o 360° in corso
         if (state == State.MovingToPole || state == State.Transiting) return;
         if (state == State.Rotating360) return;
-
-        // Solo da Idle o Backtracking
         if (state != State.Idle && state != State.Backtracking) return;
 
         var corridorData = FindCorridorData(corridorId);
         if (corridorData == null) return;
 
-        // ── Trova il polo più vicino tra i due fisici ──────────────────────
         Vector3 myPos = transform.position;
         float distPole1 = Vector3.Distance(myPos, corridorData.Pole1Position);
         float distPole2 = Vector3.Distance(myPos, corridorData.Pole2Position);
@@ -209,12 +194,11 @@ public class ExplorationManager : MonoBehaviour
             nearestPoleId  = "2";
         }
 
-        // Se stiamo già andando verso questo corridoio verso il polo corretto, ignora
         if (movingToPoleCorridorId == corridorId) return;
 
-        pendingCorridorId     = corridorId;
-        pendingPoleId         = nearestPoleId;
-        pendingPolePos        = nearestPolePos;
+        pendingCorridorId      = corridorId;
+        pendingPoleId          = nearestPoleId;
+        pendingPolePos         = nearestPolePos;
         movingToPoleCorridorId = corridorId;
 
         navAgent.isStopped = false;
@@ -233,7 +217,6 @@ public class ExplorationManager : MonoBehaviour
     {
         Debug.Log($"[ExplMgr] Segnale fisico da {corridorId}_{poleId}. Stato: {state}");
 
-        // CASO 1: Polo B durante transito — lo aspettavamo
         if (state == State.Transiting && corridorId == transitCorridorId)
         {
             pendingCorridorId = corridorId;
@@ -243,20 +226,13 @@ public class ExplorationManager : MonoBehaviour
             return;
         }
 
-        // CASO 2: Polo A — solo se stiamo ESPLICITAMENTE andando verso di lui
-        // (evita che tocchi accidentali durante MovingToDoor/InspectingDoor
-        //  avviino un transito inaspettato e interrompano l'ispezione)
         if (state == State.MovingToPole && corridorId == pendingCorridorId)
         {
-            pendingPolePos = polePos; // aggiorna posizione reale
+            pendingPolePos = polePos;
             ProcessPoleTouched();
             return;
         }
 
-        // Stato Idle: l'agente è appena entrato in un corridoio attraverso un varco
-        // e il polo fisico è stato toccato prima che il VisionCone lo vedesse visivamente.
-        // Accettiamo SOLO se il corridoio non è già stato completamente transitato
-        // (arco centrale ancora discovered = transito mai completato).
         if (state == State.Idle)
         {
             var poleANode = graph.GetCorridorPoleNode($"{corridorId}_A");
@@ -284,26 +260,67 @@ public class ExplorationManager : MonoBehaviour
     // HANDLER: DoorSensor scopre una porta durante il transito
     // --------------------------------------------------------
     private void HandleDoorDiscovered(DoorVarcoScript door, string corridorId, int orderFW)
+{
+    if (state != State.Transiting) return;
+    if (corridorId != transitCorridorId) return;
+    if (registeredTransitDoors.Contains(door.gameObject.name)) return;
+
+    // ── NUOVO: ignora i varchi che portano a un altro corridoio ──────────
+    // Questi non sono stanze: vengono già gestiti dal transito polo A→B.
+    // Aggiungere archi fw/bw per loro inquina l'ordinamento e crea
+    // exploration order sbagliati (il log mostra Varco_Prefab_corr1_2
+    // come arco bw in corridoio1 ma non è una stanza).
+    string roomBeyond = door.GetRoomNameBeyondDoor(transform.position);
+    bool isCorrLink = !string.IsNullOrEmpty(roomBeyond) 
+                  && roomBeyond.ToLower().Contains("corridoio");
+
+
+   /* if (!string.IsNullOrEmpty(roomBeyond) && roomBeyond.ToLower().Contains("corridoio"))
     {
-        if (state != State.Transiting) return;
-        if (corridorId != transitCorridorId) return;
-        if (registeredTransitDoors.Contains(door.gameObject.name)) return;
-
-        registeredTransitDoors.Add(door.gameObject.name);
-
-        graph.AddDoorEdges(
-            corridorId,
-            door.gameObject.name,
-            door.elementType == DoorVarcoScript.ElementType.Door,
-            door.transform.position,
-            door.side,
-            door.distFromA,
-            door.distFromB,
-            orderFW);
-
-        Debug.Log($"[ExplMgr] Porta censita: {door.gameObject.name} corridoio={corridorId}");
+        Debug.Log($"[ExplMgr] Varco {door.gameObject.name} → corridoio '{roomBeyond}' " +
+                  $"— ignorato come porta, è un passaggio tra corridoi.");
+        return;
     }
- 
+    // ────────────────────────────────────────────────────────────────────
+*/
+    registeredTransitDoors.Add(door.gameObject.name);
+    allCorridorDoors.Add(door.gameObject.name);
+
+    string computedSide = ComputeSideRelativeToCorridorAxis(
+        door.transform.position, poleAPos, poleBPos);
+
+    graph.AddDoorEdges(
+        corridorId,
+        door.gameObject.name,
+        door.elementType == DoorVarcoScript.ElementType.Door,
+        door.transform.position,
+        computedSide,
+        door.distFromA,
+        door.distFromB,
+        0,
+        isCorridorLink: isCorrLink);   // ← passa il flag
+
+    Debug.Log($"[ExplMgr] Porta censita: {door.gameObject.name} " +
+            $"corridoio={corridorId} side={computedSide} " +
+            $"corridorLink={isCorrLink}");
+    }
+    // ── Calcola il lato di una porta rispetto all'asse fisso corridoio A→B ──
+    // Restituisce "RIGHT" o "LEFT".
+    // Porte frontali (angolo≈0 rispetto all'asse) → "RIGHT" per convenzione.
+    private string ComputeSideRelativeToCorridorAxis(Vector3 doorPos, Vector3 posA, Vector3 posB)
+    {
+        Vector3 axis   = (posB - posA).normalized;
+        axis.y = 0f;
+        Vector3 toDoor = doorPos - posA;
+        toDoor.y = 0f;
+        toDoor   = toDoor.normalized;
+
+        // Cross product 2D (componente Y): > 0 = LEFT (sinistra guardando da A verso B)
+        float cross = axis.x * toDoor.z - axis.z * toDoor.x;
+        if (Mathf.Abs(cross) < 0.05f) return "RIGHT"; // frontale → RIGHT per convenzione
+        return cross > 0f ? "LEFT" : "RIGHT";
+    }
+
     // --------------------------------------------------------
     // HANDLER: VisionCone vede una porta dentro una stanza
     // --------------------------------------------------------
@@ -316,18 +333,57 @@ public class ExplorationManager : MonoBehaviour
         registeredRoomDoors.Add(door.gameObject.name);
         door.discovered = true;
 
+        var node = graph.GetNode(currentNodeId);
+
+        if (node != null && node.type == NodeType.CorridorPoleB)
+        {
+            string corridorId = currentNodeId.Replace("_B", "");
+
+            if (allCorridorDoors.Contains(door.gameObject.name))
+            {
+                Debug.Log($"[ExplMgr] {door.gameObject.name} già censita → ignorata");
+                return;
+            }
+
+            float dB = Vector3.Distance(door.transform.position, poleBPos);
+            float dA = Vector3.Distance(door.transform.position, poleAPos);
+
+            if (dB > 0.6f)
+            {
+                Debug.Log($"[ExplMgr] {door.gameObject.name} fuori corridoio {corridorId} " +
+                        $"(dB={dB:F2} > 0.6) → ignorata");
+                return;
+            }
+
+            registeredTransitDoors.Add(door.gameObject.name);
+            allCorridorDoors.Add(door.gameObject.name);
+
+            // Calcola side sull'asse fisso A→B anche qui
+            string computedSide = ComputeSideRelativeToCorridorAxis(
+                door.transform.position, poleAPos, poleBPos);
+
+            graph.AddDoorEdges(corridorId, door.gameObject.name,
+                door.elementType == DoorVarcoScript.ElementType.Door,
+                door.transform.position, computedSide, dA, dB, orderFW: 0);
+
+            // ── MODIFICA v2.2: ricalcola tutti e tre gli ordini dopo ogni nuova porta ──
+            graph.ComputeForwardOrders(corridorId);
+            graph.ComputeBackwardOrders(corridorId);
+            graph.ComputeExplorationOrder(corridorId);
+
+            Debug.Log($"[ExplMgr] Porta polo-B → {corridorId}: {door.gameObject.name} " +
+                      $"dA={dA:F1} dB={dB:F1} side={computedSide}");
+            return;
+        }
+
+        // Nodo stanza normale → room edge
         float navDist = door.NavMeshDistanceTo(transform.position);
-
-        graph.AddRoomDoorEdge(
-            currentNodeId,
-            door.gameObject.name,
+        graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
             door.elementType == DoorVarcoScript.ElementType.Door,
-            door.transform.position,
-            navDist);
-
+            door.transform.position, navDist);
         Debug.Log($"[ExplMgr] Porta in stanza: {door.gameObject.name} navDist={navDist:F1}");
     }
- 
+
     // --------------------------------------------------------
     // HANDLER: connettore verticale raggiunto
     // --------------------------------------------------------
@@ -346,9 +402,6 @@ public class ExplorationManager : MonoBehaviour
     {
         movingToPoleTimer += Time.deltaTime;
 
-        // Fallback timeout: se dopo N secondi non siamo arrivati,
-        // forziamo ProcessPoleTouched con la posizione del polo.
-        // Copre il caso in cui il NavMesh non riesce ad avvicinarsi abbastanza.
         if (movingToPoleTimer >= poleTimeoutSeconds)
         {
             Debug.LogWarning($"[ExplMgr] Timeout polo {pendingCorridorId}/{pendingPoleId} " +
@@ -361,8 +414,6 @@ public class ExplorationManager : MonoBehaviour
 
         if (navAgent.pathPending) return;
 
-        // Soglia più larga rispetto alle porte: i poli possono essere
-        // vicino a muri e il NavMesh path termina prima della posizione esatta.
         if (navAgent.remainingDistance < poleArrivalThreshold)
         {
             movingToPoleCorridorId = null;
@@ -388,19 +439,15 @@ public class ExplorationManager : MonoBehaviour
             poleBPos = targetB;
  
             float centralLen = Vector3.Distance(poleAPos, poleBPos);
+
             graph.AddCorridorPoles(pendingCorridorId, poleAPos, poleBPos, centralLen);
  
-            // Salva il nodo precedente PRIMA di sovrascrivere currentNodeId.
-            // Se venivamo da un polo B di un altro corridoio, crea l'arco segmento
-            // che collega la fine del corridoio precedente all'inizio di questo.
             string comingFromNodeId = currentNodeId;
 
             string poleAId = $"{pendingCorridorId}_A";
             currentNodeId  = poleAId;
             graph.EnterNode(poleAId);
 
-            // Arco segmento corridoio N_B → corridoio N+1_A (50cm default)
-            // Solo se il corridoio di provenienza è DIVERSO da quello corrente
             if (!string.IsNullOrEmpty(comingFromNodeId) && comingFromNodeId.EndsWith("_B"))
             {
                 string comingCorridor = comingFromNodeId.Replace("_B", "");
@@ -409,7 +456,7 @@ public class ExplorationManager : MonoBehaviour
             }
  
             transitCorridorId = pendingCorridorId;
-            registeredTransitDoors.Clear(); // nuovo transito: riparte da zero
+            registeredTransitDoors.Clear();
  
             navAgent.isStopped = false;
             navAgent.SetDestination(targetB);
@@ -421,19 +468,27 @@ public class ExplorationManager : MonoBehaviour
         }
         else
         {
+            // ── POLO B TOCCATO ───────────────────────────────────────────────────────
             explorationVisionCone?.StopTransitScan();
  
             string poleBId = $"{pendingCorridorId}_B";
             currentNodeId  = poleBId;
             graph.EnterNode(poleBId);
  
+            // ── MODIFICA v2.2: calcola tutti e tre gli ordini in sequenza ────────────
+            // 1. orderFW per lato (scala R e L separate, nessun buco nei numeri)
+            graph.ComputeForwardOrders(pendingCorridorId);
+            // 2. orderBW per lato (idem)
             graph.ComputeBackwardOrders(pendingCorridorId);
- 
+            // 3. explorationOrder: sequenza visita effettiva (clustering + zigzag R/L)
+            graph.ComputeExplorationOrder(pendingCorridorId);
+            // ────────────────────────────────────────────────────────────────────────
+
             string poleAId   = $"{pendingCorridorId}_A";
             string centralId = $"central_{pendingCorridorId}";
             graph.MarkEdgeExplored(poleAId, centralId, poleBId);
  
-            movingToPoleCorridorId = null; // reset dopo transito completato
+            movingToPoleCorridorId = null;
             Debug.Log($"[ExplMgr] Polo B toccato. Inizio ispezione {pendingCorridorId}.");
  
             StartRotation360(isRoom: false);
@@ -457,7 +512,7 @@ public class ExplorationManager : MonoBehaviour
  
     private void StartRotation360(bool isRoom)
     {
-        inRoomMode    = isRoom || true; // sempre true: VisionCone scansiona varchi
+        inRoomMode    = isRoom || true;
         rotationAccum = 0f;
         navAgent.isStopped = true;
         state = State.Rotating360;
@@ -470,12 +525,25 @@ public class ExplorationManager : MonoBehaviour
         float step = rotationSpeed * Time.deltaTime;
         transform.Rotate(0, step, 0);
         rotationAccum += step;
- 
+
         if (rotationAccum >= 360f)
         {
             navAgent.isStopped = false;
-            rotationAccum      = 0f;
+            rotationAccum = 0f;
             Debug.Log($"[ExplMgr] 360° completato in '{currentNodeId}'.");
+
+            // ── MODIFICA v2.2: dopo il 360° al polo B ricalcola tutti e tre gli ordini ──
+            // Serve perché durante il 360° potrebbero essere state aggiunte porte
+            // scoperte visivamente (HandleDoorVisibleInRoom) non viste durante il transito.
+            if (currentNodeId != null && currentNodeId.EndsWith("_B"))
+            {
+                string corrId = currentNodeId.Replace("_B", "");
+                graph.ComputeForwardOrders(corrId);     // aggiorna anche i FW gemelli
+                graph.ComputeBackwardOrders(corrId);    // ricalcola per lato con nuove porte
+                graph.ComputeExplorationOrder(corrId);  // ricalcola sequenza visita
+                Debug.Log($"[ExplMgr] Ordini ricalcolati dopo 360° per {corrId}");
+            }
+
             DecideNextAction();
         }
     }
@@ -533,9 +601,6 @@ public class ExplorationManager : MonoBehaviour
         StartRotation360(isRoom: true);
     }
  
-    // ─── Backtracking ─────────────────────────────────────
-    // FIX: guard su pathPending aggiunta per evitare che l'agente
-    // creda di essere "arrivato" appena dopo SetDestination (frame 0).
     private void UpdateBacktracking()
     {
         if (navAgent.pathPending) return;
@@ -603,7 +668,7 @@ public class ExplorationManager : MonoBehaviour
         if (node == null) { DoBacktrack(); return; }
  
         Debug.Log($"[Debug] Decido azione per {currentNodeId}. Tipo={node.type}");
- 
+
         GraphEdge nextEdge = null;
  
         if (node.type == NodeType.CorridorPoleB)
@@ -667,18 +732,16 @@ public class ExplorationManager : MonoBehaviour
         graph.MarkEdgeExplored(currentNodeId, edge.id, isTargetCorridor ? null : newNodeId);
         SyncTwinCorridorEdge(edge.id, newNodeId);
  
-       if (isTargetCorridor)
+        if (isTargetCorridor)
         {
-            // --- RIPRISTINA LA FIX QUI ---
             if (graph.IsCorridorFullyTransited(newNodeId))
             {
-                Debug.LogWarning($"[ExplMgr] Corridoio '{newNodeId}' già transitato → backtrack diretto.");
+                Debug.LogWarning($"[ExplMgr] Corridoio '{newNodeId}' già transitato → decido prossima azione.");
                 currentEdge = null;
                 navAgent.isStopped = false;
-                DoBacktrack();
+                DecideNextAction();
                 return;
             }
-            // -----------------------------
 
             Debug.Log($"[ExplMgr] Transito verso corridoio '{newNodeId}'. Attendo polo.");
             state = State.Idle;

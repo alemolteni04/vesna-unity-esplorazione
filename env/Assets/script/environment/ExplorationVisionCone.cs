@@ -267,7 +267,7 @@ public class ExplorationVisionCone : VisionCone
             // Filtro distanza: scarta porte oltre il Polo B
             float dAgentToB    = Vector3.Distance(transform.position, transitPoleBPos);
             float dAgentToDoor = Vector3.Distance(transform.position, door.transform.position);
-            if (dAgentToDoor > dAgentToB + 0.3f) continue;
+            if (dAgentToDoor > dAgentToB + 0.55f) continue;
 
             // Calcola geometria
             door.distFromA  = door.NavMeshDistanceTo(transitPoleAPos);
