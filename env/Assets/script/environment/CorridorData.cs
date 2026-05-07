@@ -4,31 +4,30 @@ using UnityEngine;
 // CorridorData.cs
 // ============================================================
 // Componente sul GameObject padre del corridoio.
-// Sostituisce CorridorManager che era troppo pesante.
 //
-// RESPONSABILITÀ UNICA: essere un contenitore di dati fisici.
-// Non gestisce WebSocket, non gestisce movimento, non gestisce
-// stati algoritmici. Solo dati.
+// IDENTIFICAZIONE — drag & drop (come DoorVarcoScript):
+//   Trascina nell'Inspector il GameObject che rappresenta
+//   questo corridoio (la stanza/nodo nel grafo dell'edificio).
+//   corridorId è derivato dal nome del GameObject, esattamente
+//   come roomNameFront => roomFront.name in DoorVarcoScript.
 //
-// COSA FA:
-//   1. Tiene l'ID univoco del corridoio
-//   2. All'avvio trova i figli Pole e Door e li configura
-//   3. Espone le posizioni dei poli a ExplorationManager
-//
-// COSA NON FA (a differenza del vecchio CorridorManager):
-//   - Non apre WebSocket
-//   - Non manda init_poles a JaCaMo
-//   - Non gestisce goto_pole
-//   - Non sa niente dell'algoritmo di esplorazione
-//
-// L'ID viene auto-assegnato da CorridorAutoSetup.cs al drag-drop
-// e può essere rinominato nell'Inspector.
+//   Non scrivere mai corridorId a mano: trascina corridorNode.
 // ============================================================
 
 public class CorridorData : MonoBehaviour
 {
     [Header("Identificazione")]
-    public string corridorId = "corridor_1";
+    [Tooltip("Trascina il GameObject di questo corridoio dall'Inspector.\n" +
+             "L'ID viene letto dal nome del GameObject — non scrivere a mano.\n" +
+             "Stesso pattern di roomFront/roomBack in DoorVarcoScript.")]
+    public GameObject corridorNode;
+
+    // ID derivato dal GameObject — sola lettura, mai assegnato a mano.
+    // Se corridorNode non è assegnato, usa il nome del GameObject padre
+    // come fallback (lo stesso comportamento di roomNameFront/Back).
+    public string corridorId => corridorNode != null
+        ? corridorNode.name
+        : gameObject.name;
 
     // Lette all'Awake dai figli — sola lettura per gli esterni
     public Vector3 Pole1Position { get; private set; }
@@ -64,15 +63,13 @@ public class CorridorData : MonoBehaviour
         Pole1Position = Pole1.transform.position;
         Pole2Position = Pole2.transform.position;
 
-        
-
         Debug.Log($"[CorridorData] {corridorId} configurato: P1={Pole1Position} P2={Pole2Position}");
     }
 
-    // Rinomina il corridoio e aggiorna i figli — chiamato dall'editor
+    // Aggiorna i nomi dei figli quando corridorNode cambia nell'Editor.
+    // Chiamato da CorridorDataEditor al cambio del campo.
     public void OnCorridorIdChanged()
     {
-        gameObject.name = corridorId;
         var poles = GetComponentsInChildren<CorridorPoleScript>();
         if (poles.Length > 0) { poles[0].gameObject.name = $"Pole_1_{corridorId}"; poles[0].corridorId = corridorId; }
         if (poles.Length > 1) { poles[1].gameObject.name = $"Pole_2_{corridorId}"; poles[1].corridorId = corridorId; }

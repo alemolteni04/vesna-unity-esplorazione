@@ -5,64 +5,22 @@ using UnityEngine;
 // ============================================================
 // CorridorAutoSetup.cs  — Editor Only
 // ============================================================
-// Quando l'utente trascina un prefab CorridorData nella scena,
-// assegna automaticamente corridorId incrementale:
-//   corridor_1, corridor_2, corridor_3, ...
+// Custom Inspector per CorridorData.
 //
-// L'utente può poi rinominarlo nell'Inspector e il nome
-// si propaga ai figli automaticamente (CorridorManagerEditor).
+// Mostra un ObjectField drag & drop per corridorNode
+// (stesso pattern di roomFront/roomBack in DoorVarcoScript).
+// corridorId è derivato automaticamente dal nome del GameObject
+// trascinato — nessuna stringa da scrivere a mano.
 // ============================================================
 
-[InitializeOnLoad]
-public static class CorridorAutoSetup
-{
-    static CorridorAutoSetup()
-    {
-        ObjectFactory.componentWasAdded += OnComponentAdded;
-    }
-
-    private static void OnComponentAdded(Component component)
-    {
-        if (component is not CorridorData corridor) return;
-
-        string newId = GetNextId();
-        corridor.corridorId      = newId;
-        corridor.gameObject.name = newId;
-
-        var poles = corridor.GetComponentsInChildren<CorridorPoleScript>();
-        if (poles.Length > 0) poles[0].gameObject.name = $"Pole_1_{newId}";
-        if (poles.Length > 1) poles[1].gameObject.name = $"Pole_2_{newId}";
-
-        EditorUtility.SetDirty(corridor);
-        Debug.Log($"[CorridorAutoSetup] Creato: {newId}");
-    }
-
-    private static string GetNextId()
-    {
-        var all = Object.FindObjectsByType<CorridorData>(FindObjectsSortMode.None);
-        int max = 0;
-        foreach (var c in all)
-        {
-            var parts = c.corridorId.Split('_');
-            if (parts.Length == 2 && int.TryParse(parts[1], out int n))
-                if (n > max) max = n;
-        }
-        return $"corridor_{max + 1}";
-    }
-}
-
-// ============================================================
-// Custom Inspector per CorridorData
-// Mostra corridorId modificabile con rename live
-// ============================================================
 [CustomEditor(typeof(CorridorData))]
 public class CorridorDataEditor : Editor
 {
-    private string previousId;
+    private GameObject previousNode;
 
     void OnEnable()
     {
-        previousId = ((CorridorData)target).corridorId;
+        previousNode = ((CorridorData)target).corridorNode;
     }
 
     public override void OnInspectorGUI()
@@ -72,25 +30,48 @@ public class CorridorDataEditor : Editor
         EditorGUILayout.Space(4);
         EditorGUILayout.LabelField("Corridoio", EditorStyles.boldLabel);
 
+        // ── Campo drag & drop (come roomFront/roomBack) ──────────────────
         EditorGUI.BeginChangeCheck();
-        string newId = EditorGUILayout.TextField("Corridor ID", corridor.corridorId);
-        if (EditorGUI.EndChangeCheck() && newId != previousId)
+        var newNode = (GameObject)EditorGUILayout.ObjectField(
+            new GUIContent(
+                "Corridor Node",
+                "Trascina qui il GameObject del corridoio.\n" +
+                "L'ID viene letto dal suo nome — stesso pattern di DoorVarcoScript."),
+            corridor.corridorNode,
+            typeof(GameObject),
+            allowSceneObjects: true);
+
+        if (EditorGUI.EndChangeCheck())
         {
-            if (IsIdTaken(newId, corridor))
+            // Controlla che il nome non sia già usato da un altro corridoio
+            if (newNode != null && IsNodeTaken(newNode, corridor))
             {
-                EditorUtility.DisplayDialog("ID già usato",
-                    $"'{newId}' è già usato da un altro corridoio.", "OK");
+                EditorUtility.DisplayDialog("Node già usato",
+                    $"'{newNode.name}' è già usato da un altro CorridorData.", "OK");
             }
             else
             {
-                Undo.RecordObject(corridor, "Rename Corridor");
-                corridor.corridorId = newId;
-                previousId          = newId;
+                Undo.RecordObject(corridor, "Assign Corridor Node");
+                corridor.corridorNode = newNode;
+                previousNode          = newNode;
                 corridor.OnCorridorIdChanged();
                 EditorUtility.SetDirty(corridor);
             }
         }
 
+        // ── ID derivato — sola lettura ───────────────────────────────────
+        EditorGUI.BeginDisabledGroup(true);
+        EditorGUILayout.TextField(
+            new GUIContent("Corridor ID (auto)", "Derivato dal nome di Corridor Node."),
+            corridor.corridorId);
+        EditorGUI.EndDisabledGroup();
+
+        if (corridor.corridorNode == null)
+            EditorGUILayout.HelpBox(
+                "Trascina un GameObject in 'Corridor Node' per assegnare l'ID.",
+                MessageType.Warning);
+
+        // ── Stato poli ───────────────────────────────────────────────────
         EditorGUILayout.Space(4);
         var poles = corridor.GetComponentsInChildren<CorridorPoleScript>();
         EditorGUILayout.LabelField($"Poli trovati: {poles.Length} / 2",
@@ -105,10 +86,10 @@ public class CorridorDataEditor : Editor
             corridor.OnCorridorIdChanged();
     }
 
-    private bool IsIdTaken(string id, CorridorData self)
+    private bool IsNodeTaken(GameObject node, CorridorData self)
     {
         foreach (var c in FindObjectsByType<CorridorData>(FindObjectsSortMode.None))
-            if (c != self && c.corridorId == id) return true;
+            if (c != self && c.corridorNode == node) return true;
         return false;
     }
 }
