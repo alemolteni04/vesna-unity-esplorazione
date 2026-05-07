@@ -13997,6 +13997,10 @@ PrefabInstance:
       propertyPath: corridorId
       value: corridoio2
       objectReference: {fileID: 0}
+    - target: {fileID: 3096544063482662081, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
+      propertyPath: corridorNode
+      value: 
+      objectReference: {fileID: 1144158760}
     - target: {fileID: 4054212124897289025, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.8
@@ -14051,7 +14055,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4970149556929407173, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: artifactName
-      value: corridoio2
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7501249180520985920, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: m_Name
@@ -17026,6 +17030,10 @@ PrefabInstance:
       propertyPath: corridorId
       value: corridoio1
       objectReference: {fileID: 0}
+    - target: {fileID: 3096544063482662081, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
+      propertyPath: corridorNode
+      value: 
+      objectReference: {fileID: 1706078310}
     - target: {fileID: 4054212124897289025, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.8
