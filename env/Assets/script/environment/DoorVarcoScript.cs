@@ -99,35 +99,29 @@ public class DoorVarcoScript : MonoBehaviour
         return dot >= 0f ? roomNameFront : roomNameBack;
     }
 
-    // --------------------------------------------------------
-    // AZIONE FISICA: APRI PORTA
-    // --------------------------------------------------------
+    
    // --------------------------------------------------------
     // AZIONE FISICA: APRI PORTA
     // --------------------------------------------------------
     public bool TryOpen()
+{
+    if (elementType == ElementType.Varco) return true;
+    if (isLocked) return false;
+
+    isOpen = true;
+
+    if (physicalModel != null)
     {
-        if (elementType == ElementType.Varco) return true;
-        
-        if (isLocked)
-        {
-            Debug.Log($"[DoorVarco] {gameObject.name} è bloccata.");
-            return false;
-        }
-
-        isOpen = true;
-        
-        
-        // Se c'è un modello fisico, disattivalo per far passare l'agente
-        if (physicalModel != null)
-        {
+        var doorScript = physicalModel.GetComponent<DoorScript.Door>();
+        if (doorScript != null)
+            doorScript.open = true;
+        else
             physicalModel.SetActive(false);
-            Debug.Log($"[DoorVarco] {gameObject.name} APERTA FISICAMENTE!");
-        }
-
-        NotifyPhysicalStateChanged();
-        return true;
     }
+
+    NotifyPhysicalStateChanged();
+    return true;
+}
 
     public void Close()
     {

@@ -589,12 +589,23 @@ public class ExplorationManager : MonoBehaviour
         EnterThroughEdge(currentEdge);
     }
  
-    private void UpdateEnteringRoom()
+    private float enteringRoomTimer = 0f;
+private float enteringRoomTimeout = 3f;
+
+private void UpdateEnteringRoom()
+{
+    if (navAgent.pathPending) return;
+    
+    enteringRoomTimer += Time.deltaTime;
+    
+    if (navAgent.remainingDistance < arrivalThreshold || 
+        (!navAgent.hasPath && !navAgent.pathPending) ||
+        enteringRoomTimer >= enteringRoomTimeout)  // ← timeout
     {
-        if (navAgent.pathPending) return;
-        if (navAgent.remainingDistance < arrivalThreshold)
-            StartRotation360(isRoom: true);
+        enteringRoomTimer = 0f;
+        StartRotation360(isRoom: true);
     }
+}
  
     private void UpdateInsideRoom()
     {
@@ -638,28 +649,29 @@ public class ExplorationManager : MonoBehaviour
     // DECISIONE PROSSIMA AZIONE
     // ====================================================
     private void DoBacktrack()
+{
+    string targetNode = null;
+    GraphNode targetData = null;
+
+    while (true)
     {
-        string    targetNode = null;
-        GraphNode targetData = null;
- 
-        while (true)
-        {
-            targetNode = graph.Backtrack();
-            if (targetNode == null) { CheckFloorCompletion(); return; }
- 
-            targetData = graph.GetNode(targetNode);
-            if (targetData != null && targetData.HasUndiscoveredEdges()) break;
- 
-            Debug.Log($"[ExplMgr] {targetNode} già esplorato, riavvolgo...");
-        }
- 
-        backtrackTimer = 0f;
-        navAgent.isStopped = false;
-        navAgent.SetDestination(targetData.position);
-        state = State.Backtracking;
-        Debug.Log($"[ExplMgr] Backtrack fisico → {targetNode}");
+        targetNode = graph.Backtrack();
+        if (targetNode == null) { CheckFloorCompletion(); return; }
+
+        targetData = graph.GetNode(targetNode);
+        if (targetData != null && targetData.HasUndiscoveredEdges()) break;
+
+        Debug.Log($"[Backtrack] {targetNode} già esplorato, riavvolgo...");
     }
- 
+
+    backtrackTimer = 0f;
+    navAgent.isStopped = false;
+    navAgent.SetDestination(targetData.position);
+    state = State.Backtracking;
+    Debug.Log($"[ExplMgr] Backtrack fisico → {targetNode}");
+}
+    
+    
     private void DecideNextAction()
     {
         if (string.IsNullOrEmpty(currentNodeId)) return;
@@ -866,12 +878,15 @@ public class ExplorationManager : MonoBehaviour
         return null;
     }
  
-    private DoorVarcoScript FindDoorScript(string name)
-    {
-        string cleanName = name;
-        if (name.StartsWith("fw_"))   cleanName = name.Substring(3);
-        if (name.StartsWith("bw_"))   cleanName = name.Substring(3);
-        if (name.StartsWith("room_")) cleanName = name.Substring(5);
-        return GameObject.Find(cleanName)?.GetComponent<DoorVarcoScript>();
-    }
+   private DoorVarcoScript FindDoorScript(string name)
+{
+    string cleanName = name;
+    if (name.StartsWith("fw_"))   cleanName = name.Substring(3);
+    if (name.StartsWith("bw_"))   cleanName = name.Substring(3);
+    if (name.StartsWith("room_")) cleanName = name.Substring(5);
+
+    var go = GameObject.Find(cleanName);
+    if (go == null) return null;
+    return go.GetComponentInChildren<DoorVarcoScript>();
+}
 }

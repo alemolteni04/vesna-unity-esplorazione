@@ -228,24 +228,23 @@ public class ExplorationVisionCone : VisionCone
     // ── Scan: porte in stanza (durante 360°) ──────────────────────────────────
 
     private void ScanForDoorsInRoom()
+{
+    Collider[] buffer = new Collider[50];
+    int doorCount = Physics.OverlapSphereNonAlloc(
+        transform.position, distance, buffer,
+        doorLayers, QueryTriggerInteraction.Collide);
+
+    for (int i = 0; i < doorCount; i++)
     {
-        Collider[] buffer = new Collider[50];
-        int doorCount = Physics.OverlapSphereNonAlloc(
-            transform.position, distance, buffer,
-            doorLayers, QueryTriggerInteraction.Collide);
+        var go = buffer[i].gameObject;
+        var door = go.GetComponentInParent<DoorVarcoScript>();
+        if (door == null) continue;
+        if (door.discovered) continue;
+        if (!IsInSight(go)) continue;
 
-        for (int i = 0; i < doorCount; i++)
-        {
-            var go   = buffer[i].gameObject;
-            var door = go.GetComponent<DoorVarcoScript>();
-            if (door == null) continue;
-            if (door.discovered) continue;     // già nel grafo
-            if (!IsInSight(go)) continue;
-
-            Debug.Log($"[ExplorationVisionCone] Porta/Varco visibile in stanza: {go.name}");
-            OnDoorVisibleInRoom?.Invoke(door);
-        }
+        OnDoorVisibleInRoom?.Invoke(door);
     }
+}
 
     // ── Scan: porte durante transito A→B (ex-DoorSensor) ─────────────────────
 
@@ -258,7 +257,7 @@ public class ExplorationVisionCone : VisionCone
 
         foreach (Collider col in hits)
         {
-            var door = col.GetComponent<DoorVarcoScript>();
+            var door = col.GetComponentInParent<DoorVarcoScript>();
             if (door == null) continue;
 
             string doorName = door.gameObject.name;
@@ -296,32 +295,36 @@ public class ExplorationVisionCone : VisionCone
     // Il base usa "layers" generico (shop). Qui usiamo doorLayers + corridorLayers
     // per l'occlusione, coerente con la versione v2.
 
+    
     public new bool IsInSight(GameObject targetObj)
+{
+    Vector3 origin = transform.position;
+    origin.y += height / 2f;
+
+    Vector3 dest = targetObj.transform.position;
+    dest.y = origin.y;
+
+    Vector3 direction = dest - origin;
+    float dist = direction.magnitude;
+
+    if (Vector3.Angle(direction, transform.forward) > angle) return false;
+
+    RaycastHit hit;
+    if (Physics.Raycast(origin, direction.normalized, out hit, dist,
+                        occlusionLayers | doorLayers))
     {
-        Vector3 origin = transform.position;
-        origin.y += height / 2f;    // altezza occhi
-
-        Vector3 dest = targetObj.transform.position;
-        dest.y = origin.y;
-
-        Vector3 direction = dest - origin;
-        float   dist      = direction.magnitude;
-
-        // 1. Controllo angolo
-        if (Vector3.Angle(direction, transform.forward) > angle) return false;
-
-        // 2. Raycast: blocca su muri o porte, trasparente su poli
-        RaycastHit hit;
-        if (Physics.Raycast(origin, direction.normalized, out hit, dist,
-                            occlusionLayers | doorLayers))
+        if (hit.collider.gameObject != targetObj)
         {
-            if (hit.collider.gameObject != targetObj)
-            {
-                // I poli sono "trasparenti" per vedere oltre
-                if (hit.collider.GetComponentInParent<CorridorPoleScript>() == null)
-                    return false;
-            }
+            // Ignora il collider della porta target stessa e suoi figli
+            if (hit.collider.GetComponentInParent<DoorVarcoScript>() == 
+                targetObj.GetComponentInParent<DoorVarcoScript>())
+                return true;
+                
+            if (hit.collider.GetComponentInParent<CorridorPoleScript>() == null)
+                return false;
         }
-        return true;
     }
+    return true;
+}
+
 }
