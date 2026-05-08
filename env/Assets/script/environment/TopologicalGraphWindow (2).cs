@@ -407,13 +407,11 @@ public class TopologicalGraphWindow : EditorWindow
                 int fw = edge.orderFW > 0 ? edge.orderFW : 1;
                 return $"fw{fw}{side} dA={edge.distFromA:F1}";
             }
-            case EdgeType.DoorBW:
+              case EdgeType.DoorBW:
             {
                 int bw = edge.orderBW > 0 ? edge.orderBW : 1;
-                // Lato invertito rispetto a FW: A→B e B→A sono direzioni opposte
-                string bwSide = edge.side == "LEFT" ? " RIGHT" :
-                                edge.side == "RIGHT" ? " LEFT" : side;
-                return $"bw{bw}{bwSide} dB={edge.distFromB:F1}";
+                // Niente inversione — il side è già corretto nel dato
+                return $"bw{bw}{side} dB={edge.distFromB:F1}";
             }
             case EdgeType.RoomDoor:
                 return $"room {edge.navMeshDist:F1}m";

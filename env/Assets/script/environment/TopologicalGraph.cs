@@ -245,16 +245,17 @@ public class TopologicalGraph
 
         // Arco BW: polo B → porta
         string bwId = $"bw_{doorId}";
+       string bwSide = (side == "LEFT") ? "RIGHT" : "LEFT";
         if (nodeB.edges.Find(e => e?.id == bwId) == null)
         {
             nodeB.edges.Add(new GraphEdge(bwId, idB, isPhysical, EdgeType.DoorBW, doorPos)
             {
-                toNodeId  = doorId,
-                side      = side,
-                distFromA = distFromA,
-                distFromB = distFromB,
-                orderBW   = 0,   // verrà assegnato da ComputeBackwardOrders()
-                 isCorridorLink = isCorridorLink   // ← imposta
+                toNodeId       = doorId,
+                side           = bwSide,   // ← invertito rispetto al fw
+                distFromA      = distFromA,
+                distFromB      = distFromB,
+                orderBW        = 0,
+                isCorridorLink = isCorridorLink
             });
         }
 
