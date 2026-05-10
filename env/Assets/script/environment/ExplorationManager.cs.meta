@@ -1,15 +1,2 @@
 fileFormatVersion: 2
-guid: fe8781ea5fd33c44d89d6c89f14b4b23
-MonoImporter:
-  externalObjects: {}
-  serializedVersion: 2
-  defaultReferences:
-  - navAgent: {instanceID: 0}
-  - explorationVisionCone: {instanceID: 0}
-  - buildingGraph: {instanceID: 0}
-  - startRoomObject: {instanceID: 0}
-  executionOrder: 0
-  icon: {instanceID: 0}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+guid: 836e356f1388ca947a26a0790ca62cfb
