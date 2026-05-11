@@ -1,36 +1,59 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
- 
+
 // ============================================================
-// ExplorationManager.cs  — v2.2
-// MODIFICHE rispetto a v2.1:
-//   1. ProcessPoleTouched (polo B): chiama ComputeForwardOrders +
-//      ComputeBackwardOrders + ComputeExplorationOrder in sequenza.
-//   2. UpdateRotating360 (dopo 360° al polo B): ricalcola BW e
-//      ExplorationOrder per includere le porte scoperte visivamente.
-//   3. HandleDoorVisibleInRoom (polo B): dopo AddDoorEdges ricalcola
-//      subito BW + ExplorationOrder così il viewer è sempre aggiornato.
+// ExplorationManager.cs  — v2.4
+// MODIFICHE rispetto a v2.3:
+//   ARCHITETTURA MULTI-GRAFO (un TopologicalGraph per piano)
+//
+//   • floorGraphs[N] contiene solo i nodi del piano N.
+//   • La proprietà `graph` restituisce sempre floorGraphs[currentFloor],
+//     quindi tutto il codice di esplorazione resta invariato.
+//   • Quando l'agente attraversa un connettore verticale, ExecuteFloorChange:
+//       1. Aggiunge "conn_{connectorId}" al grafo piano CORRENTE
+//          (pos = triggerStartPosition, es. Door_Cor1-Box su piano 1).
+//       2. Crea/recupera il grafo piano DESTINAZIONE.
+//       3. Aggiunge "conn_{connectorId}" al grafo piano DESTINAZIONE
+//          (pos = triggerEndPosition, es. Door_Box su piano 0).
+//       4. Registra il link in ConnectorLinks (struttura pubblica).
+//   • BeliefTransmitter può accedere ad AllFloorGraphs e ConnectorLinks
+//     per ricostruire il grafo completo dell'edificio.
 // ============================================================
- 
+
+// ─────────────────────────────────────────────────────────────
+// STRUTTURA DATI: link cross-floor tra due grafi di piano
+// ─────────────────────────────────────────────────────────────
+[System.Serializable]
+public struct FloorConnectorLink
+{
+    public string  connectorId;
+    public int     floorFrom;
+    public string  nodeIdFrom;    // ID nodo in floorGraphs[floorFrom]
+    public Vector3 posFrom;       // posizione fisica lato partenza
+    public int     floorTo;
+    public string  nodeIdTo;      // ID nodo in floorGraphs[floorTo]
+    public Vector3 posTo;         // posizione fisica lato arrivo
+}
+
+// ─────────────────────────────────────────────────────────────
+
 public class ExplorationManager : MonoBehaviour
 {
     [Header("Agente")]
     public NavMeshAgent          navAgent;
     public ExplorationVisionCone explorationVisionCone;
- 
+
     [Header("Macro-Grafo edificio")]
     public BuildingGraph buildingGraph;
- 
+
     [Header("Piano iniziale")]
     public int startingFloor = 0;
- 
-    [Header("Stanza di partenza — trascina il GameObject dall'Inspector")]
-    [Tooltip("Trascina qui il GameObject della stanza/nodo da cui parte l'agente.\n" +
-             "Il suo nome verrà usato come ID del nodo iniziale nel grafo.\n" +
-             "NON scrivere stringhe a mano.")]
+
+    [Header("Stanza di partenza")]
+    [Tooltip("Trascina il GameObject stanza di partenza. Il nome è l'ID nodo iniziale.")]
     public GameObject startRoomObject;
- 
+
     [Header("Impostazioni")]
     public float arrivalThreshold      = 0.5f;
     public float poleArrivalThreshold  = 1.2f;
@@ -38,61 +61,73 @@ public class ExplorationManager : MonoBehaviour
     public float inspectionDistance    = 1.2f;
     public float enterOffset           = 1.5f;
     public float poleTimeoutSeconds    = 4f;
- 
+
     // --------------------------------------------------------
     // MACCHINA A STATI
     // --------------------------------------------------------
     private enum State
     {
-        Idle,
-        MovingToPole,
-        Transiting,
-        WaitingAtPoleB,
-        Rotating360,
-        MovingToDoor,
-        InspectingDoor,
-        EnteringRoom,
-        InsideRoom,
-        Backtracking,
-        MovingToConnector,
-        MovingThroughStairs,
-        Completed
+        Idle, MovingToPole, Transiting, WaitingAtPoleB,
+        Rotating360, MovingToDoor, InspectingDoor,
+        EnteringRoom, InsideRoom, Backtracking,
+        MovingToConnector, Completed
     }
- 
-    private State            state               = State.Idle;
-    private TopologicalGraph graph               = new TopologicalGraph();
-    private string           currentNodeId;
- 
-    public TopologicalGraph Graph         => graph;
-    public string           CurrentNodeId => currentNodeId;
- 
+
+    private State state = State.Idle;
+
+    // ─────────────────────────────────────────────────────────
+    // MULTI-GRAFO: un TopologicalGraph per piano
+    // ─────────────────────────────────────────────────────────
+    private Dictionary<int, TopologicalGraph> floorGraphs
+        = new Dictionary<int, TopologicalGraph>();
+
+    /// <summary>Grafo del piano corrente (proprietà calcolata).</summary>
+    private TopologicalGraph graph
+        => floorGraphs.TryGetValue(currentFloor, out var g) ? g : null;
+
+    /// <summary>Tutti i grafi, accessibili da BeliefTransmitter.</summary>
+    public Dictionary<int, TopologicalGraph> AllFloorGraphs => floorGraphs;
+
+    /// <summary>
+    /// Link cross-floor: descrive come il nodo conn_X nel grafo pianoA si
+    /// collega al nodo conn_X nel grafo pianoB. Usato da BeliefTransmitter
+    /// per ricostruire il grafo completo dell'edificio.
+    /// </summary>
+    public List<FloorConnectorLink> ConnectorLinks { get; }
+        = new List<FloorConnectorLink>();
+
+    // Alias pubblico per retrocompatibilità
+    public TopologicalGraph Graph => graph;
+
+    private string currentNodeId;
+    public  string CurrentNodeId => currentNodeId;
+
     private string  transitCorridorId;
     private Vector3 poleAPos;
     private Vector3 poleBPos;
- 
+
     private string  pendingCorridorId;
     private string  pendingPoleId;
     private Vector3 pendingPolePos;
- 
+
     private GraphEdge currentEdge;
- 
+
     private float rotationAccum = 0f;
     public  bool  inRoomMode   = false;
- 
+
     private HashSet<string> registeredRoomDoors    = new HashSet<string>();
     private HashSet<string> registeredTransitDoors = new HashSet<string>();
     private HashSet<string> allCorridorDoors       = new HashSet<string>();
- 
+
     private bool explorationStarted = false;
     private int  currentFloor;
     private VerticalConnector pendingConnector;
-    private HashSet<string> traversedConnectors = new HashSet<string>();
-    private Vector3 stairsReturnPosition = Vector3.zero;
-private bool    needsStairsReturn    = false;
+    private HashSet<string>   traversedConnectors = new HashSet<string>();
+
     private string movingToPoleCorridorId;
-    private float  movingToPoleTimer   = 0f;
-    private float  backtrackTimer      = 0f;
-    public  float  backtrackTimeout    = 5f;
+    private float  movingToPoleTimer = 0f;
+    private float  backtrackTimer    = 0f;
+    public  float  backtrackTimeout  = 5f;
 
     // --------------------------------------------------------
     // EVENTI
@@ -109,7 +144,7 @@ private bool    needsStairsReturn    = false;
         ExplorationVisionCone.OnDoorVisibleInRoom   += HandleDoorVisibleInRoom;
         VerticalConnectorScript.OnConnectorReached  += HandleConnectorReached;
     }
- 
+
     void OnDestroy()
     {
         CorridorPoleScript.OnPoleTouched            -= HandlePoleTouched;
@@ -118,7 +153,7 @@ private bool    needsStairsReturn    = false;
         ExplorationVisionCone.OnDoorVisibleInRoom   -= HandleDoorVisibleInRoom;
         VerticalConnectorScript.OnConnectorReached  -= HandleConnectorReached;
     }
- 
+
     // --------------------------------------------------------
     // AVVIO
     // --------------------------------------------------------
@@ -129,25 +164,50 @@ private bool    needsStairsReturn    = false;
         else
             Debug.LogWarning("[ExplMgr] startRoomObject non assegnato!");
     }
+
+    // ──────────────────────────────────────────────────────────────
+// METODO 1: StartExploration  (sostituisce l'intero metodo)
+// ──────────────────────────────────────────────────────────────
+public void StartExploration(string startNodeId, Vector3 startPos)
+{
+    if (explorationStarted) return;
+    explorationStarted = true;
  
-    public void StartExploration(string startNodeId, Vector3 startPos)
+    // ── FIX BUG 1: auto-rileva il piano di partenza ──────────────────────
+    // Cerca nel BuildingGraph quale FloorNode contiene startRoomObject
+    // (come spawnObject o come uno dei roomObjects).
+    // Se non trovato, usa startingFloor come fallback.
+    currentFloor = startingFloor;  // fallback
+    if (buildingGraph != null && startRoomObject != null)
     {
-        if (explorationStarted) return;
-        explorationStarted = true;
-        currentFloor = startingFloor;
- 
-        explorationVisionCone?.SetExplorationMode(true);
-        currentNodeId = startNodeId;
-        graph.AddRoomNode(startNodeId, startPos);
-        graph.EnterNode(startNodeId);
- 
-        CorridorPoleScript.OnPoleTouched -= HandlePoleTouched;
-        CorridorPoleScript.OnPoleTouched += HandlePoleTouched;
- 
-        StartRotation360(isRoom: true);
-        Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
+        foreach (var floor in buildingGraph.floors)
+        {
+            bool isSpawn = floor.spawnObject == startRoomObject;
+            bool isRoom  = floor.roomObjects.Contains(startRoomObject);
+            if (isSpawn || isRoom)
+            {
+                currentFloor = floor.floorIndex;
+                Debug.Log($"[ExplMgr] Piano di partenza auto-rilevato: {currentFloor} " +
+                          $"({floor.floorName})");
+                break;
+            }
+        }
     }
  
+    // Crea il grafo per il piano iniziale
+    floorGraphs[currentFloor] = new TopologicalGraph();
+ 
+    explorationVisionCone?.SetExplorationMode(true);
+    currentNodeId = startNodeId;
+    graph.AddRoomNode(startNodeId, startPos);
+    graph.EnterNode(startNodeId);
+ 
+    CorridorPoleScript.OnPoleTouched -= HandlePoleTouched;
+    CorridorPoleScript.OnPoleTouched += HandlePoleTouched;
+ 
+    StartRotation360(isRoom: true);
+    Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
+}
     // --------------------------------------------------------
     // UPDATE
     // --------------------------------------------------------
@@ -164,10 +224,9 @@ private bool    needsStairsReturn    = false;
             case State.InsideRoom:        UpdateInsideRoom();        break;
             case State.Backtracking:      UpdateBacktracking();      break;
             case State.MovingToConnector: UpdateMovingToConnector(); break;
-            case State.MovingThroughStairs: UpdateMovingThroughStairs(); break; 
         }
     }
- 
+
     // --------------------------------------------------------
     // HANDLER: VisionCone vede un polo di corridoio
     // --------------------------------------------------------
@@ -180,23 +239,16 @@ private bool    needsStairsReturn    = false;
         var corridorData = FindCorridorData(corridorId);
         if (corridorData == null) return;
 
-        Vector3 myPos = transform.position;
+        Vector3 myPos   = transform.position;
         float distPole1 = Vector3.Distance(myPos, corridorData.Pole1Position);
         float distPole2 = Vector3.Distance(myPos, corridorData.Pole2Position);
 
         Vector3 nearestPolePos;
         string  nearestPoleId;
-
         if (distPole1 <= distPole2)
-        {
-            nearestPolePos = corridorData.Pole1Position;
-            nearestPoleId  = "1";
-        }
+        { nearestPolePos = corridorData.Pole1Position; nearestPoleId = "1"; }
         else
-        {
-            nearestPolePos = corridorData.Pole2Position;
-            nearestPoleId  = "2";
-        }
+        { nearestPolePos = corridorData.Pole2Position; nearestPoleId = "2"; }
 
         if (movingToPoleCorridorId == corridorId) return;
 
@@ -210,12 +262,11 @@ private bool    needsStairsReturn    = false;
         movingToPoleTimer = 0f;
         state = State.MovingToPole;
 
-        Debug.Log($"[ExplMgr] Polo {corridorId}/{nearestPoleId} individuato → mi avvicino " +
-                  $"(dist1={distPole1:F1} dist2={distPole2:F1}, scelto polo {nearestPoleId}).");
+        Debug.Log($"[ExplMgr] Polo {corridorId}/{nearestPoleId} individuato → mi avvicino.");
     }
- 
+
     // --------------------------------------------------------
-    // HANDLER: Polo fisicamente toccato (trigger collider)
+    // HANDLER: Polo fisicamente toccato
     // --------------------------------------------------------
     private void HandlePoleTouched(string corridorId, string poleId, Vector3 polePos)
     {
@@ -245,8 +296,7 @@ private bool    needsStairsReturn    = false;
                 var central = poleANode.edges.Find(e => e?.id == $"central_{corridorId}");
                 if (central != null && central.state == EdgeState.Explored)
                 {
-                    Debug.Log($"[ExplMgr] Polo {corridorId}_{poleId} ignorato in Idle " +
-                              $"— corridoio già transitato.");
+                    Debug.Log($"[ExplMgr] Polo {corridorId}_{poleId} ignorato — corridoio già transitato.");
                     return;
                 }
             }
@@ -257,71 +307,44 @@ private bool    needsStairsReturn    = false;
             return;
         }
 
-        Debug.Log($"[ExplMgr] Polo {corridorId}_{poleId} ignorato — stato={state} non compatibile.");
+        Debug.Log($"[ExplMgr] Polo {corridorId}_{poleId} ignorato — stato={state}.");
     }
- 
+
     // --------------------------------------------------------
     // HANDLER: DoorSensor scopre una porta durante il transito
     // --------------------------------------------------------
     private void HandleDoorDiscovered(DoorVarcoScript door, string corridorId, int orderFW)
-{
-    if (state != State.Transiting) return;
-    if (corridorId != transitCorridorId) return;
-    if (registeredTransitDoors.Contains(door.gameObject.name)) return;
-
-    // ── NUOVO: ignora i varchi che portano a un altro corridoio ──────────
-    // Questi non sono stanze: vengono già gestiti dal transito polo A→B.
-    // Aggiungere archi fw/bw per loro inquina l'ordinamento e crea
-    // exploration order sbagliati (il log mostra Varco_Prefab_corr1_2
-    // come arco bw in corridoio1 ma non è una stanza).
-    string roomBeyond = door.GetRoomNameBeyondDoor(transform.position);
-    bool isCorrLink = !string.IsNullOrEmpty(roomBeyond) 
-                  && roomBeyond.ToLower().Contains("corridoio");
-
-
-   /* if (!string.IsNullOrEmpty(roomBeyond) && roomBeyond.ToLower().Contains("corridoio"))
     {
-        Debug.Log($"[ExplMgr] Varco {door.gameObject.name} → corridoio '{roomBeyond}' " +
-                  $"— ignorato come porta, è un passaggio tra corridoi.");
-        return;
+        if (state != State.Transiting) return;
+        if (corridorId != transitCorridorId) return;
+        if (registeredTransitDoors.Contains(door.gameObject.name)) return;
+
+        string roomBeyond = door.GetRoomNameBeyondDoor(transform.position);
+        bool isCorrLink   = !string.IsNullOrEmpty(roomBeyond)
+                         && roomBeyond.ToLower().Contains("corridoio");
+
+        registeredTransitDoors.Add(door.gameObject.name);
+        allCorridorDoors.Add(door.gameObject.name);
+
+        string computedSide = ComputeSideRelativeToCorridorAxis(
+            door.transform.position, poleAPos, poleBPos);
+
+        graph.AddDoorEdges(corridorId, door.gameObject.name,
+            door.elementType == DoorVarcoScript.ElementType.Door,
+            door.transform.position, computedSide,
+            door.distFromA, door.distFromB, 0,
+            isCorridorLink: isCorrLink);
+
+        Debug.Log($"[ExplMgr] Porta censita: {door.gameObject.name} " +
+                  $"corridoio={corridorId} side={computedSide} corridorLink={isCorrLink}");
     }
-    // ────────────────────────────────────────────────────────────────────
-*/
-    registeredTransitDoors.Add(door.gameObject.name);
-    allCorridorDoors.Add(door.gameObject.name);
 
-    string computedSide = ComputeSideRelativeToCorridorAxis(
-        door.transform.position, poleAPos, poleBPos);
-
-    graph.AddDoorEdges(
-        corridorId,
-        door.gameObject.name,
-        door.elementType == DoorVarcoScript.ElementType.Door,
-        door.transform.position,
-        computedSide,
-        door.distFromA,
-        door.distFromB,
-        0,
-        isCorridorLink: isCorrLink);   // ← passa il flag
-
-    Debug.Log($"[ExplMgr] Porta censita: {door.gameObject.name} " +
-            $"corridoio={corridorId} side={computedSide} " +
-            $"corridorLink={isCorrLink}");
-    }
-    // ── Calcola il lato di una porta rispetto all'asse fisso corridoio A→B ──
-    // Restituisce "RIGHT" o "LEFT".
-    // Porte frontali (angolo≈0 rispetto all'asse) → "RIGHT" per convenzione.
     private string ComputeSideRelativeToCorridorAxis(Vector3 doorPos, Vector3 posA, Vector3 posB)
     {
-        Vector3 axis   = (posB - posA).normalized;
-        axis.y = 0f;
-        Vector3 toDoor = doorPos - posA;
-        toDoor.y = 0f;
-        toDoor   = toDoor.normalized;
-
-        // Cross product 2D (componente Y): > 0 = LEFT (sinistra guardando da A verso B)
+        Vector3 axis   = (posB - posA).normalized; axis.y = 0f;
+        Vector3 toDoor = (doorPos - posA).normalized; toDoor.y = 0f;
         float cross = axis.x * toDoor.z - axis.z * toDoor.x;
-        if (Mathf.Abs(cross) < 0.05f) return "RIGHT"; // frontale → RIGHT per convenzione
+        if (Mathf.Abs(cross) < 0.05f) return "RIGHT";
         return cross > 0f ? "LEFT" : "RIGHT";
     }
 
@@ -331,16 +354,18 @@ private bool    needsStairsReturn    = false;
     private void HandleDoorVisibleInRoom(DoorVarcoScript door)
     {
         if (state != State.Rotating360 && state != State.InsideRoom) return;
-    if (!inRoomMode) return;
-    if (registeredRoomDoors.Contains(door.gameObject.name)) return;
+        if (!inRoomMode) return;
+        if (registeredRoomDoors.Contains(door.gameObject.name)) return;
 
-    // NON aggiungere porte che sono ingressi/uscite di scale o ascensori
-    // Altrimenti il 360° nel box aggiunge Door_Box come room door → loop
-    if (IsConnectorDoor(door.gameObject.name))
-    {
-        Debug.Log($"[ExplMgr] {door.gameObject.name} è porta connettore → ignorata nel 360°");
-        return;
-    }
+        // Le porte connettore (scale/ascensori) vengono ignorate nel 360°.
+        // L'agente non aggiungerà archi verso di esse durante l'esplorazione
+        // del piano corrente — verranno usate solo da CheckFloorCompletion.
+        if (IsConnectorDoor(door.gameObject.name))
+        {
+            Debug.Log($"[ExplMgr] {door.gameObject.name} è porta connettore → ignorata nel 360°");
+            return;
+        }
+
         registeredRoomDoors.Add(door.gameObject.name);
         door.discovered = true;
 
@@ -351,25 +376,17 @@ private bool    needsStairsReturn    = false;
             string corridorId = currentNodeId.Replace("_B", "");
 
             if (allCorridorDoors.Contains(door.gameObject.name))
-            {
-                Debug.Log($"[ExplMgr] {door.gameObject.name} già censita → ignorata");
-                return;
-            }
+            { Debug.Log($"[ExplMgr] {door.gameObject.name} già censita → ignorata"); return; }
 
             float dB = Vector3.Distance(door.transform.position, poleBPos);
             float dA = Vector3.Distance(door.transform.position, poleAPos);
 
             if (dB > 0.6f)
-            {
-                Debug.Log($"[ExplMgr] {door.gameObject.name} fuori corridoio {corridorId} " +
-                        $"(dB={dB:F2} > 0.6) → ignorata");
-                return;
-            }
+            { Debug.Log($"[ExplMgr] {door.gameObject.name} fuori corridoio (dB={dB:F2}) → ignorata"); return; }
 
             registeredTransitDoors.Add(door.gameObject.name);
             allCorridorDoors.Add(door.gameObject.name);
 
-            // Calcola side sull'asse fisso A→B anche qui
             string computedSide = ComputeSideRelativeToCorridorAxis(
                 door.transform.position, poleAPos, poleBPos);
 
@@ -377,7 +394,6 @@ private bool    needsStairsReturn    = false;
                 door.elementType == DoorVarcoScript.ElementType.Door,
                 door.transform.position, computedSide, dA, dB, orderFW: 0);
 
-            // ── MODIFICA v2.2: ricalcola tutti e tre gli ordini dopo ogni nuova porta ──
             graph.ComputeForwardOrders(corridorId);
             graph.ComputeBackwardOrders(corridorId);
             graph.ComputeExplorationOrder(corridorId);
@@ -387,7 +403,6 @@ private bool    needsStairsReturn    = false;
             return;
         }
 
-        // Nodo stanza normale → room edge
         float navDist = door.NavMeshDistanceTo(transform.position);
         graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
             door.elementType == DoorVarcoScript.ElementType.Door,
@@ -396,7 +411,7 @@ private bool    needsStairsReturn    = false;
     }
 
     // --------------------------------------------------------
-    // HANDLER: connettore verticale raggiunto
+    // HANDLER: connettore verticale raggiunto (trigger fisico)
     // --------------------------------------------------------
     private void HandleConnectorReached(string connectorId, int targetFloor, Vector3 pos)
     {
@@ -404,19 +419,17 @@ private bool    needsStairsReturn    = false;
         if (pendingConnector == null || pendingConnector.id != connectorId) return;
         ExecuteFloorChange(targetFloor);
     }
- 
+
     // ====================================================
     // STATI
     // ====================================================
- 
     private void UpdateMovingToPole()
     {
         movingToPoleTimer += Time.deltaTime;
 
         if (movingToPoleTimer >= poleTimeoutSeconds)
         {
-            Debug.LogWarning($"[ExplMgr] Timeout polo {pendingCorridorId}/{pendingPoleId} " +
-                             $"— forzo ProcessPoleTouched (dist={navAgent.remainingDistance:F2})");
+            Debug.LogWarning($"[ExplMgr] Timeout polo {pendingCorridorId}/{pendingPoleId}.");
             movingToPoleCorridorId = null;
             movingToPoleTimer = 0f;
             ProcessPoleTouched();
@@ -424,7 +437,6 @@ private bool    needsStairsReturn    = false;
         }
 
         if (navAgent.pathPending) return;
-
         if (navAgent.remainingDistance < poleArrivalThreshold)
         {
             movingToPoleCorridorId = null;
@@ -432,31 +444,28 @@ private bool    needsStairsReturn    = false;
             ProcessPoleTouched();
         }
     }
- 
+
     private void ProcessPoleTouched()
     {
         var corridorData = FindCorridorData(pendingCorridorId);
         if (corridorData == null) return;
- 
+
         bool isFirstPole = (state != State.Transiting);
- 
+
         if (isFirstPole)
         {
             poleAPos = pendingPolePos;
-
             Vector3 targetB = pendingPoleId == "1"
                 ? corridorData.Pole2Position
                 : corridorData.Pole1Position;
             poleBPos = targetB;
- 
-            float centralLen = Vector3.Distance(poleAPos, poleBPos);
 
-            graph.AddCorridorPoles(pendingCorridorId, poleAPos, poleBPos, centralLen);
- 
+            graph.AddCorridorPoles(pendingCorridorId, poleAPos, poleBPos,
+                Vector3.Distance(poleAPos, poleBPos));
+
             string comingFromNodeId = currentNodeId;
-
-            string poleAId = $"{pendingCorridorId}_A";
-            currentNodeId  = poleAId;
+            string poleAId          = $"{pendingCorridorId}_A";
+            currentNodeId           = poleAId;
             graph.EnterNode(poleAId);
 
             if (!string.IsNullOrEmpty(comingFromNodeId) && comingFromNodeId.EndsWith("_B"))
@@ -465,50 +474,42 @@ private bool    needsStairsReturn    = false;
                 if (comingCorridor != pendingCorridorId)
                     graph.AddSegmentArc(comingFromNodeId, poleAId, 0.5f);
             }
- 
+
             transitCorridorId = pendingCorridorId;
             registeredTransitDoors.Clear();
- 
+
             navAgent.isStopped = false;
             navAgent.SetDestination(targetB);
             explorationVisionCone?.StartTransitScan(poleAPos, targetB, pendingCorridorId);
             inRoomMode = false;
             state      = State.Transiting;
- 
+
             Debug.Log($"[ExplMgr] Transito {pendingCorridorId}: A={poleAPos} → B={targetB}");
         }
         else
         {
-            // ── POLO B TOCCATO ───────────────────────────────────────────────────────
             explorationVisionCone?.StopTransitScan();
- 
+
             string poleBId = $"{pendingCorridorId}_B";
             currentNodeId  = poleBId;
             graph.EnterNode(poleBId);
- 
-            // ── MODIFICA v2.2: calcola tutti e tre gli ordini in sequenza ────────────
-            // 1. orderFW per lato (scala R e L separate, nessun buco nei numeri)
-            graph.ComputeForwardOrders(pendingCorridorId);
-            // 2. orderBW per lato (idem)
-            graph.ComputeBackwardOrders(pendingCorridorId);
-            // 3. explorationOrder: sequenza visita effettiva (clustering + zigzag R/L)
-            graph.ComputeExplorationOrder(pendingCorridorId);
-            // ────────────────────────────────────────────────────────────────────────
 
-            string poleAId   = $"{pendingCorridorId}_A";
-            string centralId = $"central_{pendingCorridorId}";
-            graph.MarkEdgeExplored(poleAId, centralId, poleBId);
- 
+            graph.ComputeForwardOrders(pendingCorridorId);
+            graph.ComputeBackwardOrders(pendingCorridorId);
+            graph.ComputeExplorationOrder(pendingCorridorId);
+
+            graph.MarkEdgeExplored($"{pendingCorridorId}_A",
+                $"central_{pendingCorridorId}", poleBId);
+
             movingToPoleCorridorId = null;
             Debug.Log($"[ExplMgr] Polo B toccato. Inizio ispezione {pendingCorridorId}.");
- 
             StartRotation360(isRoom: false);
         }
- 
+
         pendingCorridorId = null;
         pendingPoleId     = null;
     }
- 
+
     private void UpdateTransiting()
     {
         if (navAgent.pathPending) return;
@@ -520,7 +521,7 @@ private bool    needsStairsReturn    = false;
             ProcessPoleTouched();
         }
     }
- 
+
     private void StartRotation360(bool isRoom)
     {
         inRoomMode    = isRoom;
@@ -529,7 +530,7 @@ private bool    needsStairsReturn    = false;
         state = State.Rotating360;
         Debug.Log($"[ExplMgr] 360° in '{currentNodeId}' (inRoomMode={inRoomMode})");
     }
- 
+
     private void UpdateRotating360()
     {
         navAgent.isStopped = true;
@@ -543,22 +544,19 @@ private bool    needsStairsReturn    = false;
             rotationAccum = 0f;
             Debug.Log($"[ExplMgr] 360° completato in '{currentNodeId}'.");
 
-            // ── MODIFICA v2.2: dopo il 360° al polo B ricalcola tutti e tre gli ordini ──
-            // Serve perché durante il 360° potrebbero essere state aggiunte porte
-            // scoperte visivamente (HandleDoorVisibleInRoom) non viste durante il transito.
             if (currentNodeId != null && currentNodeId.EndsWith("_B"))
             {
                 string corrId = currentNodeId.Replace("_B", "");
-                graph.ComputeForwardOrders(corrId);     // aggiorna anche i FW gemelli
-                graph.ComputeBackwardOrders(corrId);    // ricalcola per lato con nuove porte
-                graph.ComputeExplorationOrder(corrId);  // ricalcola sequenza visita
+                graph.ComputeForwardOrders(corrId);
+                graph.ComputeBackwardOrders(corrId);
+                graph.ComputeExplorationOrder(corrId);
                 Debug.Log($"[ExplMgr] Ordini ricalcolati dopo 360° per {corrId}");
             }
 
             DecideNextAction();
         }
     }
- 
+
     private void UpdateMovingToDoor()
     {
         if (navAgent.pathPending) return;
@@ -569,11 +567,11 @@ private bool    needsStairsReturn    = false;
             Debug.Log($"[ExplMgr] Davanti a: {currentEdge?.id}");
         }
     }
- 
+
     private void UpdateInspectingDoor()
     {
         if (currentEdge == null) { DecideNextAction(); return; }
- 
+
         if (currentEdge.doorState == DoorState.Locked)
         {
             graph.MarkEdgeExplored(currentNodeId, currentEdge.id, null);
@@ -582,7 +580,7 @@ private bool    needsStairsReturn    = false;
             DecideNextAction();
             return;
         }
- 
+
         var door = FindDoorScript(currentEdge.id);
         if (door != null && !door.IsTraversable)
         {
@@ -596,10 +594,10 @@ private bool    needsStairsReturn    = false;
                 return;
             }
         }
- 
+
         EnterThroughEdge(currentEdge);
     }
- 
+
     private float enteringRoomTimer   = 0f;
     private float enteringRoomTimeout = 3f;
 
@@ -613,56 +611,17 @@ private bool    needsStairsReturn    = false;
             enteringRoomTimer >= enteringRoomTimeout)
         {
             enteringRoomTimer = 0f;
-
-            var stair = FindNearbyVerticalConnector(detectionRadius: 5f);
-            if (stair != null)
-            {
-                var connector = buildingGraph?.connectors
-                    .Find(c => c.id == stair.connectorId);
-                if (connector != null)
-                {
-                    traversedConnectors.Add(stair.connectorId);
-                    Debug.Log($"[ExplMgr] Scale '{stair.connectorId}' → navigo lungo la rampa");
-                    pendingConnector   = connector;
-                    navAgent.isStopped = false;
-                    // Naviga fisicamente lungo la rampa fino a Door_Box
-                    navAgent.SetDestination(connector.triggerEndPosition);
-                    state = State.MovingThroughStairs;
-                    return;
-                }
-            }
             StartRotation360(isRoom: true);
         }
     }
 
-// ── Helper: cerca VerticalConnectorScript tramite layer "connector" ───────────
-// Usa QueryTriggerInteraction.Collide perché il collider è un trigger.
-    private VerticalConnectorScript FindNearbyVerticalConnector(float detectionRadius = 5f)
-    {
-        var hits = Physics.OverlapSphere(
-            transform.position, detectionRadius,
-            Physics.AllLayers, QueryTriggerInteraction.Collide);
+    private void UpdateInsideRoom() => StartRotation360(isRoom: true);
 
-        foreach (var col in hits)
-        {
-            var vcs = col.GetComponent<VerticalConnectorScript>();
-            // Salta connettori già attraversati → impedisce il loop
-            if (vcs != null && !traversedConnectors.Contains(vcs.connectorId))
-                return vcs;
-        }
-        return null;
-    }
-    private void UpdateInsideRoom()
-    {
-        StartRotation360(isRoom: true);
-    }
- 
     private void UpdateBacktracking()
     {
         if (navAgent.pathPending) return;
 
         backtrackTimer += Time.deltaTime;
-
         bool arrived    = navAgent.hasPath && navAgent.remainingDistance <= arrivalThreshold;
         bool pathFailed = !navAgent.hasPath;
         bool timedOut   = backtrackTimer >= backtrackTimeout;
@@ -671,11 +630,11 @@ private bool    needsStairsReturn    = false;
         {
             backtrackTimer = 0f;
             if (timedOut && !arrived)
-                Debug.LogWarning($"[ExplMgr] Backtrack timeout verso {graph.CurrentNodeId} " +
-                                 $"(dist={navAgent.remainingDistance:F2}, hasPath={navAgent.hasPath}). Forzo avanzamento.");
+                Debug.LogWarning($"[ExplMgr] Backtrack timeout → {graph.CurrentNodeId}.");
 
             currentNodeId = graph.CurrentNodeId;
             if (string.IsNullOrEmpty(currentNodeId)) { CheckFloorCompletion(); return; }
+
             Debug.Log($"[ExplMgr] Backtrack completato in {currentNodeId}. Prossima azione!");
             state = State.Idle;
             DecideNextAction();
@@ -689,58 +648,13 @@ private bool    needsStairsReturn    = false;
             navAgent.remainingDistance <= arrivalThreshold * 2f)
             ExecuteFloorChange(pendingConnector.floorTo);
     }
-    // ── Agente sta percorrendo fisicamente le scale verso il piano inferiore ──────
-    // Quando arriva al fondo, chiama ExecuteFloorChange.
-    // Se la NavMesh non riesce a raggiungere triggerEndPosition entro il timeout
-    // usiamo un timer di sicurezza.
-    private float stairsTimer   = 0f;
-    private const float StairsTimeout = 10f;
 
-    private void UpdateMovingThroughStairs()
-    {
-        if (navAgent.pathPending) return;
-        stairsTimer += Time.deltaTime;
-
-        bool arrived  = navAgent.hasPath &&
-                        navAgent.remainingDistance <= navAgent.stoppingDistance + arrivalThreshold;
-        bool timedOut = stairsTimer >= StairsTimeout;
-        if (!arrived && !timedOut) return;
-
-        stairsTimer = 0f;
-
-        var floorData = buildingGraph?.GetFloor(pendingConnector.floorTo);
-        if (floorData?.spawnObject == null)
-        {
-            Debug.LogError("[ExplMgr] spawnObject del piano inferiore non assegnato!");
-            return;
-        }
-
-        // Salva posizione attuale come punto di ritorno (cima scala, piano superiore)
-        stairsReturnPosition = transform.position;
-        needsStairsReturn    = true;
-
-        navAgent.Warp(floorData.spawnPosition);
-
-        string nodeId = floorData.spawnObject.name;
-        if (graph.GetNode(nodeId) == null)
-            graph.AddRoomNode(nodeId, floorData.spawnPosition);
-
-        currentNodeId          = nodeId;
-        graph.EnterNode(nodeId);
-        pendingConnector       = null;
-        movingToPoleCorridorId = null;
-        inRoomMode             = true;
-
-        Debug.Log($"[ExplMgr] Warp a '{nodeId}'. Ritorno salvato: {stairsReturnPosition}");
-        StartRotation360(isRoom: true);
-    }
- 
     // ====================================================
     // DECISIONE PROSSIMA AZIONE
     // ====================================================
-   private void DoBacktrack()
+    private void DoBacktrack()
     {
-        string targetNode = null;
+        string    targetNode = null;
         GraphNode targetData = null;
 
         while (true)
@@ -755,40 +669,22 @@ private bool    needsStairsReturn    = false;
 
         backtrackTimer = 0f;
         navAgent.isStopped = false;
-
-        // Se dobbiamo tornare al piano superiore e il nodo target è lassù,
-        // Warp al punto di ritorno (cima scala) prima di navigare
-        if (needsStairsReturn)
-        {
-            float distToTarget = Vector3.Distance(transform.position, targetData.position);
-            float distReturnToTarget = Vector3.Distance(stairsReturnPosition, targetData.position);
-
-            // Se il target è più vicino alla cima scala che al piano attuale → siamo sul piano sbagliato
-            if (distReturnToTarget < distToTarget - 1f)
-            {
-                Debug.Log($"[ExplMgr] Warp di ritorno a piano superiore: {stairsReturnPosition}");
-                navAgent.Warp(stairsReturnPosition);
-                needsStairsReturn = false;
-            }
-        }
-
         navAgent.SetDestination(targetData.position);
         state = State.Backtracking;
         Debug.Log($"[ExplMgr] Backtrack fisico → {targetNode}");
     }
-    
-    
+
     private void DecideNextAction()
     {
         if (string.IsNullOrEmpty(currentNodeId)) return;
- 
+
         var node = graph.GetNode(currentNodeId);
         if (node == null) { DoBacktrack(); return; }
- 
+
         Debug.Log($"[Debug] Decido azione per {currentNodeId}. Tipo={node.type}");
 
         GraphEdge nextEdge = null;
- 
+
         if (node.type == NodeType.CorridorPoleB)
         {
             nextEdge = graph.NextCorridorEdgeToInspect(currentNodeId);
@@ -800,14 +696,10 @@ private bool    needsStairsReturn    = false;
             }
         }
         else if (node.type == NodeType.Room)
-        {
             nextEdge = graph.NextRoomEdgeToInspect(currentNodeId);
-        }
         else
-        {
             nextEdge = graph.NextEdgeToInspect(currentNodeId);
-        }
- 
+
         if (nextEdge != null)
         {
             currentEdge        = nextEdge;
@@ -832,6 +724,26 @@ private bool    needsStairsReturn    = false;
         string newNodeId = doorScript != null
             ? doorScript.GetRoomNameBeyondDoor(transform.position)
             : edge.id;
+
+        // Se la porta è un connettore verticale (scala/ascensore):
+        // - usa l'ID del connettore come nome nodo (es. "scalaBox")
+        // - NON entrare fisicamente: marca l'arco e prosegui
+        if (doorScript != null && IsConnectorDoor(doorScript.gameObject.name))
+        {
+            var connector = FindConnectorForDoor(doorScript.gameObject.name);
+            if (connector != null) newNodeId = connector.id;  // "scalaBox"
+
+            if (graph.GetNode(newNodeId) == null)
+                graph.AddRoomNode(newNodeId, edge.position);
+
+            graph.MarkEdgeExplored(currentNodeId, edge.id, newNodeId);
+            SyncTwinCorridorEdge(edge.id, newNodeId);
+
+            currentEdge = null;
+            navAgent.isStopped = false;
+            DecideNextAction();
+            return;
+        }
 
         bool isTargetCorridor = newNodeId.ToLower().Contains("corridoio");
 
@@ -872,41 +784,33 @@ private bool    needsStairsReturn    = false;
         }
 
         Vector3 doorNormal = doorScript != null ? doorScript.transform.forward : transform.forward;
-        Vector3 toDoor = (edge.position - transform.position).normalized;
+        Vector3 toDoor     = (edge.position - transform.position).normalized;
         if (Vector3.Dot(doorNormal, toDoor) < 0) doorNormal = -doorNormal;
-
         Vector3 enterTarget = edge.position + doorNormal * enterOffset;
 
-        // ── verifica che enterTarget sia sul NavMesh ─────────────────────────
-        // Se non lo è, cerca il punto valido più vicino nel raggio di 2m.
-        // Senza questo, il path fallisce istantaneamente e UpdateEnteringRoom
-        // fa il 360° davanti alla porta invece che dentro la stanza.
         NavMeshHit hit;
         if (!NavMesh.SamplePosition(enterTarget, out hit, 2f, NavMesh.AllAreas))
         {
-            // Fallback: prova dall'altra parte della porta
             enterTarget = edge.position - doorNormal * enterOffset;
             if (!NavMesh.SamplePosition(enterTarget, out hit, 2f, NavMesh.AllAreas))
             {
-                // Ultimo fallback: usa direttamente la posizione della porta
                 hit.position = edge.position;
-                Debug.LogWarning($"[ExplMgr] NavMesh non trovato vicino a '{newNodeId}' " +
-                                $"— uso posizione porta.");
+                Debug.LogWarning($"[ExplMgr] NavMesh non trovato vicino a '{newNodeId}'.");
             }
         }
         enterTarget = hit.position;
-        
+
         navAgent.isStopped = false;
         navAgent.SetDestination(enterTarget);
         currentEdge = null;
 
         Debug.Log($"[ExplMgr] Entro in '{newNodeId}' → target NavMesh: {enterTarget}");
     }
- 
+
     private void SyncTwinCorridorEdge(string edgeId, string toNodeId)
     {
         if (string.IsNullOrEmpty(currentNodeId)) return;
- 
+
         if (currentNodeId.EndsWith("_B") && edgeId.StartsWith("bw_"))
         {
             string poleA  = currentNodeId.Replace("_B", "_A");
@@ -925,83 +829,228 @@ private bool    needsStairsReturn    = false;
     // COMPLETAMENTO PIANO
     // ====================================================
     private void CheckFloorCompletion()
-{
-    if (buildingGraph == null) { OnAllFloorsCompleted(); return; }
-
-    var floorData = buildingGraph.GetFloor(currentFloor);
-    if (!IsCurrentFloorFullyExplored(floorData))
     {
-        NavigateToUnexploredCorridor(floorData);
-        return;
+        if (buildingGraph == null) { OnAllFloorsCompleted(); return; }
+
+        var floorData = buildingGraph.GetFloor(currentFloor);
+
+        if (!IsCurrentFloorFullyExplored(floorData))
+        {
+            NavigateToUnexploredCorridor(floorData);
+            return;
+        }
+
+        if (floorData != null) floorData.explored = true;
+        Debug.Log($"[ExplMgr] Piano {currentFloor} completato.");
+
+        // Cerca il prossimo piano da esplorare, in ordine di floorIndex crescente
+        var unexplored = buildingGraph.GetUnexploredFloors();
+        unexplored.Sort((a, b) => a.floorIndex.CompareTo(b.floorIndex));
+
+        foreach (var targetFloor in unexplored)
+        {
+            var connectors = buildingGraph.GetConnectors(currentFloor, targetFloor.floorIndex);
+            connectors.RemoveAll(c => traversedConnectors.Contains(c.id));
+            if (connectors.Count == 0) continue;
+
+            connectors.Sort((a, b) => a.costUp.CompareTo(b.costUp));
+            pendingConnector = connectors[0];
+
+            Debug.Log($"[ExplMgr] Piano {currentFloor} → piano {targetFloor.floorIndex} " +
+                      $"via '{pendingConnector.id}'");
+
+            navAgent.isStopped = false;
+            navAgent.SetDestination(pendingConnector.triggerStartPosition);
+            state = State.MovingToConnector;
+            return;
+        }
+
+        Debug.Log("[ExplMgr] Tutti i piani esplorati.");
+        OnAllFloorsCompleted();
     }
 
-    if (floorData != null) floorData.explored = true;
-    Debug.Log($"[ExplMgr] Piano {currentFloor} completato.");
-
-    var nextFloor = buildingGraph.GetNextFloor(currentFloor);
-    if (nextFloor == null) { OnAllFloorsCompleted(); return; }
-
-    var connectors = buildingGraph.GetConnectors(currentFloor, nextFloor.floorIndex);
-    
-    // Rimuove connettori già percorsi inline durante l'esplorazione
-    // senza questo, l'agente torna al Box anche se lo ha già visitato
-    connectors.RemoveAll(c => traversedConnectors.Contains(c.id));
-    
-    if (connectors.Count == 0) 
-    { 
-        Debug.Log("[ExplMgr] Tutti i connettori già percorsi → esplorazione completa.");
-        OnAllFloorsCompleted(); 
-        return; 
-    }
-
-    connectors.Sort((a, b) => a.costUp.CompareTo(b.costUp));
-    pendingConnector = connectors[0];
-    navAgent.SetDestination(pendingConnector.triggerStartPosition);
-    state = State.MovingToConnector;
-}
-    private bool IsCurrentFloorFullyExplored(FloorNode floorData) => graph.IsFullyExplored();
+ // ──────────────────────────────────────────────────────────────
+// METODO 2: IsCurrentFloorFullyExplored  (sostituisce l'intero metodo)
+// ──────────────────────────────────────────────────────────────
+private bool IsCurrentFloorFullyExplored(FloorNode floorData)
+{
+    // 1. Il grafo del piano corrente deve avere tutti gli archi esplorati
+    if (!graph.IsFullyExplored()) return false;
  
+    // 2. Tutti i roomObjects del BuildingGraph per questo piano devono
+    //    essere stati visitati come nodi nel grafo.
+    if (floorData != null && floorData.roomObjects.Count > 0)
+    {
+        foreach (string roomId in floorData.roomIds)
+        {
+            // Check diretto: nodo con ID uguale al nome del GameObject
+            if (graph.GetNode(roomId) != null) continue;
+ 
+            // ── FIX BUG 2: i corridoi nel grafo si chiamano {id}_A e {id}_B ──
+            // Un corridoio nel BuildingGraph si chiama es. "corridoio1",
+            // ma nel TopologicalGraph esiste come "corridoio1_A" e "corridoio1_B".
+            // Se almeno il polo A è presente, il corridoio è stato attraversato.
+            if (graph.GetCorridorPoleNode($"{roomId}_A") != null) continue;
+ 
+            // Stanza/corridoio non ancora visitato
+            Debug.Log($"[ExplMgr] Piano {currentFloor}: '{roomId}' non ancora visitata.");
+            return false;
+        }
+    }
+ 
+    return true;
+}
+
     private void NavigateToUnexploredCorridor(FloorNode floorData)
     {
         string targetId = graph.FindNearestNodeWithDiscoveredEdges(transform.position);
         if (targetId == null) { OnAllFloorsCompleted(); return; }
- 
+
         navAgent.SetDestination(graph.GetNode(targetId).position);
         currentNodeId = targetId;
         state         = State.Backtracking;
     }
- 
-    private void ExecuteFloorChange(int targetFloor)
+
+    // ====================================================
+    // CAMBIO PIANO  —  v2.4: ARCHITETTURA MULTI-GRAFO
+    // ====================================================
+    //
+    //  PRIMA della chiamata (es. piano 1 → piano 0):
+    //    floorGraphs[1]: soggiorno, corridoio1, corridoio2, camera1, camera2,
+    //                    bagno1, bagno2, cucina  (grafo del piano 1)
+    //
+    //  DOPO la chiamata:
+    //    floorGraphs[1]: + nodo "conn_scalaBox" (pos=Door_Cor1-Box, piano 1)
+    //    floorGraphs[0]: nodo "conn_scalaBox" (pos=Door_Box, piano 0)
+    //                  + nodo "box"           (spawn piano 0)   ← currentNode
+    //
+    //    ConnectorLinks: { scalaBox, piano1/"conn_scalaBox" ↔ piano0/"conn_scalaBox" }
+    //
+    //  I due grafi restano separati. Il link è modellato in ConnectorLinks.
+    //  Se vuoi navigazione cross-floor, usa ConnectorLinks per trovare il nodo
+    //  ponte e poi il grafo del piano destinazione per il pathfinding locale.
+    // ====================================================
+   // Sostituisci l'intero metodo ExecuteFloorChange con questo:
+
+private void ExecuteFloorChange(int targetFloor)
+{
+    if (state == State.Completed) return;
+
+    int    fromFloor  = currentFloor;
+    string connNodeId = string.Empty;
+
+    if (pendingConnector != null)
     {
-        currentFloor     = targetFloor;
-        pendingConnector = null;
-        registeredRoomDoors.Clear();
-        registeredTransitDoors.Clear();
-        graph = new TopologicalGraph();
- 
-        var floorData = buildingGraph?.GetFloor(targetFloor);
-        if (floorData != null)
+        traversedConnectors.Add(pendingConnector.id);
+
+        // ── 1. Nome del nodo connettore = ID del connettore ───────────────
+        connNodeId = pendingConnector.id;  // es. "scalaBox"
+        Debug.Log($"[ExplMgr] Nodo connettore: '{connNodeId}'");
+
+        // ── 2. Nodo connettore nel grafo del piano CORRENTE ───────────────
+        if (graph != null && graph.GetNode(connNodeId) == null)
+            graph.AddRoomNode(connNodeId, pendingConnector.triggerStartPosition);
+
+        // ── 3. Crea grafo piano DESTINAZIONE se non esiste ────────────────
+        if (!floorGraphs.ContainsKey(targetFloor))
+            floorGraphs[targetFloor] = new TopologicalGraph();
+
+        // ── 4. Nodo connettore nel grafo DESTINAZIONE ─────────────────────
+        var destGraph = floorGraphs[targetFloor];
+        if (destGraph.GetNode(connNodeId) == null)
+            destGraph.AddRoomNode(connNodeId, pendingConnector.triggerEndPosition);
+
+        // ── 5. ConnectorLink cross-floor ──────────────────────────────────
+        ConnectorLinks.Add(new FloorConnectorLink
         {
-            navAgent.Warp(floorData.spawnPosition);
-            currentNodeId = $"floor_{targetFloor}_entry";
-            graph.AddRoomNode(currentNodeId, floorData.spawnPosition);
-            graph.EnterNode(currentNodeId);
-        }
- 
-        inRoomMode = false;
-        movingToPoleCorridorId = null;
-        StartRotation360(isRoom: false);
-        Debug.Log($"[ExplMgr] Piano {targetFloor} — nuova esplorazione.");
+            connectorId = pendingConnector.id,
+            floorFrom   = fromFloor,
+            nodeIdFrom  = connNodeId,
+            posFrom     = pendingConnector.triggerStartPosition,
+            floorTo     = targetFloor,
+            nodeIdTo    = connNodeId,
+            posTo       = pendingConnector.triggerEndPosition
+        });
+
+        Debug.Log($"[ExplMgr] ConnectorLink: " +
+                  $"piano {fromFloor}/'{connNodeId}' ↔ piano {targetFloor}/'{connNodeId}'");
     }
- 
+    else if (!floorGraphs.ContainsKey(targetFloor))
+    {
+        floorGraphs[targetFloor] = new TopologicalGraph();
+    }
+
+    // ── 6. Passa al piano destinazione ────────────────────────────────────
+    currentFloor     = targetFloor;
+    pendingConnector = null;
+
+    registeredRoomDoors.Clear();
+    registeredTransitDoors.Clear();
+    allCorridorDoors.Clear();
+
+    var floorData = buildingGraph?.GetFloor(targetFloor);
+    if (floorData != null)
+    {
+        navAgent.Warp(floorData.spawnPosition);
+
+        string spawnId = floorData.spawnObject != null
+            ? floorData.spawnObject.name
+            : $"floor_{targetFloor}_entry";
+
+        currentNodeId = spawnId;
+        if (graph.GetNode(currentNodeId) == null)
+            graph.AddRoomNode(currentNodeId, floorData.spawnPosition);
+
+        graph.EnterNode(currentNodeId);
+
+        // ── 7. Arco spawn ↔ connettore (es. box ↔ scalaBox) ──────────────
+        // Senza questo i due nodi sarebbero scollegati nel grafo del piano 0.
+        if (!string.IsNullOrEmpty(connNodeId) && graph.GetNode(connNodeId) != null)
+        {
+            float dist = Vector3.Distance(floorData.spawnPosition,
+                                          graph.GetNode(connNodeId).position);
+            graph.AddSegmentArc(spawnId, connNodeId, dist);
+            Debug.Log($"[ExplMgr] Arco '{spawnId}' ↔ '{connNodeId}' dist={dist:F1}m");
+        }
+    }
+
+    inRoomMode             = false;
+    movingToPoleCorridorId = null;
+    StartRotation360(isRoom: true);
+
+    Debug.Log($"[ExplMgr] Piano {targetFloor} — nuova esplorazione. " +
+              $"Grafi attivi: {floorGraphs.Count}  Link: {ConnectorLinks.Count}");
+}
+
+    // ====================================================
+    // FINE ESPLORAZIONE
+    // ====================================================
     private void OnAllFloorsCompleted()
     {
         explorationVisionCone?.SetExplorationMode(false);
-        GetComponent<BeliefTransmitter>()?.TransmitGraph(graph);
         state = State.Completed;
-        Debug.Log("[ExplMgr] Edificio completamente esplorato.");
+
+        // Retrocompatibilità: trasmette il grafo del piano corrente.
+        // Per trasmettere tutti i grafi, estendi BeliefTransmitter con:
+        //   TransmitAllGraphs(AllFloorGraphs, ConnectorLinks)
+        var bt = GetComponent<BeliefTransmitter>();
+        if (bt != null)
+        {
+            var sortedFloors = new List<int>(floorGraphs.Keys);
+            sortedFloors.Sort();
+            foreach (int f in sortedFloors)
+                bt.TransmitGraph(floorGraphs[f]);
+        }
+
+        Debug.Log($"[ExplMgr] Edificio esplorato. " +
+                  $"Piani: {floorGraphs.Count}  Link: {ConnectorLinks.Count}");
+
+        foreach (var link in ConnectorLinks)
+            Debug.Log($"  ↔ '{link.connectorId}': " +
+                      $"piano {link.floorFrom}/'{link.nodeIdFrom}' ↔ " +
+                      $"piano {link.floorTo}/'{link.nodeIdTo}'");
     }
- 
+
     // ====================================================
     // HELPER
     // ====================================================
@@ -1011,7 +1060,7 @@ private bool    needsStairsReturn    = false;
             if (c.corridorId == id) return c;
         return null;
     }
- 
+
     private DoorVarcoScript FindDoorScript(string name)
     {
         string cleanName = name;
@@ -1023,14 +1072,25 @@ private bool    needsStairsReturn    = false;
         if (go == null) return null;
         return go.GetComponentInChildren<DoorVarcoScript>();
     }
+
     private bool IsConnectorDoor(string doorName)
     {
         if (buildingGraph == null) return false;
         foreach (var connector in buildingGraph.connectors)
         {
             if (connector.triggerStartObject?.name == doorName) return true;
-            if (connector.triggerEndObject?.name == doorName) return true;
+            if (connector.triggerEndObject?.name   == doorName) return true;
         }
         return false;
     }
+    private VerticalConnector FindConnectorForDoor(string doorName)
+{
+    if (buildingGraph == null) return null;
+    foreach (var c in buildingGraph.connectors)
+    {
+        if (c.triggerStartObject?.name == doorName) return c;
+        if (c.triggerEndObject?.name == doorName) return c;
+    }
+    return null;
+}
 }
