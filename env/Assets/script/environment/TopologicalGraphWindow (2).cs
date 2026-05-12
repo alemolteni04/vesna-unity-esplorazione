@@ -359,8 +359,8 @@ public class TopologicalGraphWindow : EditorWindow
                     if (!string.IsNullOrEmpty(lbl))
                     {
                         GUI.color = c;
-                        GUI.Label(new Rect(mid.x - 30, mid.y - 10, 80, 20),
-                                  lbl, MiniStyle());
+                        GUI.Label(new Rect(mid.x - 90, mid.y - 10, 180, 20),
+                            lbl, MiniStyle());
                         GUI.color = Color.white;
                     }
                 }
@@ -396,32 +396,37 @@ public class TopologicalGraphWindow : EditorWindow
     }
 
     private string BuildEdgeLabel(GraphEdge edge)
-    {
-        string side = string.IsNullOrEmpty(edge.side) ? "" : $" {edge.side}";
-        switch (edge.edgeType)
-        {
-            case EdgeType.Central:
-                return $"central {edge.distFromA:F1}m";
-            case EdgeType.DoorFW:
-            {
-                int fw = edge.orderFW > 0 ? edge.orderFW : 1;
-                return $"fw{fw}{side} dA={edge.distFromA:F1}";
-            }
-              case EdgeType.DoorBW:
-            {
-                int bw = edge.orderBW > 0 ? edge.orderBW : 1;
-                // Niente inversione — il side è già corretto nel dato
-                return $"bw{bw}{side} dB={edge.distFromB:F1}";
-            }
-            case EdgeType.RoomDoor:
-                return $"room {edge.navMeshDist:F1}m";
-            case EdgeType.Segment:
-                return $"seg {edge.distFromA:F1}m";
-            default:
-                return "";
-        }
-    }
+{
+    string stateTag = edge.state == EdgeState.Explored ? "[E]" : "[D]";
+    string doorTag  = string.IsNullOrEmpty(edge.doorName) ? "" 
+                      : $" {TruncateLabel(edge.doorName, 12)}";
+    string side     = string.IsNullOrEmpty(edge.side) ? "" : $" {edge.side}";
 
+    switch (edge.edgeType)
+    {
+        case EdgeType.Central:
+            return $"{stateTag} central {edge.distFromA:F1}m";
+
+        case EdgeType.DoorFW:
+        {
+            int fw = edge.orderFW > 0 ? edge.orderFW : 1;
+            return $"{stateTag} fw{fw}{side}{doorTag}";
+        }
+        case EdgeType.DoorBW:
+        {
+            int bw = edge.orderBW > 0 ? edge.orderBW : 1;
+            return $"{stateTag} bw{bw}{side}{doorTag}";
+        }
+        case EdgeType.RoomDoor:
+            return $"{stateTag} room{doorTag}";
+
+        case EdgeType.Segment:
+            return $"{stateTag} seg{doorTag}";
+
+        default:
+            return stateTag;
+    }
+}
     // ====================================================
     // DISEGNO NODI
     // ====================================================

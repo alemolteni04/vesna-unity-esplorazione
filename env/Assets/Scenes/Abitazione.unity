@@ -12137,7 +12137,10 @@ PrefabInstance:
     - {fileID: 706406227178797927, guid: c92cdb9d3b3e15f4b99ce98fe4c864b2, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1160928174161554, guid: c92cdb9d3b3e15f4b99ce98fe4c864b2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1382079787}
   m_SourcePrefab: {fileID: 100100000, guid: c92cdb9d3b3e15f4b99ce98fe4c864b2, type: 3}
 --- !u!4 &1382079785 stripped
 Transform:
@@ -12149,6 +12152,22 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1160928174161554, guid: c92cdb9d3b3e15f4b99ce98fe4c864b2, type: 3}
   m_PrefabInstance: {fileID: 1382079784}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1382079787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1382079786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ac678b9ef8fb924eba39c4300e38d2b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objInUse: {fileID: 0}
+  port: 
+  artifactName: 
+  doorScript: {fileID: 0}
 --- !u!1 &1395617282
 GameObject:
   m_ObjectHideFlags: 0

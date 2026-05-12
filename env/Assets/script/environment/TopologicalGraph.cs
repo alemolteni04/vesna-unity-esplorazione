@@ -108,6 +108,7 @@ public class GraphEdge
 
     public bool isCorridorLink; // aggiunto per gestire varchi che sono collegamento di corridoio . se no si alterava la struttura del grafo
 
+    public string doorName;
     public GraphEdge(string id, string fromNodeId, bool isPhysical,
                      EdgeType edgeType, Vector3 position)
     {
@@ -239,7 +240,8 @@ public class TopologicalGraph
                 distFromA = distFromA,
                 distFromB = distFromB,
                 orderFW   = 0,   // verrà assegnato da ComputeForwardOrders()
-                 isCorridorLink = isCorridorLink   // ← imposta
+                 isCorridorLink = isCorridorLink,   // ← imposta
+                  doorName       = doorId 
             });
         }
 
@@ -255,7 +257,8 @@ public class TopologicalGraph
                 distFromA      = distFromA,
                 distFromB      = distFromB,
                 orderBW        = 0,
-                isCorridorLink = isCorridorLink
+                isCorridorLink = isCorridorLink,
+                 doorName       = doorId 
             });
         }
 
@@ -276,7 +279,8 @@ public class TopologicalGraph
         var edge = new GraphEdge(eid, fromNodeId, isPhysical, EdgeType.RoomDoor, doorPos)
         {
             navMeshDist = navMeshDist,
-            toNodeId    = doorId
+            toNodeId    = doorId,
+             doorName       = doorId 
         };
         node.edges.Add(edge);
 
