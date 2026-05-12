@@ -1009,7 +1009,7 @@ private void ExecuteFloorChange(int targetFloor)
         {
             float dist = Vector3.Distance(floorData.spawnPosition,
                                           graph.GetNode(connNodeId).position);
-            graph.AddSegmentArc(spawnId, connNodeId, dist);
+            graph.AddSegmentArc(spawnId, connNodeId, dist, connNodeId);
             Debug.Log($"[ExplMgr] Arco '{spawnId}' ↔ '{connNodeId}' dist={dist:F1}m");
         }
     }
