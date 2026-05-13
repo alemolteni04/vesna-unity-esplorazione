@@ -936,9 +936,11 @@ private void ExecuteFloorChange(int targetFloor)
 {
     if (state == State.Completed) return;
 
-    int    fromFloor  = currentFloor;
-    string connNodeId = string.Empty;
-
+    int    fromFloor   = currentFloor;
+    string connNodeId  = string.Empty;
+    
+    // SALVA il connettore PRIMA di azzerarlo
+    var activeConnector = pendingConnector;
     if (pendingConnector != null)
     {
         traversedConnectors.Add(pendingConnector.id);
@@ -975,14 +977,15 @@ private void ExecuteFloorChange(int targetFloor)
         Debug.Log($"[ExplMgr] ConnectorLink: " +
                   $"piano {fromFloor}/'{connNodeId}' ↔ piano {targetFloor}/'{connNodeId}'");
     }
+
     else if (!floorGraphs.ContainsKey(targetFloor))
     {
         floorGraphs[targetFloor] = new TopologicalGraph();
     }
 
-    // ── 6. Passa al piano destinazione ────────────────────────────────────
+    // ── 6. Passa al piano destinazione ──────────────────────────
     currentFloor     = targetFloor;
-    pendingConnector = null;
+    pendingConnector = null;          // ← azzerato qui, ma usiamo activeConnector
 
     registeredRoomDoors.Clear();
     registeredTransitDoors.Clear();
@@ -991,7 +994,15 @@ private void ExecuteFloorChange(int targetFloor)
     var floorData = buildingGraph?.GetFloor(targetFloor);
     if (floorData != null)
     {
-        navAgent.Warp(floorData.spawnPosition);
+        // Usa la posizione di arrivo del connettore se disponibile
+        Vector3 warpTarget = (activeConnector != null)
+            ? activeConnector.triggerEndPosition
+            : floorData.spawnPosition;
+
+        navAgent.enabled = false;
+        navAgent.transform.position = warpTarget;
+        navAgent.enabled = true;
+        navAgent.Warp(warpTarget);
 
         string spawnId = floorData.spawnObject != null
             ? floorData.spawnObject.name
