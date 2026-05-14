@@ -1266,7 +1266,38 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
     // ====================================================
     // FINE ESPLORAZIONE
     // ====================================================
+
     private void OnAllFloorsCompleted()
+{
+    explorationVisionCone?.SetExplorationMode(false);
+    state = State.Completed;
+
+    var bt = GetComponent<BeliefTransmitter>();
+    if (bt != null)
+    {
+        // 1. Trasmetti i grafi per piano (già esistente)
+        var sortedFloors = new List<int>(floorGraphs.Keys);
+        sortedFloors.Sort();
+        foreach (int f in sortedFloors)
+            bt.TransmitGraph(floorGraphs[f]);
+
+        // 2. Calcola e trasmetti le distanze porte (NUOVO)
+        var ddm = GetComponent<DoorDistanceMap>();
+        if (ddm != null)
+        {
+            ddm.Compute(floorGraphs);
+            bt.TransmitDoorDistances(ddm.pairs);
+        }
+        else
+        {
+            Debug.LogWarning("[ExplMgr] DoorDistanceMap non trovato sul GameObject!");
+        }
+    }
+
+    Debug.Log($"[ExplMgr] Edificio esplorato. Piani: {floorGraphs.Count} Link: {ConnectorLinks.Count}");
+}
+   /* VECCHIO
+   private void OnAllFloorsCompleted()
     {
         explorationVisionCone?.SetExplorationMode(false);
         state = State.Completed;
@@ -1291,7 +1322,7 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
                       $"piano {link.floorFrom}/'{link.nodeIdFrom}' ↔ " +
                       $"piano {link.floorTo}/'{link.nodeIdTo}'");
     }
-
+*/
     // ====================================================
     // HELPER
     // ====================================================

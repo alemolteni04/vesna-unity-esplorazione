@@ -39,6 +39,7 @@ public class BeliefTransmitter : AbstractMasElement
         StartCoroutine(TransmitCoroutine(graph));
     }
 
+    
     private IEnumerator TransmitCoroutine(TopologicalGraph graph)
     {
         Debug.Log("[BeliefTransmitter] Inizio trasmissione grafo a JaCaMo...");
@@ -108,6 +109,11 @@ public class BeliefTransmitter : AbstractMasElement
             }
         }
 
+        //-----------------------------
+        //TRASMETTI PORTE
+        //------------------------------
+        
+
         // ----------------------------------------
         // 3. Segnala completamento
         // ----------------------------------------
@@ -125,6 +131,40 @@ public class BeliefTransmitter : AbstractMasElement
         Debug.Log($"[BeliefTransmitter] Trasmissione completata: {count} credenze inviate.");
     }
 
+//SALVATAGGIO DISTANZE PORTE
+    public void TransmitDoorDistances(List<DoorDistancePair> pairs)
+{
+    StartCoroutine(TransmitDoorDistancesCoroutine(pairs));
+}
+
+private IEnumerator TransmitDoorDistancesCoroutine(List<DoorDistancePair> pairs)
+{
+    Debug.Log($"[BeliefTransmitter] Invio {pairs.Count} distanze porte...");
+    int count = 0;
+
+    foreach (var p in pairs)
+    {
+        var msg = new BeliefMessage
+        {
+            beliefType = "door_dist",
+            payload    = new Dictionary<string, object>
+            {
+                { "doorA",    p.doorA    },
+                { "doorB",    p.doorB    },
+                { "floor",    p.floor    },
+                { "distance", p.distance }
+            }
+        };
+
+        SendBelief(msg);
+        count++;
+
+        if (count % beliefsPerFrame == 0)
+            yield return null;
+    }
+
+    Debug.Log($"[BeliefTransmitter] {count} distanze inviate.");
+}
     private void SendBelief(BeliefMessage msg)
     {
         string json = JsonConvert.SerializeObject(msg);
