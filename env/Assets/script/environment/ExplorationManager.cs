@@ -134,6 +134,8 @@ public class ExplorationManager : MonoBehaviour
     private float  backtrackTimer    = 0f;
     public  float  backtrackTimeout  = 5f;
 
+    private float transitTimer = 0f;
+
     // Corridoio verso cui l'agente sta navigando in stato Idle
     // (dopo EnterThroughEdge su un varco corridoio). Blocca segnali
     // di poli di altri corridoi finché non si tocca il polo corretto.
@@ -477,7 +479,7 @@ public void StartExploration(string startNodeId, Vector3 startPos)
             float dB = Vector3.Distance(door.transform.position, poleBPos);
             float dA = Vector3.Distance(door.transform.position, poleAPos);
 
-            if (dB > 0.6f)
+            if (dB > 0.6f && dA>0.6)
             { Debug.Log($"[ExplMgr] {door.gameObject.name} fuori corridoio (dB={dB:F2}) → ignorata"); return; }
 
             registeredTransitDoors.Add(door.gameObject.name);
@@ -662,9 +664,13 @@ public void StartExploration(string startNodeId, Vector3 startPos)
 
     private void UpdateTransiting()
     {
-        if (navAgent.pathPending) return;
-        if (navAgent.remainingDistance < arrivalThreshold * 0.5f)
+        transitTimer += Time.deltaTime;
+
+        if (navAgent.pathPending && transitTimer < poleTimeoutSeconds) return;
+
+        if (navAgent.remainingDistance < poleArrivalThreshold || transitTimer >= poleTimeoutSeconds)
         {
+            transitTimer = 0f;
             pendingCorridorId = transitCorridorId;
             pendingPoleId     = "B_fallback";
             pendingPolePos    = poleBPos;
@@ -942,7 +948,7 @@ public void StartExploration(string startNodeId, Vector3 startPos)
             {
                 currentNode.edges.RemoveAll(e =>
                     e != null &&
-                    e.edgeType == EdgeType.RoomDoor &&
+                    e.edgeType == EdgeType.Door &&
                     e.toNodeId == edge.toNodeId);
                 Debug.Log($"[ExplMgr] Rimosso RoomDoor '{edge.toNodeId}' da '{currentNodeId}' — è un link corridoio");
             }
@@ -1356,7 +1362,7 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
         string cleanName = name;
         if (name.StartsWith("fw_"))   cleanName = name.Substring(3);
         if (name.StartsWith("bw_"))   cleanName = name.Substring(3);
-        if (name.StartsWith("room_")) cleanName = name.Substring(5);
+        //if (name.StartsWith("room_")) cleanName = name.Substring(5);
 
         var go = GameObject.Find(cleanName);
         if (go == null) return null;

@@ -64,7 +64,7 @@ public class DoorDistanceMap : MonoBehaviour
                     if (edge == null) continue;
                     if (edge.edgeType == EdgeType.DoorFW  ||
                         edge.edgeType == EdgeType.DoorBW  ||
-                        edge.edgeType == EdgeType.RoomDoor)
+                        edge.edgeType == EdgeType.Door)
                     {
                         if (!string.IsNullOrEmpty(edge.id) &&
                             !doorPositions.ContainsKey(edge.id))

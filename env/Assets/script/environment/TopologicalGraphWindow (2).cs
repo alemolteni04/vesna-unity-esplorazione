@@ -417,8 +417,8 @@ public class TopologicalGraphWindow : EditorWindow
             int bw = edge.orderBW > 0 ? edge.orderBW : 1;
             return $"{stateTag} bw{bw}{side}{doorTag}";
         }
-        case EdgeType.RoomDoor:
-            return $"{stateTag} room{doorTag}";
+        case EdgeType.Door:
+            return $"{stateTag} {doorTag}";
 
         case EdgeType.Segment:
             return $"{stateTag} seg{doorTag}";
@@ -761,7 +761,7 @@ public class TopologicalGraphWindow : EditorWindow
         EdgeType.Central  => ColCentral,
         EdgeType.DoorFW   => ColDoorFW,
         EdgeType.DoorBW   => ColDoorBW,
-        EdgeType.RoomDoor => ColRoomDoor,
+        EdgeType.Door => ColRoomDoor,
         EdgeType.Segment  => ColSegment,
         _                 => ColUnknown
     };

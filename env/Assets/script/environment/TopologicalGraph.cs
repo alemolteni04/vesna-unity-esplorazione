@@ -23,7 +23,7 @@ using UnityEngine;
 public enum NodeType  { Unknown, CorridorPoleA, CorridorPoleB, Room }
 public enum EdgeState { Discovered, Explored }
 public enum DoorState { Open, Closed, Locked }
-public enum EdgeType  { Central, DoorFW, DoorBW, RoomDoor, Segment }
+public enum EdgeType  { Central, DoorFW, DoorBW, Door, Segment }
 
 // ─────────────────────────────────────────────────────────────
 // NODO BASE (astratto)
@@ -278,12 +278,12 @@ public class TopologicalGraph
     {
         if (!nodes.ContainsKey(fromNodeId)) return null;
         var node  = nodes[fromNodeId];
-        string eid = $"room_{doorId}";
+        string eid = $"{doorId}";
 
         var existing = node.edges.Find(e => e?.id == eid);
         if (existing != null) return existing;
 
-        var edge = new GraphEdge(eid, fromNodeId, isPhysical, EdgeType.RoomDoor, doorPos)
+        var edge = new GraphEdge(eid, fromNodeId, isPhysical, EdgeType.Door, doorPos)
         {
             navMeshDist = navMeshDist,
             toNodeId    =  toNodeId ?? doorId,   // ← usa toNodeId se fornito
@@ -291,7 +291,7 @@ public class TopologicalGraph
         };
         node.edges.Add(edge);
 
-        Debug.Log($"[Graph] RoomDoor: {fromNodeId}→{doorId} navDist={navMeshDist:F1}");
+        Debug.Log($"[Graph] Door: {fromNodeId}→{doorId} navDist={navMeshDist:F1}");
         return edge;
     }
 
@@ -589,7 +589,7 @@ public class TopologicalGraph
     {
         if (!nodes.ContainsKey(roomNodeId)) return null;
         var list = nodes[roomNodeId].edges.FindAll(
-            e => e != null && e.state == EdgeState.Discovered && e.edgeType == EdgeType.RoomDoor);
+            e => e != null && e.state == EdgeState.Discovered && e.edgeType == EdgeType.Door);
         if (list.Count == 0) return null;
         list.Sort((a, b) => a.navMeshDist.CompareTo(b.navMeshDist));
         return list[0];
