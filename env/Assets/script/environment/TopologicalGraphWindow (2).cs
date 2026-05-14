@@ -626,21 +626,49 @@ public class TopologicalGraphWindow : EditorWindow
     // CONTROLLI (pulsanti in basso a destra)
     // ====================================================
     private void DrawControls()
+{
+    float bw = 110f, bh = 24f;
+    float bx = position.width  - bw - 10f;
+    float by = position.height - bh - 10f;
+
+    if (GUI.Button(new Rect(bx, by, bw, bh), "Reset Vista"))
     {
-        float bw = 110f, bh = 24f;
-        float bx = position.width  - bw - 10f;
-        float by = position.height - bh - 10f;
-
-        if (GUI.Button(new Rect(bx, by, bw, bh), "Reset Vista"))
-        {
-            canvasOffset = new Vector2(position.width * 0.5f, position.height * 0.5f);
-            zoom         = 1f;
-            layoutDirty  = true;
-        }
-
-        if (GUI.Button(new Rect(bx - bw - 8f, by, bw, bh), "Ricalcola Layout"))
-            layoutDirty = true;
+        canvasOffset = new Vector2(position.width * 0.5f, position.height * 0.5f);
+        zoom         = 1f;
+        layoutDirty  = true;
     }
+
+    if (GUI.Button(new Rect(bx - bw - 8f, by, bw, bh), "Ricalcola Layout"))
+        layoutDirty = true;
+
+    // ── Dropdown piani disponibili ──────────────────────────
+    if (manager != null && Application.isPlaying && manager.AllFloorGraphs.Count > 0)
+    {
+        var floorKeys = new List<int>(manager.AllFloorGraphs.Keys);
+        floorKeys.Sort();
+
+        // Costruisci le label: "Piano 0", "Piano 1", ...
+        var labels = new string[floorKeys.Count + 1];
+        labels[0] = "Auto (corrente)";
+        for (int i = 0; i < floorKeys.Count; i++)
+            labels[i + 1] = $"Piano {floorKeys[i]}";
+
+        // Trova l'indice corrente nel dropdown
+        int currentIdx = selectedFloor == -1 ? 0 : floorKeys.IndexOf(selectedFloor) + 1;
+        if (currentIdx < 0) currentIdx = 0;
+
+        float ddW = 140f;
+        int newIdx = EditorGUI.Popup(
+            new Rect(bx - bw - 8f - ddW - 8f, by, ddW, bh),
+            currentIdx, labels);
+
+        if (newIdx != currentIdx)
+        {
+            selectedFloor = newIdx == 0 ? -1 : floorKeys[newIdx - 1];
+            layoutDirty = true;
+        }
+    }
+}
 
     // ====================================================
     // MESSAGGIO NESSUN GRAFO
@@ -682,13 +710,21 @@ public class TopologicalGraphWindow : EditorWindow
     // ====================================================
     // HELPER — reflection grafo
     // ====================================================
+    private int selectedFloor = -1; // -1 = auto (piano corrente)
+
     private TopologicalGraph GetGraph()
     {
         if (manager == null || !Application.isPlaying) return null;
-        return manager.Graph;
+        
+        // Se -1 o il piano selezionato non esiste più, usa il piano corrente
+        if (selectedFloor == -1 || !manager.AllFloorGraphs.ContainsKey(selectedFloor))
+            return manager.Graph;
+        
+        manager.AllFloorGraphs.TryGetValue(selectedFloor, out var g);
+        return g;
     }
 
-    private string GetCurrentNodeId()
+        private string GetCurrentNodeId()
     {
         if (manager == null) return null;
         return manager.CurrentNodeId;

@@ -4860,11 +4860,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2461382583679995558, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -7
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 2461382583679995558, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.532
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 2461382583679995558, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       propertyPath: m_LocalPosition.z
@@ -5060,15 +5060,14 @@ MonoBehaviour:
   navAgent: {fileID: 544074378}
   explorationVisionCone: {fileID: 544074384}
   buildingGraph: {fileID: 2136206639}
-  startingFloor: 0
-  startRoomObject: {fileID: 2070023752}
   arrivalThreshold: 0.5
   poleArrivalThreshold: 1.2
   rotationSpeed: 120
   inspectionDistance: 1.2
-  enterOffset: 1.5
+  enterOffset: 3
   poleTimeoutSeconds: 4
   inRoomMode: 0
+  currentFloor: 0
   backtrackTimeout: 5
 --- !u!114 &544074384
 MonoBehaviour:
@@ -20048,7 +20047,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.3
+      value: -2.1
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalRotation.w

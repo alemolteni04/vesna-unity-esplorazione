@@ -45,8 +45,29 @@ public class VerticalConnectorScript : MonoBehaviour
         if (!other.CompareTag("Agent")) return;
         triggered = true;
 
-        OnConnectorReached?.Invoke(connectorId, targetFloor, transform.position);
-        Debug.Log($"[Connector] {connectorId} raggiunto → piano {targetFloor}");
+        var manager = other.GetComponent<ExplorationManager>() 
+                ?? FindObjectOfType<ExplorationManager>();
+        if (manager == null) { Debug.LogWarning("[Connector] ExplorationManager non trovato!"); return; }
+
+        var connector = manager.buildingGraph?.connectors.Find(c => c.id == connectorId);
+        if (connector == null) { Debug.LogWarning($"[Connector] '{connectorId}' non trovato!"); return; }
+
+        int currentFloor = manager.currentFloor;
+        int resolvedTarget;
+
+        if (connector.floorFrom == currentFloor)
+            resolvedTarget = connector.floorTo;
+        else if (connector.bidirectional && connector.floorTo == currentFloor)
+            resolvedTarget = connector.floorFrom;
+        else
+        {
+            Debug.LogWarning($"[Connector] '{connectorId}' non applicabile dal piano {currentFloor}");
+            triggered = false;
+            return;
+        }
+
+        OnConnectorReached?.Invoke(connectorId, resolvedTarget, transform.position);
+        Debug.Log($"[Connector] {connectorId} raggiunto → piano {resolvedTarget}");
     }
 
     public void ResetTrigger() => triggered = false;

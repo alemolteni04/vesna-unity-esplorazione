@@ -38,6 +38,13 @@ public abstract class GraphNode
 
     public List<GraphEdge> edges = new List<GraphEdge>();
 
+    /// <summary>
+    /// True dopo che l'agente ha eseguito un 360° fisico in questa stanza.
+    /// Usato per distinguere nodi aggiunti programmaticamente (es. ExecuteFloorChange)
+    /// da nodi realmente visitati, evitando che LOOP EVITATO blocchi l'ingresso.
+    /// </summary>
+    public bool physicallyVisited = false;
+
     protected GraphNode(string id, NodeType type, Vector3 position)
     {
         this.id       = id;
@@ -267,7 +274,7 @@ public class TopologicalGraph
 
     // Arco da nodo stanza → porta (scoperta col 360° interno)
     public GraphEdge AddRoomDoorEdge(string fromNodeId, string doorId, bool isPhysical,
-                                     Vector3 doorPos, float navMeshDist)
+                                     Vector3 doorPos, float navMeshDist, string toNodeId = null)
     {
         if (!nodes.ContainsKey(fromNodeId)) return null;
         var node  = nodes[fromNodeId];
@@ -279,7 +286,7 @@ public class TopologicalGraph
         var edge = new GraphEdge(eid, fromNodeId, isPhysical, EdgeType.RoomDoor, doorPos)
         {
             navMeshDist = navMeshDist,
-            toNodeId    = doorId,
+            toNodeId    =  toNodeId ?? doorId,   // ← usa toNodeId se fornito
              doorName       = doorId 
         };
         node.edges.Add(edge);
