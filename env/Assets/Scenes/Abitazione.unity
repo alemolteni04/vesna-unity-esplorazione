@@ -24277,14 +24277,14 @@ MonoBehaviour:
   floors:
   - floorIndex: 0
     floorName: Box
-    spawnObject: {fileID: 113373871}
+    spawnObject: {fileID: 1368982673}
     roomObjects:
     - {fileID: 113373871}
     - {fileID: 1368982673}
     explored: 0
   - floorIndex: 1
     floorName: Casa
-    spawnObject: {fileID: 1813157715}
+    spawnObject: {fileID: 1144158760}
     roomObjects:
     - {fileID: 1224112154}
     - {fileID: 1706078310}
