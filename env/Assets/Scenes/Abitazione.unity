@@ -24284,7 +24284,7 @@ MonoBehaviour:
     explored: 0
   - floorIndex: 1
     floorName: Casa
-    spawnObject: {fileID: 2070023752}
+    spawnObject: {fileID: 1813157715}
     roomObjects:
     - {fileID: 1224112154}
     - {fileID: 1706078310}
@@ -24516,11 +24516,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.3
+      value: -2.1
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalRotation.w
