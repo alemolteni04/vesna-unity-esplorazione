@@ -75,7 +75,7 @@ public class ExplorationManager : MonoBehaviour
         Idle, MovingToPole, Transiting, WaitingAtPoleB,
         Rotating360, MovingToDoor, InspectingDoor,
         EnteringRoom, InsideRoom, Backtracking,
-        MovingToConnector, Completed, DescendingStairs
+        MovingToConnector, Completed,TraversingStairs
     }
 
     private State state = State.Idle;
@@ -550,8 +550,9 @@ public void StartExploration(string startNodeId, Vector3 startPos)
 
     if (stairsWaypoints != null && stairsWaypoints.Length > 0)
     {
-        state = State.DescendingStairs;
-        StartCoroutine(DescendStairsThen(targetFloor));
+       bool ascending = isReverse; // isReverse = (pendingConnector.floorFrom == targetFloor)
+state = State.TraversingStairs;
+StartCoroutine(TraverseStairsThen(targetFloor, ascending));
     }
     else
     {
@@ -813,15 +814,19 @@ public void StartExploration(string startNodeId, Vector3 startPos)
     if (pendingConnector != null &&
         navAgent.remainingDistance <= arrivalThreshold * 2f)
     {
-        int targetFloor = pendingConnector.floorTo;
+        int targetFloor = (pendingConnector.floorFrom == currentFloor)
+            ? pendingConnector.floorTo
+            : pendingConnector.floorFrom;
+        bool ascending = (pendingConnector.floorFrom != currentFloor);
+
         if (stairsWaypoints != null && stairsWaypoints.Length > 0)
         {
-            state = State.DescendingStairs;
-            StartCoroutine(DescendStairsThen(targetFloor));
+            state = State.TraversingStairs;
+            StartCoroutine(TraverseStairsThen(targetFloor, ascending));
         }
         else
         {
-            ExecuteFloorChange(targetFloor);  // fallback senza waypoint
+            ExecuteFloorChange(targetFloor);
         }
     }
 }
@@ -1226,7 +1231,7 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
             : floorData.spawnPosition;
 
         // Warp solo se NON stiamo scendendo fisicamente le scale
-        if (state != State.DescendingStairs)
+        if (state != State.TraversingStairs)
         {
             navAgent.enabled = false;
             navAgent.transform.position = warpTarget;
@@ -1401,9 +1406,8 @@ private void ResetCorridorPoles(string corridorId)
 }
 
 //DISCESA SCALE
-private IEnumerator DescendStairsThen(int targetFloor)
+private IEnumerator TraverseStairsThen(int targetFloor, bool ascending)
 {
-    // Salva il connettore SUBITO (viene azzerato da ExecuteFloorChange)
     var activeConnector = pendingConnector;
 
     navAgent.isStopped = true;
@@ -1412,8 +1416,15 @@ private IEnumerator DescendStairsThen(int targetFloor)
     if (agentAnimator != null)
         agentAnimator.SetBool(walkAnimParam, true);
 
-    foreach (Transform wp in stairsWaypoints)
+    // ascending=true → waypoint in ordine inverso (fondo→cima)
+    int start = ascending ? stairsWaypoints.Length - 1 : 0;
+    int end   = ascending ? -1 : stairsWaypoints.Length;
+    int step  = ascending ? -1 : 1;
+
+    for (int i = start; i != end; i += step)
     {
+        Transform wp = stairsWaypoints[i];
+
         Vector3 dir = (wp.position - transform.position);
         dir.y = 0f;
         if (dir.sqrMagnitude > 0.001f)
@@ -1442,20 +1453,22 @@ private IEnumerator DescendStairsThen(int targetFloor)
     if (agentAnimator != null)
         agentAnimator.SetBool(walkAnimParam, false);
 
-    // ── NUOVO: apri la porta di arrivo prima di entrare nel box ──
-    if (activeConnector?.triggerEndObject != null)
+    // Apre la porta giusta: cima se salita, fondo se discesa
+    var arrivalDoor = ascending
+        ? activeConnector?.triggerStartObject
+        : activeConnector?.triggerEndObject;
+
+    if (arrivalDoor != null)
     {
-        var door = activeConnector.triggerEndObject
-                       .GetComponentInChildren<DoorVarcoScript>();
+        var door = arrivalDoor.GetComponentInChildren<DoorVarcoScript>();
         if (door != null && !door.IsTraversable)
         {
             door.TryOpen();
-            yield return new WaitForSeconds(0.6f); // attendi l'apertura
-            Debug.Log("[ExplMgr] Porta arrivo aperta prima di entrare.");
+            yield return new WaitForSeconds(0.6f);
         }
     }
 
     navAgent.enabled = true;
     ExecuteFloorChange(targetFloor);
-} 
+}
 }
