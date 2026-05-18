@@ -36,6 +36,12 @@ public struct FloorConnectorLink
     public string  nodeIdTo;      // ID nodo in floorGraphs[floorTo]
     public Vector3 posTo;         // posizione fisica lato arrivo
 }
+[System.Serializable]
+public class StaircaseWaypoints
+{
+    public string      connectorId;
+    public Transform[] waypoints;
+}
 
 // ─────────────────────────────────────────────────────────────
 
@@ -59,13 +65,15 @@ public class ExplorationManager : MonoBehaviour
     public float poleTimeoutSeconds    = 4f;
 
     [Header("Discesa Scale")]
-    [Tooltip("Waypoint dell'animazione, dalla cima al fondo della scala.")]
-    public Transform[] stairsWaypoints;
     public float stairsMoveSpeed = 1.2f;
+    [Tooltip("Un elemento per ogni scala — connectorId deve corrispondere esattamente all'ID nel BuildingGraph")]
+    public List<StaircaseWaypoints> staircaseWaypointsList = new List<StaircaseWaypoints>();
 
     [Header("Animatore")]
     public Animator agentAnimator;
     public string walkAnimParam = "IsWalking"; // oppure "Speed" se usi blend tree
+
+
 
     // --------------------------------------------------------
     // MACCHINA A STATI
@@ -120,7 +128,7 @@ public class ExplorationManager : MonoBehaviour
     private float rotationAccum = 0f;
     public  bool  inRoomMode   = false;
 
-    private HashSet<string> registeredRoomDoors    = new HashSet<string>();
+    private Dictionary<string, string> registeredRoomDoors = new Dictionary<string, string>();
     private HashSet<string> registeredTransitDoors = new HashSet<string>();
     private HashSet<string> allCorridorDoors       = new HashSet<string>();
 
@@ -433,9 +441,11 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
     // --------------------------------------------------------
     private void HandleDoorVisibleInRoom(DoorVarcoScript door)
     {
+        
         if (state != State.Rotating360 && state != State.InsideRoom) return;
         if (!inRoomMode) return;
-        if (registeredRoomDoors.Contains(door.gameObject.name)) return;
+        if (registeredRoomDoors.TryGetValue(door.gameObject.name, out string registeredFrom)
+    &&      registeredFrom == currentNodeId) return;
         if (traversedConnectors.Contains(currentNodeId) && !IsConnectorDoor(door.gameObject.name))
         {
             Debug.Log($"[ExplMgr] {door.gameObject.name} ignorata — siamo in nodo connettore '{currentNodeId}'");
@@ -446,45 +456,54 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
         // L'agente non aggiungerà archi verso di esse durante l'esplorazione
         // del piano corrente — verranno usate solo da CheckFloorCompletion.
         if (IsConnectorDoor(door.gameObject.name))
+{
+    var connectorForDoor = FindConnectorForDoor(door.gameObject.name);
+
+    // Guard: la porta connettore deve appartenere fisicamente a questa stanza
+    bool frontMatch = door.roomFront != null && door.roomFront.name == currentNodeId;
+    bool backMatch  = door.roomBack  != null && door.roomBack.name  == currentNodeId;
+    if (!frontMatch && !backMatch)
+    {
+        Debug.Log($"[ExplMgr] Connettore '{door.gameObject.name}' visto da " +
+                  $"'{currentNodeId}' ma non appartiene → ignorato");
+        return;
+    }
+
+    if (connectorForDoor != null && traversedConnectors.Contains(connectorForDoor.id))
+    {
+        if (!registeredRoomDoors.ContainsKey(door.gameObject.name))
         {
-            // Se questo connettore è già stato attraversato (es. le scale usate per salire),
-            // aggiungiamo subito un RoomDoor già explored: non va ri-analizzato.
-            var connectorForDoor = FindConnectorForDoor(door.gameObject.name);
-            if (connectorForDoor != null && traversedConnectors.Contains(connectorForDoor.id))
+            registeredRoomDoors[door.gameObject.name] = currentNodeId;
+            string connRoomBeyond = door.GetRoomNameBeyondDoor(transform.position);
+            string targetId = connRoomBeyond;
+
+            if (!string.IsNullOrEmpty(targetId) && graph.GetNode(targetId) == null)
             {
-                if (!registeredRoomDoors.Contains(door.gameObject.name))
-                {
-                    registeredRoomDoors.Add(door.gameObject.name);
-                   string connRoomBeyond = door.GetRoomNameBeyondDoor(transform.position);
-                    string targetId = connRoomBeyond;
-
-                    // Se la stanza non esiste ancora nel grafo, creala subito da BuildingGraph
-                    if (!string.IsNullOrEmpty(targetId) && graph.GetNode(targetId) == null)
-                    {
-                        var floorData = buildingGraph?.GetFloor(currentFloor);
-                        var roomObj = floorData?.roomObjects.Find(r => r != null && r.name == targetId);
-                        if (roomObj != null)
-                            graph.AddRoomNode(targetId, roomObj.transform.position);
-                    }
-
-                    if (string.IsNullOrEmpty(targetId) || graph.GetNode(targetId) == null)
-                        targetId = connectorForDoor.id;
-                    float connNavDist = door.NavMeshDistanceTo(transform.position);
-                    var edge = graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
-                        door.elementType == DoorVarcoScript.ElementType.Door,
-                        door.transform.position, connNavDist, targetId);
-                    if (edge != null) graph.MarkEdgeExplored(currentNodeId, edge.id, targetId);
-                    Debug.Log($"[ExplMgr] Connettore '{door.gameObject.name}' già attraversato → RoomDoor explored verso '{targetId}'.");
-                }
-                return;
+                var floorData = buildingGraph?.GetFloor(currentFloor);
+                var roomObj = floorData?.roomObjects.Find(r => r != null && r.name == targetId);
+                if (roomObj != null)
+                    graph.AddRoomNode(targetId, roomObj.transform.position);
             }
 
-            string corridorBeyond = door.GetRoomNameBeyondDoor(transform.position);
+            if (string.IsNullOrEmpty(targetId) || graph.GetNode(targetId) == null)
+                targetId = connectorForDoor.id;
+            float connNavDist = door.NavMeshDistanceTo(transform.position);
+            var edge = graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
+                door.elementType == DoorVarcoScript.ElementType.Door,
+                door.transform.position, connNavDist, targetId);
+            if (edge != null) graph.MarkEdgeExplored(currentNodeId, edge.id, targetId);
+            Debug.Log($"[ExplMgr] Connettore '{door.gameObject.name}' già attraversato → RoomDoor explored verso '{targetId}'.");
+        }
+        return;
+    }
+
+    string corridorBeyond = door.GetRoomNameBeyondDoor(transform.position);
+    
             if (!string.IsNullOrEmpty(corridorBeyond) && corridorBeyond.ToLower().Contains("corridoio"))
             {
-                if (!registeredRoomDoors.Contains(door.gameObject.name))
+                if (!registeredRoomDoors.ContainsKey(door.gameObject.name))
                 {
-                    registeredRoomDoors.Add(door.gameObject.name);
+                    registeredRoomDoors[door.gameObject.name] = currentNodeId;
                     NavMeshPath path = new NavMeshPath();
                     float corridorNavDist = 0f;
                     if (NavMesh.CalculatePath(transform.position, door.transform.position, NavMesh.AllAreas, path))
@@ -502,7 +521,7 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
             }
             return;
         }
-        registeredRoomDoors.Add(door.gameObject.name);
+        registeredRoomDoors[door.gameObject.name] = currentNodeId;
         door.discovered = true;
 
         var node = graph.GetNode(currentNodeId);
@@ -610,7 +629,7 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
         fromGraph.EnterNode(connectorId);
     }
 
-    if (stairsWaypoints != null && stairsWaypoints.Length > 0)
+    if (staircaseWaypointsList != null && staircaseWaypointsList.Count > 0)
     {
        bool ascending = targetFloor > currentFloor;
         state = State.TraversingStairs;
@@ -762,6 +781,9 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
         navAgent.isStopped = true;
         state = State.Rotating360;
 
+        if (isRoom)
+        registeredRoomDoors.Clear();
+
         // Marca il nodo come fisicamente visitato (360° reale).
         // Questo distingue i nodi aggiunti programmaticamente (es. ExecuteFloorChange)
         // dai nodi realmente esplorati, impedendo che LOOP EVITATO li salti.
@@ -795,6 +817,17 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
                 graph.ComputeExplorationOrder(corrId);
                 Debug.Log($"[ExplMgr] Ordini ricalcolati dopo 360° per {corrId}");
             }
+
+            if (inRoomMode && !string.IsNullOrEmpty(currentNodeId))
+                {
+                    var currentNode = graph.GetNode(currentNodeId);
+                    bool hasUnexploredDoors = currentNode != null &&
+                        currentNode.edges.Exists(e => e != null &&
+                                                    e.state != EdgeState.Explored &&
+                                                    e.edgeType == EdgeType.Door);
+                    if (!hasUnexploredDoors)
+                        ScanRoomDoorsFromScript(currentNodeId);
+                }
 
             DecideNextAction();
         }
@@ -895,7 +928,7 @@ private void UpdateMovingToConnector()
             : pendingConnector.floorFrom;
         bool ascending = targetFloor > currentFloor;
 
-        if (stairsWaypoints != null && stairsWaypoints.Length > 0)
+        if (staircaseWaypointsList != null && staircaseWaypointsList.Count > 0)
         {
             state = State.TraversingStairs;
             StartCoroutine(TraverseStairsThen(targetFloor, ascending));
@@ -1104,6 +1137,106 @@ private void UpdateMovingToConnector()
     // COMPLETAMENTO PIANO
     // ====================================================
     private void CheckFloorCompletion()
+{
+    if (buildingGraph == null) { OnAllFloorsCompleted(); return; }
+
+    var floorData = buildingGraph.GetFloor(currentFloor);
+
+    if (!IsCurrentFloorFullyExplored(floorData))
+    {
+        NavigateToUnexploredCorridor(floorData);
+        return;
+    }
+
+    if (floorData != null) floorData.explored = true;
+    Debug.Log($"[ExplMgr] Piano {currentFloor} completato.");
+
+    var unexplored = buildingGraph.GetUnexploredFloors();
+    if (unexplored.Count == 0)
+    {
+        Debug.Log("[ExplMgr] Tutti i piani esplorati.");
+        OnAllFloorsCompleted();
+        return;
+    }
+
+    // STEP 1 — connettore diretto dal piano corrente a un piano non esplorato
+    // Ordina per vicinanza al piano corrente (evita di scendere quando si può salire)
+    unexplored.Sort((a, b) =>
+        Mathf.Abs(a.floorIndex - currentFloor)
+            .CompareTo(Mathf.Abs(b.floorIndex - currentFloor)));
+
+    foreach (var targetFloor in unexplored)
+    {
+        var connectors = buildingGraph.GetConnectors(currentFloor, targetFloor.floorIndex);
+        connectors.RemoveAll(c => traversedConnectors.Contains(c.id));
+        if (connectors.Count == 0) continue;
+
+        connectors.Sort((a, b) => a.costUp.CompareTo(b.costUp));
+        pendingConnector = connectors[0];
+
+        bool isReverse = (pendingConnector.floorFrom != currentFloor);
+        Vector3 navTarget = isReverse
+            ? pendingConnector.triggerEndPosition
+            : pendingConnector.triggerStartPosition;
+
+        Debug.Log($"[ExplMgr] Piano {currentFloor} → piano {targetFloor.floorIndex} " +
+                  $"via '{pendingConnector.id}' (diretto)");
+        navAgent.isStopped = false;
+        navAgent.SetDestination(navTarget);
+        state = State.MovingToConnector;
+        return;
+    }
+
+    // STEP 2 — nessun connettore diretto: cerca un piano intermedio già esplorato
+    // che abbia un connettore verso un piano non ancora esplorato
+    Debug.Log($"[ExplMgr] Nessun connettore diretto da piano {currentFloor}. " +
+              $"Cerco percorso indiretto...");
+
+    unexplored.Sort((a, b) => a.floorIndex.CompareTo(b.floorIndex));
+
+    // Piani già visitati, ordinati per vicinanza al piano corrente
+    var visitedFloors = new List<int>(floorGraphs.Keys);
+    visitedFloors.Sort((a, b) =>
+        Mathf.Abs(a - currentFloor).CompareTo(Mathf.Abs(b - currentFloor)));
+
+    foreach (var targetFloor in unexplored)
+    {
+        foreach (int midFloor in visitedFloors)
+        {
+            if (midFloor == currentFloor) continue;
+
+            // Il piano intermedio deve avere un connettore non traversato verso targetFloor
+            var connToTarget = buildingGraph.GetConnectors(midFloor, targetFloor.floorIndex);
+            connToTarget.RemoveAll(c => traversedConnectors.Contains(c.id));
+            if (connToTarget.Count == 0) continue;
+
+            // Cerca il connettore tra currentFloor e midFloor
+            // (può essere già traversato — vogliamo ri-attraversarlo)
+            var connToMid = buildingGraph.GetConnectors(currentFloor, midFloor);
+            if (connToMid.Count == 0) continue;
+
+            connToMid.Sort((a, b) => a.costUp.CompareTo(b.costUp));
+            pendingConnector = connToMid[0];
+
+            bool isReverse = (pendingConnector.floorFrom != currentFloor);
+            Vector3 navTarget = isReverse
+                ? pendingConnector.triggerEndPosition
+                : pendingConnector.triggerStartPosition;
+
+            Debug.Log($"[ExplMgr] Percorso indiretto: piano {currentFloor} → piano {midFloor} " +
+                      $"→ piano {targetFloor.floorIndex} via '{pendingConnector.id}'");
+            navAgent.isStopped = false;
+            navAgent.SetDestination(navTarget);
+            state = State.MovingToConnector;
+            return;
+        }
+    }
+
+    Debug.Log("[ExplMgr] Tutti i piani esplorati (o non raggiungibili).");
+    OnAllFloorsCompleted();
+}
+    /*vecchio
+    private void CheckFloorCompletion()
     {
         if (buildingGraph == null) { OnAllFloorsCompleted(); return; }
 
@@ -1144,7 +1277,7 @@ private void UpdateMovingToConnector()
 
         Debug.Log("[ExplMgr] Tutti i piani esplorati.");
         OnAllFloorsCompleted();
-    }
+    }*/
 
  // ──────────────────────────────────────────────────────────────
 // METODO 2: IsCurrentFloorFullyExplored  (sostituisce l'intero metodo)
@@ -1177,6 +1310,18 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
  
     return true;
 }
+    private Vector3 GetRoomCenter(GameObject roomObj)
+{
+    if (roomObj == null) return Vector3.zero;
+
+    var col = roomObj.GetComponentInChildren<Collider>();
+    if (col != null) return col.bounds.center;
+
+    var rend = roomObj.GetComponentInChildren<Renderer>();
+    if (rend != null) return rend.bounds.center;
+
+    return roomObj.transform.position;
+}
 
     private void NavigateToUnexploredCorridor(FloorNode floorData)
     {
@@ -1191,7 +1336,8 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
                 if (roomObj == null) continue;
 
                 Debug.Log($"[ExplMgr] Navigazione verso stanza non visitata: {roomId}");
-                graph.AddRoomNode(roomId, roomObj.transform.position);
+                Vector3 center = GetRoomCenter(roomObj);
+                graph.AddRoomNode(roomId,center);
                 graph.EnterNode(roomId);
                 foreach (var node in graph.AllNodes())
                 {
@@ -1207,7 +1353,7 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
                 }
                 currentNodeId = roomId;
                 navAgent.isStopped = false;
-                navAgent.SetDestination(roomObj.transform.position);
+                navAgent.SetDestination(center);
                 state = State.EnteringRoom;
                 return;
             }
@@ -1480,10 +1626,45 @@ private void ResetCorridorPoles(string corridorId)
     }
 }
 
+private Transform[] GetWaypointsForConnector(string connectorId)
+{
+    if (!string.IsNullOrEmpty(connectorId))
+        foreach (var sw in staircaseWaypointsList)
+            if (sw.connectorId == connectorId)
+                return sw.waypoints;
+
+    Debug.LogWarning($"[ExplMgr] Nessun waypoint trovato per connettore '{connectorId}'!");
+    return null;
+}
 //DISCESA SCALE
 private IEnumerator TraverseStairsThen(int targetFloor, bool ascending)
 {
     var activeConnector = pendingConnector;
+
+    // ← prende i waypoint della scala giusta
+    Transform[] waypoints = GetWaypointsForConnector(activeConnector?.id);
+
+    if (waypoints == null || waypoints.Length == 0)
+    {
+        Debug.LogWarning("[ExplMgr] Waypoint mancanti — salto animazione scala.");
+        navAgent.enabled = true;
+        ExecuteFloorChange(targetFloor);
+        yield break;
+    }
+     var departureDoorObj = ascending
+        ? activeConnector?.triggerStartObject   // porta in basso quando sali
+        : activeConnector?.triggerEndObject;    // porta in alto quando scendi
+
+    if (departureDoorObj != null)
+    {
+        var departureDoor = departureDoorObj.GetComponentInChildren<DoorVarcoScript>();
+        if (departureDoor != null && !departureDoor.IsTraversable)
+        {
+            departureDoor.TryOpen();
+            yield return new WaitForSeconds(0.6f);
+            Debug.Log($"[ExplMgr] Porta partenza aperta: {departureDoorObj.name}");
+        }
+    }
 
     navAgent.isStopped = true;
     navAgent.enabled   = false;
@@ -1491,15 +1672,98 @@ private IEnumerator TraverseStairsThen(int targetFloor, bool ascending)
     if (agentAnimator != null)
         agentAnimator.SetBool(walkAnimParam, true);
 
-    int start = ascending ? stairsWaypoints.Length - 1 : 0;
-    int end   = ascending ? -1 : stairsWaypoints.Length;
+    int start = ascending ? waypoints.Length - 1 : 0;
+    int end   = ascending ? -1 : waypoints.Length;
     int step  = ascending ? -1 : 1;
+
+    Debug.Log($"[ExplMgr] Scale '{activeConnector?.id}': " +
+              $"{(ascending ? "SALITA" : "DISCESA")} verso piano {targetFloor}");
+
+    for (int i = start; i != end; i += step)
+    {
+        Transform wp = waypoints[i];
+        if (wp == null)
+        {
+            Debug.LogWarning($"[ExplMgr] waypoints[{i}] è null — saltato.");
+            continue;
+        }
+
+        Vector3 dir = (wp.position - transform.position);
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.001f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
+            float elapsed = 0f;
+            while (elapsed < 0.25f)
+            {
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation, targetRot, elapsed / 0.25f);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        while (Vector3.Distance(transform.position, wp.position) > 0.05f)
+        {
+            transform.position = Vector3.MoveTowards(
+                transform.position, wp.position, stairsMoveSpeed * Time.deltaTime);
+            yield return null;
+        }
+        transform.position = wp.position;
+    }
+
+    if (agentAnimator != null)
+        agentAnimator.SetBool(walkAnimParam, false);
+
+    var arrivalDoorObj = ascending
+        ? activeConnector?.triggerEndObject
+        : activeConnector?.triggerStartObject;
+
+    if (arrivalDoorObj != null)
+    {
+        var door = arrivalDoorObj.GetComponentInChildren<DoorVarcoScript>();
+        if (door != null && !door.IsTraversable)
+        {
+            door.TryOpen();
+            yield return new WaitForSeconds(0.6f);
+        }
+    }
+
+    navAgent.enabled = true;
+    ExecuteFloorChange(targetFloor);
+}
+/*VECCHIO
+private IEnumerator TraverseStairsThen(int targetFloor, bool ascending)
+{
+    var activeConnector = pendingConnector;
+    
+    // ← usa i waypoint della scala giusta
+    Transform[] waypoints = GetWaypointsForConnector(activeConnector?.id);
+    
+    if (waypoints == null || waypoints.Length == 0)
+    {
+        Debug.LogWarning("[ExplMgr] Nessun waypoint trovato per questa scala!");
+        navAgent.enabled = true;
+        ExecuteFloorChange(targetFloor);
+        yield break;
+    }
+
+    navAgent.isStopped = true;
+    navAgent.enabled   = false;
+
+    if (agentAnimator != null)
+        agentAnimator.SetBool(walkAnimParam, true);
+
+    int start = ascending ? waypoints.Length - 1 : 0;
+    int end   = ascending ? -1 : waypoints.Length;
+    int step  = ascending ? -1 : 1;
+
 
     Debug.Log($"[ExplMgr] Scale: {(ascending ? "SALITA" : "DISCESA")} verso piano {targetFloor}");
 
     for (int i = start; i != end; i += step)
     {
-        Transform wp = stairsWaypoints[i];
+        Transform wp =  waypoints[i];
 
         Vector3 dir = (wp.position - transform.position);
         dir.y = 0f;
@@ -1547,7 +1811,7 @@ private IEnumerator TraverseStairsThen(int targetFloor, bool ascending)
     navAgent.enabled = true;
     ExecuteFloorChange(targetFloor);
 }
-
+*/
 private void ScanCorridorDoorsFromScript(string corridorId)
 {
     foreach (var door in FindObjectsByType<DoorVarcoScript>(FindObjectsSortMode.None))
@@ -1609,5 +1873,41 @@ private void UpdateIdle()
     state = State.MovingToPole;
 
     Debug.Log($"[ExplMgr] Idle fallback → polo {pendingCorridorId}/{pendingPoleId} a {pendingPolePos}");
+}
+private void ScanRoomDoorsFromScript(string roomId)
+{
+    foreach (var door in FindObjectsByType<DoorVarcoScript>(FindObjectsSortMode.None))
+    {
+        if (door.roomFront == null || door.roomBack == null) continue;
+        if (IsConnectorDoor(door.gameObject.name)) continue;
+
+        string frontName = door.roomFront.name;
+        string backName  = door.roomBack.name;
+        if (frontName != roomId && backName != roomId) continue;
+
+        // Con il nuovo Dictionary: controlla se già registrata da QUESTA stanza
+        if (registeredRoomDoors.TryGetValue(door.gameObject.name, out string from)
+            && from == roomId) continue;
+        string roomBeyond = (frontName == roomId) ? backName : frontName;
+
+        // ← NON aggiungere se la destinazione è già stata fisicamente visitata
+        var beyondNode = graph.GetNode(roomBeyond);
+        if (beyondNode != null && beyondNode.physicallyVisited) continue;
+
+        bool leadsToCorridor = roomBeyond.ToLower().Contains("corridoio");
+
+        registeredRoomDoors[door.gameObject.name] = roomId;
+        door.discovered = true;
+
+        float navDist = door.NavMeshDistanceTo(transform.position);
+        
+        graph.AddRoomDoorEdge(roomId, door.gameObject.name,
+            door.elementType == DoorVarcoScript.ElementType.Door,
+            door.transform.position, navDist,
+            toNodeId: leadsToCorridor ? roomBeyond : null);
+
+        Debug.Log($"[ExplMgr] Fallback scan stanza: {door.gameObject.name} " +
+                  $"in '{roomId}' → '{roomBeyond}'");
+    }
 }
 }

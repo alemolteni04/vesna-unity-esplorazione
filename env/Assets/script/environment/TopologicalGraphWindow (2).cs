@@ -174,14 +174,20 @@ public class TopologicalGraphWindow : EditorWindow
         float minX = float.MaxValue, maxX = float.MinValue;
         float minZ = float.MaxValue, maxZ = float.MinValue;
 
-        foreach (var node in graph.AllNodes())
-        {
-            if (node == null) continue;
-            if (node.position.x < minX) minX = node.position.x;
-            if (node.position.x > maxX) maxX = node.position.x;
-            if (node.position.z < minZ) minZ = node.position.z;
-            if (node.position.z > maxZ) maxZ = node.position.z;
-        }
+        // Sostituisci il filtro nel loop del bounding box con:
+        foreach (var node in graph.AllNodes()){
+    if (node != null)
+        Debug.Log($"[Viewer] nodo={node.id} pos=({node.position.x:F1}, {node.position.z:F1}) isConnector={IsConnectorNodeId(node.id)}");
+    if (node == null) continue;
+    
+    // Escludi qualsiasi nodo il cui ID corrisponde a un connettore verticale
+    if (IsConnectorNodeId(node.id)) continue;
+
+    if (node.position.x < minX) minX = node.position.x;
+    if (node.position.x > maxX) maxX = node.position.x;
+    if (node.position.z < minZ) minZ = node.position.z;
+    if (node.position.z > maxZ) maxZ = node.position.z;
+}
 
         float rangeX = Mathf.Max(maxX - minX, 1f);
         float rangeZ = Mathf.Max(maxZ - minZ, 1f);
@@ -203,6 +209,14 @@ public class TopologicalGraphWindow : EditorWindow
             nodePositions[node.id] = new Vector2(x, y);
         }
     }
+    //HELPER
+    private bool IsConnectorNodeId(string nodeId)
+{
+    if (manager == null || manager.buildingGraph == null) return false;
+    foreach (var c in manager.buildingGraph.connectors)
+        if (c.id == nodeId) return true;
+    return false;
+}
 
     // ====================================================
     // INPUT
