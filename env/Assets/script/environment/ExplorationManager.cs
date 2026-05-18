@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;  
+using System.Linq;
 
 // ============================================================
 // ExplorationManager.cs  — v2.4
@@ -441,64 +442,119 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
     // --------------------------------------------------------
     private void HandleDoorVisibleInRoom(DoorVarcoScript door)
     {
-        
         if (state != State.Rotating360 && state != State.InsideRoom) return;
         if (!inRoomMode) return;
         if (registeredRoomDoors.TryGetValue(door.gameObject.name, out string registeredFrom)
-    &&      registeredFrom == currentNodeId) return;
+            && registeredFrom == currentNodeId) return;
+
+        // FIX spam: porte non-connettore in un nodo connettore → ignora UNA VOLTA SOLA
         if (traversedConnectors.Contains(currentNodeId) && !IsConnectorDoor(door.gameObject.name))
         {
-            Debug.Log($"[ExplMgr] {door.gameObject.name} ignorata — siamo in nodo connettore '{currentNodeId}'");
+            if (!registeredRoomDoors.ContainsKey(door.gameObject.name))
+            {
+                registeredRoomDoors[door.gameObject.name] = currentNodeId;
+                Debug.Log($"[ExplMgr] {door.gameObject.name} ignorata — siamo in nodo connettore '{currentNodeId}'");
+            }
             return;
         }
 
-        // Le porte connettore (scale/ascensori) vengono ignorate nel 360°.
-        // L'agente non aggiungerà archi verso di esse durante l'esplorazione
-        // del piano corrente — verranno usate solo da CheckFloorCompletion.
+        // ── PORTE CONNETTORE (scale/ascensori) ──
         if (IsConnectorDoor(door.gameObject.name))
-{
-    var connectorForDoor = FindConnectorForDoor(door.gameObject.name);
-
-    // Guard: la porta connettore deve appartenere fisicamente a questa stanza
-    bool frontMatch = door.roomFront != null && door.roomFront.name == currentNodeId;
-    bool backMatch  = door.roomBack  != null && door.roomBack.name  == currentNodeId;
-    if (!frontMatch && !backMatch)
-    {
-        Debug.Log($"[ExplMgr] Connettore '{door.gameObject.name}' visto da " +
-                  $"'{currentNodeId}' ma non appartiene → ignorato");
-        return;
-    }
-
-    if (connectorForDoor != null && traversedConnectors.Contains(connectorForDoor.id))
-    {
-        if (!registeredRoomDoors.ContainsKey(door.gameObject.name))
         {
-            registeredRoomDoors[door.gameObject.name] = currentNodeId;
-            string connRoomBeyond = door.GetRoomNameBeyondDoor(transform.position);
-            string targetId = connRoomBeyond;
+            var connectorForDoor = FindConnectorForDoor(door.gameObject.name);
 
-            if (!string.IsNullOrEmpty(targetId) && graph.GetNode(targetId) == null)
+            // La porta è accettata se:
+            //   a) appartiene fisicamente a questa stanza (roomFront/roomBack)
+            //   b) oppure il nodo corrente È il connettore stesso (es. scalaSolaio vede Door_Solaio2)
+            bool frontMatch     = door.roomFront != null && door.roomFront.name == currentNodeId;
+            bool backMatch      = door.roomBack  != null && door.roomBack.name  == currentNodeId;
+            bool connectorMatch = connectorForDoor != null && connectorForDoor.id == currentNodeId;
+
+            if (!frontMatch && !backMatch && !connectorMatch)
             {
-                var floorData = buildingGraph?.GetFloor(currentFloor);
-                var roomObj = floorData?.roomObjects.Find(r => r != null && r.name == targetId);
-                if (roomObj != null)
-                    graph.AddRoomNode(targetId, roomObj.transform.position);
+                if (!registeredRoomDoors.ContainsKey(door.gameObject.name))
+                {
+                    registeredRoomDoors[door.gameObject.name] = currentNodeId;
+                    Debug.Log($"[ExplMgr] Connettore '{door.gameObject.name}' visto da " +
+                              $"'{currentNodeId}' ma non appartiene → ignorato");
+                }
+                return;
             }
 
-            if (string.IsNullOrEmpty(targetId) || graph.GetNode(targetId) == null)
-                targetId = connectorForDoor.id;
-            float connNavDist = door.NavMeshDistanceTo(transform.position);
-            var edge = graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
-                door.elementType == DoorVarcoScript.ElementType.Door,
-                door.transform.position, connNavDist, targetId);
-            if (edge != null) graph.MarkEdgeExplored(currentNodeId, edge.id, targetId);
-            Debug.Log($"[ExplMgr] Connettore '{door.gameObject.name}' già attraversato → RoomDoor explored verso '{targetId}'.");
-        }
-        return;
-    }
+            // Connettore già attraversato: creo arco verso la stanza al di là
+            if (connectorForDoor != null && traversedConnectors.Contains(connectorForDoor.id))
+            {
+                if (!registeredRoomDoors.ContainsKey(door.gameObject.name))
+                {
+                    registeredRoomDoors[door.gameObject.name] = currentNodeId;
 
-    string corridorBeyond = door.GetRoomNameBeyondDoor(transform.position);
-    
+                    // Determina la stanza di destinazione
+                    string connRoomBeyond = door.GetRoomNameBeyondDoor(transform.position);
+
+                    // FIX self-loop: se GetRoomNameBeyondDoor restituisce il nodo corrente
+                    // (succede quando door.roomFront/roomBack non sono configurati correttamente),
+                    // cerco la stanza non ancora visitata del piano corrente più vicina alla porta.
+                    if (string.IsNullOrEmpty(connRoomBeyond)
+                        || connRoomBeyond == currentNodeId
+                        || connRoomBeyond == connectorForDoor.id)
+                    {
+                        var fd = buildingGraph?.GetFloor(currentFloor);
+                        if (fd != null)
+                        {
+                            float minDist = float.MaxValue;
+                            string nearest = null;
+                            foreach (string roomId in fd.roomIds)
+                            {
+                                if (roomId == currentNodeId || roomId == connectorForDoor.id) continue;
+                                if (graph.GetNode(roomId) != null) continue; // già visitata
+                                var rObj = fd.roomObjects.Find(r => r != null && r.name == roomId);
+                                if (rObj == null) continue;
+                                float d = Vector3.Distance(door.transform.position, rObj.transform.position);
+                                if (d < minDist) { minDist = d; nearest = roomId; }
+                            }
+                            if (!string.IsNullOrEmpty(nearest)) connRoomBeyond = nearest;
+                        }
+                    }
+
+                    // Se ancora non abbiamo una destinazione valida, abbandoniamo
+                    if (string.IsNullOrEmpty(connRoomBeyond)
+                        || connRoomBeyond == currentNodeId
+                        || connRoomBeyond == connectorForDoor.id)
+                        return;
+
+                    string targetId = connRoomBeyond;
+
+                    // Aggiungi il nodo destinazione al grafo se non esiste ancora
+                    if (graph.GetNode(targetId) == null)
+                    {
+                        var floorData = buildingGraph?.GetFloor(currentFloor);
+                        var roomObj   = floorData?.roomObjects.Find(r => r != null && r.name == targetId);
+                        if (roomObj != null)
+                            graph.AddRoomNode(targetId, roomObj.transform.position);
+                    }
+
+                    if (graph.GetNode(targetId) == null) return; // nodo non trovabile, skip
+
+                    float connNavDist = door.NavMeshDistanceTo(transform.position);
+                    var edge = graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
+                        door.elementType == DoorVarcoScript.ElementType.Door,
+                        door.transform.position, connNavDist, targetId);
+
+                    // Marca explored SOLO se la stanza è già stata visitata;
+                    // altrimenti resta Discovered → l'agente la raggiungerà via la porta.
+                    var beyondNode = graph.GetNode(targetId);
+                    bool targetVisited = beyondNode != null && beyondNode.physicallyVisited;
+                    if (edge != null && targetVisited)
+                        graph.MarkEdgeExplored(currentNodeId, edge.id, targetId);
+
+                    Debug.Log($"[ExplMgr] Connettore '{door.gameObject.name}' già attraversato → " +
+                              $"RoomDoor {(targetVisited ? "explored" : "discovered")} verso '{targetId}'.");
+                }
+                return;
+            }
+
+            // Connettore NON ancora attraversato
+            string corridorBeyond = door.GetRoomNameBeyondDoor(transform.position);
             if (!string.IsNullOrEmpty(corridorBeyond) && corridorBeyond.ToLower().Contains("corridoio"))
             {
                 if (!registeredRoomDoors.ContainsKey(door.gameObject.name))
@@ -508,19 +564,52 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
                     float corridorNavDist = 0f;
                     if (NavMesh.CalculatePath(transform.position, door.transform.position, NavMesh.AllAreas, path))
                         for (int i = 1; i < path.corners.Length; i++)
-                            corridorNavDist += Vector3.Distance(path.corners[i-1], path.corners[i]);
+                            corridorNavDist += Vector3.Distance(path.corners[i - 1], path.corners[i]);
                     graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
                         door.elementType == DoorVarcoScript.ElementType.Door,
                         door.transform.position, corridorNavDist, corridorBeyond);
                     Debug.Log($"[ExplMgr] Porta connettore registrata come varco corridoio: {door.gameObject.name} → {corridorBeyond}");
                 }
             }
-            else
+         else
+        {
+            if (!registeredRoomDoors.ContainsKey(door.gameObject.name))
             {
-                Debug.Log($"[ExplMgr] {door.gameObject.name} è porta connettore → ignorata nel 360°");
+                registeredRoomDoors[door.gameObject.name] = currentNodeId;
+
+                // Apri fisicamente la porta
+                if (!door.IsTraversable)
+                    door.TryOpen();
+
+                // Crea il nodo connettore nel grafo se non esiste ancora
+                string connId2 = connectorForDoor?.id;
+                if (!string.IsNullOrEmpty(connId2) && graph.GetNode(connId2) == null)
+                {
+                    bool isRev3 = (connectorForDoor.floorFrom == currentFloor);
+                    Vector3 connPos3 = isRev3
+                        ? connectorForDoor.triggerEndPosition
+                        : connectorForDoor.triggerStartPosition;
+                    graph.AddRoomNode(connId2, connPos3);
+                }
+
+                // Arco currentNodeId→door→connettore, marcato explored (porta aperta = visitata)
+                if (!string.IsNullOrEmpty(connId2))
+                {
+                    float navDist2 = door.NavMeshDistanceTo(transform.position);
+                    var edgeConn = graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
+                        door.elementType == DoorVarcoScript.ElementType.Door,
+                        door.transform.position, navDist2, connId2);
+                    if (edgeConn != null)
+                        graph.MarkEdgeExplored(currentNodeId, edgeConn.id, connId2);
+                }
+
+                Debug.Log($"[ExplMgr] Scala '{door.gameObject.name}' aperta da '{currentNodeId}' → '{connId2}' (non entro)");
             }
+        }
             return;
         }
+
+        // ── PORTA NORMALE ──
         registeredRoomDoors[door.gameObject.name] = currentNodeId;
         door.discovered = true;
 
@@ -536,7 +625,7 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
             float dB = Vector3.Distance(door.transform.position, poleBPos);
             float dA = Vector3.Distance(door.transform.position, poleAPos);
 
-            if (dB > 0.6f && dA>0.6)
+            if (dB > 0.6f && dA > 0.6)
             { Debug.Log($"[ExplMgr] {door.gameObject.name} fuori corridoio (dB={dB:F2}) → ignorata"); return; }
 
             registeredTransitDoors.Add(door.gameObject.name);
@@ -558,46 +647,39 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
             return;
         }
 
-    // ── FIX: ignora porte che non appartengono fisicamente a questa stanza ──
-    // (visibili di scorcio dalla visionCone ma collegate ad altre stanze/corridoi)
-    // registeredRoomDoors è già stata aggiornata a riga 479, quindi la porta
-    // viene "bruciata" correttamente e non verrà riprocessata.
-    {
-        string frontName     = door.roomFront?.name;
-        string backName      = door.roomBack?.name;
-        bool   doorBelongsHere = (frontName == currentNodeId || backName == currentNodeId);
-        if (!doorBelongsHere)
+        // Ignora porte che non appartengono fisicamente a questa stanza
         {
-            Debug.Log($"[ExplMgr] Porta {door.gameObject.name} vista ma non appartiene a " +
-                      $"'{currentNodeId}' (front={frontName}, back={backName}) → ignorata");
-            return;
+            string frontName      = door.roomFront?.name;
+            string backName       = door.roomBack?.name;
+            bool   doorBelongsHere = (frontName == currentNodeId || backName == currentNodeId);
+            if (!doorBelongsHere)
+            {
+                Debug.Log($"[ExplMgr] Porta {door.gameObject.name} vista ma non appartiene a " +
+                          $"'{currentNodeId}' (front={frontName}, back={backName}) → ignorata");
+                return;
+            }
         }
-    }
 
-   string roomBeyond = door.GetRoomNameBeyondDoor(transform.position);
-    bool leadsToCorridor = !string.IsNullOrEmpty(roomBeyond)
-                        && roomBeyond.ToLower().Contains("corridoio");
+        string roomBeyond = door.GetRoomNameBeyondDoor(transform.position);
+        bool leadsToCorridor = !string.IsNullOrEmpty(roomBeyond)
+                            && roomBeyond.ToLower().Contains("corridoio");
 
-    // Non registrare la porta se la stanza di destinazione è già stata esplorata
-    string toNodeId = leadsToCorridor ? roomBeyond : null;
-    if (!string.IsNullOrEmpty(toNodeId))
-    {
-        var targetNode = graph.GetNode(toNodeId);
-        if (targetNode != null && targetNode.physicallyVisited && !targetNode.HasUndiscoveredEdges())
-            return;
-    }
+        string toNodeId = leadsToCorridor ? roomBeyond : null;
+        if (!string.IsNullOrEmpty(toNodeId))
+        {
+            var targetNode = graph.GetNode(toNodeId);
+            if (targetNode != null && targetNode.physicallyVisited && !targetNode.HasUndiscoveredEdges())
+                return;
+        }
 
-    float navDist = door.NavMeshDistanceTo(transform.position);
-    graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
-        door.elementType == DoorVarcoScript.ElementType.Door,
-        door.transform.position, navDist,
-        toNodeId: toNodeId);
+        float navDist = door.NavMeshDistanceTo(transform.position);
+        graph.AddRoomDoorEdge(currentNodeId, door.gameObject.name,
+            door.elementType == DoorVarcoScript.ElementType.Door,
+            door.transform.position, navDist,
+            toNodeId: toNodeId);
 
-    /*if (leadsToCorridor)
-        allCorridorDoors.Add(door.gameObject.name);*/
-
-    Debug.Log($"[ExplMgr] Porta in stanza: {door.gameObject.name} navDist={navDist:F1}" +
-            (leadsToCorridor ? $" → corridoio '{roomBeyond}'" : ""));
+        Debug.Log($"[ExplMgr] Porta in stanza: {door.gameObject.name} navDist={navDist:F1}" +
+                (leadsToCorridor ? $" → corridoio '{roomBeyond}'" : ""));
     }
 
     // --------------------------------------------------------
@@ -619,7 +701,7 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
     if (fromGraph != null && fromGraph.GetNode(connectorId) == null)
     {
         fromGraph.AddRoomNode(connectorId, connPosHere);
-        string sourceId = FindNearestRoomNodeIn(fromGraph, connPosHere);
+        string sourceId = currentNodeId;
         if (!string.IsNullOrEmpty(sourceId))
         {
             float dist = Vector3.Distance(fromGraph.GetNode(sourceId).position, connPosHere);
@@ -1018,10 +1100,18 @@ private void UpdateMovingToConnector()
         // Se la porta è un connettore verticale (scala/ascensore):
         // - usa l'ID del connettore come nome nodo (es. "scalaBox")
         // - NON entrare fisicamente: marca l'arco e prosegui
-        if (doorScript != null && IsConnectorDoor(doorScript.gameObject.name))
+       if (doorScript != null && IsConnectorDoor(doorScript.gameObject.name))
         {
             var connector = FindConnectorForDoor(doorScript.gameObject.name);
-            if (connector != null) newNodeId = connector.id;  // "scalaBox"
+            if (connector != null) newNodeId = connector.id;
+
+            // Self-loop: siamo già nel nodo connettore, la porta porta all'altra stanza
+            if (newNodeId == currentNodeId)
+            {
+                string beyond = doorScript.GetRoomNameBeyondDoor(transform.position);
+                if (!string.IsNullOrEmpty(beyond) && beyond != currentNodeId)
+                    newNodeId = beyond;
+            }
 
             if (graph.GetNode(newNodeId) == null)
                 graph.AddRoomNode(newNodeId, edge.position);
@@ -1330,6 +1420,15 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
             foreach (string roomId in floorData.roomIds)
             {
                 if (graph.GetNode(roomId) != null) continue;
+                // Skip se la porta fisica verso questa stanza è già stata esplorata (anche con nome nodo diverso)
+                string doorCheck = FindDoorBetweenNodes(currentNodeId, roomId);
+                if (!string.IsNullOrEmpty(doorCheck))
+                {
+                    var currNode = graph.GetNode(currentNodeId);
+                    if (currNode != null && currNode.edges.Exists(e =>
+                        e?.id == doorCheck && e.state == EdgeState.Explored))
+                        continue;
+                }
                 if (graph.GetCorridorPoleNode($"{roomId}_A") != null) continue;
 
                 var roomObj = floorData.roomObjects.Find(r => r != null && r.name == roomId);
@@ -1339,6 +1438,23 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
                 Vector3 center = GetRoomCenter(roomObj);
                 graph.AddRoomNode(roomId,center);
                 graph.EnterNode(roomId);
+                var prevNode = graph.GetNode(currentNodeId);
+                bool alreadyLinked = prevNode != null && prevNode.edges.Exists(e => e != null && e.toNodeId == roomId);
+                if (!alreadyLinked && prevNode != null)
+                {
+                    float dist = Vector3.Distance(prevNode.position, center);
+                  // DOPO:
+                // Trova la porta fisica più vicina al nodo connettore corrente
+                string synDoorName = FindDoorBetweenNodes(currentNodeId, roomId);
+                if (string.IsNullOrEmpty(synDoorName))
+                    synDoorName = $"nav_{currentNodeId}_{roomId}";
+
+                var synEdge = graph.AddRoomDoorEdge(currentNodeId, synDoorName,
+                    false, center, dist, roomId);
+                if (synEdge != null)
+                    graph.MarkEdgeExplored(currentNodeId, synEdge.id, roomId);
+                    Debug.Log($"[ExplMgr] Arco sintetico: {currentNodeId} → {roomId}");
+                }
                 foreach (var node in graph.AllNodes())
                 {
                     if (node == null) continue;
@@ -1439,6 +1555,7 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
 
     currentFloor     = targetFloor;
     pendingConnector = null;
+    
 
     registeredRoomDoors.Clear();
     registeredTransitDoors.Clear();
@@ -1469,6 +1586,38 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
             graph.AddRoomNode(currentNodeId, floorData.spawnPosition);
 
         graph.EnterNode(currentNodeId);
+        var fd = buildingGraph?.GetFloor(targetFloor);
+        if (fd != null && IsCurrentFloorFullyExplored(fd))
+        {
+            CheckFloorCompletion();
+            return;
+        }
+        // NUOVO: pre-collega le stanze già note del piano destinazione al nodo connettore
+        if (!string.IsNullOrEmpty(connNodeId))
+        {
+            var fd2 = buildingGraph?.GetFloor(targetFloor);
+            if (fd2 != null)
+            {
+                foreach (string rid in fd2.roomIds)
+                {
+                    // cerca la porta fisica tra connettore e stanza
+                    string dName = FindDoorBetweenNodes(connNodeId, rid);
+                    if (string.IsNullOrEmpty(dName)) continue;
+                        bool isConnTrigger = buildingGraph.connectors?.Any(c =>
+                        (c.triggerStartObject != null && c.triggerStartObject.name == dName) ||
+                        (c.triggerEndObject   != null && c.triggerEndObject.name   == dName)) ?? false;
+                    if (isConnTrigger) continue;
+                    var existingEdge = graph.GetNode(connNodeId)?.edges
+                        .Find(e => e?.toNodeId == rid || e?.id == dName);
+                    if (existingEdge != null) continue;
+                    var roomObj = fd2.roomObjects.Find(r => r != null && r.name == rid);
+                    if (roomObj == null) continue;
+                    Vector3 rCenter = GetRoomCenter(roomObj);
+                    float d =Vector3.Distance(graph.GetNode(connNodeId).position, rCenter);
+                    graph.AddRoomDoorEdge(connNodeId, dName, false, rCenter, d, rid);
+                }
+            }
+        }
 
         // NON si crea un arco segment spawn→connettore.
     }
@@ -1477,18 +1626,33 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
     movingToPoleCorridorId = null;
     idleTargetCorridorId   = null;
 
+    // SOSTITUISCI il blocco riga 1545-1557 con:
     CorridorData spawnCorridor = FindCorridorContainingPosition(navAgent.transform.position, 3f);
     if (spawnCorridor != null)
     {
-        Debug.Log($"[ExplMgr] Spawn in corridoio '{spawnCorridor.corridorId}' — avvio modalità corridoio.");
-        pendingCorridorId      = spawnCorridor.corridorId;
-        pendingPoleId          = "1";
-        pendingPolePos         = spawnCorridor.Pole1Position;
-        movingToPoleCorridorId = spawnCorridor.corridorId;
-        navAgent.isStopped     = false;
-        navAgent.SetDestination(spawnCorridor.Pole1Position);
-        movingToPoleTimer      = 0f;
-        state                  = State.MovingToPole;
+        // Controlla se il corridoio è già stato completamente esplorato in questo piano
+        var poleANode = graph.GetCorridorPoleNode($"{spawnCorridor.corridorId}_A");
+        bool alreadyDone = poleANode != null &&
+            poleANode.edges.Exists(e => e?.id == $"central_{spawnCorridor.corridorId}"
+                                    && e.state == EdgeState.Explored);
+
+        if (alreadyDone)
+        {
+            Debug.Log($"[ExplMgr] Corridoio '{spawnCorridor.corridorId}' già esplorato — skip.");
+            StartRotation360(isRoom: true);
+        }
+        else
+        {
+            Debug.Log($"[ExplMgr] Spawn in corridoio '{spawnCorridor.corridorId}' — avvio modalità corridoio.");
+            pendingCorridorId      = spawnCorridor.corridorId;
+            pendingPoleId          = "1";
+            pendingPolePos         = spawnCorridor.Pole1Position;
+            movingToPoleCorridorId = spawnCorridor.corridorId;
+            navAgent.isStopped     = false;
+            navAgent.SetDestination(spawnCorridor.Pole1Position);
+            movingToPoleTimer      = 0f;
+            state                  = State.MovingToPole;
+        }
     }
     else
     {
@@ -1663,6 +1827,7 @@ private IEnumerator TraverseStairsThen(int targetFloor, bool ascending)
             departureDoor.TryOpen();
             yield return new WaitForSeconds(0.6f);
             Debug.Log($"[ExplMgr] Porta partenza aperta: {departureDoorObj.name}");
+         
         }
     }
 
@@ -1909,5 +2074,31 @@ private void ScanRoomDoorsFromScript(string roomId)
         Debug.Log($"[ExplMgr] Fallback scan stanza: {door.gameObject.name} " +
                   $"in '{roomId}' → '{roomBeyond}'");
     }
+}
+
+private string FindDoorBetweenNodes(string nodeA, string nodeB)
+{
+    foreach (var conn in buildingGraph?.connectors ?? new List<VerticalConnector>())
+    {
+        bool matchStart = (conn.triggerStartObject != null &&
+            (conn.id == nodeA || conn.triggerStartObject.name == nodeA));
+        bool matchEnd   = (conn.triggerEndObject   != null &&
+            (conn.id == nodeA || conn.triggerEndObject.name == nodeA));
+        if (matchStart && conn.triggerEndObject != null)
+            return conn.triggerEndObject.name;
+        if (matchEnd && conn.triggerStartObject != null)
+            return conn.triggerStartObject.name;
+    }
+    // Fallback: cerca DoorVarcoScript con roomFront/roomBack che matchano
+    foreach (var d in FindObjectsByType<DoorVarcoScript>(FindObjectsSortMode.None))
+    {
+        bool aFront = d.roomFront != null && d.roomFront.name == nodeA;
+        bool aBack  = d.roomBack  != null && d.roomBack.name  == nodeA;
+        bool bFront = d.roomFront != null && d.roomFront.name == nodeB;
+        bool bBack  = d.roomBack  != null && d.roomBack.name  == nodeB;
+        if ((aFront || aBack) && (bFront || bBack))
+            return d.gameObject.name;
+    }
+    return null;
 }
 }

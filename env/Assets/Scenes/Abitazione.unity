@@ -2713,7 +2713,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4576068129945394736, guid: 9e3eb6f566737ff46924eb14e59cd780, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.025
+      value: 1.9999981
       objectReference: {fileID: 0}
     - target: {fileID: 4576068129945394736, guid: 9e3eb6f566737ff46924eb14e59cd780, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2721,7 +2721,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4576068129945394736, guid: 9e3eb6f566737ff46924eb14e59cd780, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5
+      value: 4.9999995
       objectReference: {fileID: 0}
     - target: {fileID: 4576068129945394736, guid: 9e3eb6f566737ff46924eb14e59cd780, type: 3}
       propertyPath: m_LocalRotation.w
@@ -19648,7 +19648,7 @@ PrefabInstance:
     - target: {fileID: 2109280056485578673, guid: 5358fd1e82b36ce4fb170c9d7e5bb351, type: 3}
       propertyPath: roomBack
       value: 
-      objectReference: {fileID: 1104958194}
+      objectReference: {fileID: 573513223}
     - target: {fileID: 2109280056485578673, guid: 5358fd1e82b36ce4fb170c9d7e5bb351, type: 3}
       propertyPath: roomFront
       value: 
@@ -19704,6 +19704,10 @@ PrefabInstance:
     - target: {fileID: 6002447565961761865, guid: 5358fd1e82b36ce4fb170c9d7e5bb351, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7551751404137702588, guid: 5358fd1e82b36ce4fb170c9d7e5bb351, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -30537,7 +30541,7 @@ MonoBehaviour:
     explored: 0
   - floorIndex: 1
     floorName: Casa
-    spawnObject: {fileID: 2070023752}
+    spawnObject: {fileID: 573513223}
     roomObjects:
     - {fileID: 1224112154}
     - {fileID: 1706078310}
