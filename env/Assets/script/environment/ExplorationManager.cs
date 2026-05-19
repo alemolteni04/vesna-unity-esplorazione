@@ -138,6 +138,9 @@ public class ExplorationManager : MonoBehaviour
 
     private string lastCorridorLinkDoorName;
     private VerticalConnector pendingConnector;
+
+    private DoorVarcoScript pendingArrivalDoor = null;
+
     private HashSet<string>   traversedConnectors = new HashSet<string>();
 
     private string movingToPoleCorridorId;
@@ -799,8 +802,19 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
                     graph.GetNode(poleAId)?.position ?? poleAPos);
 
                 string nearestFrom = distBA <= distAA ? comingFromNodeId : poleAIdComing;
-                graph.AddSegmentArc(nearestFrom, poleAId, 0.5f, lastCorridorLinkDoorName);
-                lastCorridorLinkDoorName = null;
+
+                // Determina il polo più vicino del NUOVO corridoio rispetto alla porta
+                string poleBId = $"{pendingCorridorId}_B";
+                Vector3 doorPos = transform.position;
+                var doorSc = !string.IsNullOrEmpty(lastCorridorLinkDoorName)
+                    ? FindDoorScript(lastCorridorLinkDoorName) : null;
+                if (doorSc != null) doorPos = doorSc.transform.position;
+                float distToNewA = Vector3.Distance(doorPos, poleAPos);
+                float distToNewB = Vector3.Distance(doorPos, poleBPos);
+                string nearestTo = distToNewA <= distToNewB ? poleAId : poleBId;
+
+                graph.AddSegmentArc(nearestFrom, nearestTo, 0.5f, lastCorridorLinkDoorName);               
+                 lastCorridorLinkDoorName = null;
             }
 
             transitCorridorId = pendingCorridorId;
@@ -1592,6 +1606,82 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
             CheckFloorCompletion();
             return;
         }
+         // ← QUI INSERISCI IL BLOCCO NUOVO
+        if (!string.IsNullOrEmpty(connNodeId))
+    {
+        string adjRoom    = null;
+        string adjDoorName = null;
+        Vector3 adjPos    = Vector3.zero;
+
+        // Tentativo 1: usa la porta di arrivo fisica
+        if (pendingArrivalDoor != null)
+        {
+            var arrDoor = pendingArrivalDoor;
+            string front = arrDoor.roomFront?.name;
+            string back  = arrDoor.roomBack?.name;
+            string candidate = (front == connNodeId) ? back
+                            : (back  == connNodeId) ? front
+                            : string.IsNullOrEmpty(front) ? back : front;
+
+            var fdAdj = buildingGraph?.GetFloor(targetFloor);
+            if (!string.IsNullOrEmpty(candidate) && candidate != connNodeId
+                && (fdAdj?.roomIds.Contains(candidate) ?? false))
+            {
+                adjRoom     = candidate;
+                adjDoorName = arrDoor.gameObject.name;
+                var rObj    = fdAdj.roomObjects.Find(r => r != null && r.name == adjRoom);
+                adjPos      = rObj != null ? GetRoomCenter(rObj) : arrDoor.transform.position;
+            }
+        }
+        pendingArrivalDoor = null;
+
+        // Tentativo 2: fallback tramite FindDoorBetweenNodes
+        if (string.IsNullOrEmpty(adjRoom))
+        {
+            var fdAdj = buildingGraph?.GetFloor(targetFloor);
+            if (fdAdj != null)
+            {
+                foreach (string rid in fdAdj.roomIds)
+                {
+                    string dName = FindDoorBetweenNodes(connNodeId, rid);
+                    if (string.IsNullOrEmpty(dName)) continue;
+                    var rObj = fdAdj.roomObjects.Find(r => r != null && r.name == rid);
+                    if (rObj == null) continue;
+                    adjRoom     = rid;
+                    adjDoorName = dName;
+                    adjPos      = GetRoomCenter(rObj);
+                    break;
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(adjRoom))
+        {
+            if (graph.GetNode(adjRoom) == null)
+                graph.AddRoomNode(adjRoom, adjPos);
+
+            float dAdj = Vector3.Distance(graph.GetNode(connNodeId).position, adjPos);
+            var adjEdge = graph.AddRoomDoorEdge(connNodeId, adjDoorName,
+                false, adjPos, dAdj, adjRoom);
+            if (adjEdge != null)
+                graph.MarkEdgeExplored(connNodeId, adjEdge.id, adjRoom);
+
+            graph.EnterNode(adjRoom);
+            currentNodeId = adjRoom;
+
+            inRoomMode             = false;
+            movingToPoleCorridorId = null;
+            idleTargetCorridorId   = null;
+
+            navAgent.isStopped = false;
+            navAgent.SetDestination(adjPos);
+            enteringRoomTimer  = 0f;
+            state              = State.EnteringRoom;
+
+            Debug.Log($"[ExplMgr] Cammino verso '{adjRoom}' via '{adjDoorName}'.");
+            return;
+        }
+    }
         // NUOVO: pre-collega le stanze già note del piano destinazione al nodo connettore
         if (!string.IsNullOrEmpty(connNodeId))
         {
@@ -1892,6 +1982,7 @@ private IEnumerator TraverseStairsThen(int targetFloor, bool ascending)
             door.TryOpen();
             yield return new WaitForSeconds(0.6f);
         }
+        pendingArrivalDoor = door; // salva la porta di arrivo per ExecuteFloorChange
     }
 
     navAgent.enabled = true;
