@@ -76,6 +76,7 @@ public class DoorDistanceMap : MonoBehaviour
             }
 
             var doorList = new List<string>(doorPositions.Keys);
+            Debug.Log($"[DoorDistMap] Piano {floor} — porte: " + string.Join(", ", doorList));
 
             for (int i = 0; i < doorList.Count; i++)
             {

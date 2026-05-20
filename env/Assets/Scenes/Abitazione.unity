@@ -7623,15 +7623,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2461382583679995558, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -7.83
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 2461382583679995558, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.54
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2461382583679995558, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -6.46
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 2461382583679995558, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7831,7 +7831,7 @@ MonoBehaviour:
   poleTimeoutSeconds: 4
   stairsMoveSpeed: 1.2
   staircaseWaypointsList:
-  - connectorId: scalaBox
+  - connectorObject: {fileID: 1817726809}
     waypoints:
     - {fileID: 245952689}
     - {fileID: 787724073}
@@ -7842,7 +7842,7 @@ MonoBehaviour:
     - {fileID: 179580397}
     - {fileID: 942123722}
     - {fileID: 1639651190}
-  - connectorId: scalaSolaio
+  - connectorObject: {fileID: 1495629036}
     waypoints:
     - {fileID: 1294943482}
     - {fileID: 1493723999}
@@ -15694,7 +15694,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bba9f3322ea3ae84eb56831f0cdd743e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  connectorId: scala_p-1
+  connectorIdObject: {fileID: 0}
   connectorType: 0
   targetFloor: -1
 --- !u!4 &1092106443
@@ -17268,6 +17268,10 @@ PrefabInstance:
       propertyPath: targetFloor
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3941165997373603201, guid: 7e732786b4a65e943872713b9275bec6, type: 3}
+      propertyPath: connectorIdObject
+      value: 
+      objectReference: {fileID: 1495629036}
     - target: {fileID: 6779263132242954991, guid: 7e732786b4a65e943872713b9275bec6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.00000047683716
@@ -20851,7 +20855,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1495629037}
   m_Layer: 0
-  m_Name: scalePiano2
+  m_Name: scalePiano1-2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26329,7 +26333,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1817726810}
   m_Layer: 0
-  m_Name: scalePiano0
+  m_Name: scalePiano0-1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -30562,7 +30566,7 @@ MonoBehaviour:
     explored: 0
   connectors:
   - type: 0
-    id: scalaBox
+    idObject: {fileID: 1817726809}
     floorFrom: 1
     floorTo: 0
     bidirectional: 1
@@ -30572,7 +30576,7 @@ MonoBehaviour:
     triggerEndObject: {fileID: 878543804742875415}
     agentNearby: 0
   - type: 0
-    id: scalaSolaio
+    idObject: {fileID: 1495629036}
     floorFrom: 1
     floorTo: 2
     bidirectional: 1
@@ -30843,6 +30847,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3941165997373603201, guid: 7e732786b4a65e943872713b9275bec6, type: 3}
+      propertyPath: connectorIdObject
+      value: 
+      objectReference: {fileID: 1817726809}
     - target: {fileID: 6853195225122258446, guid: 7e732786b4a65e943872713b9275bec6, type: 3}
       propertyPath: m_Name
       value: Scala
@@ -30971,7 +30979,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4342259202371163873, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.5
+      value: 1.4
       objectReference: {fileID: 0}
     - target: {fileID: 4423980635592111131, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: m_LocalPosition.x

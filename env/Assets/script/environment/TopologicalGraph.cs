@@ -644,4 +644,11 @@ public class TopologicalGraph
             e => e != null && e.edgeType == EdgeType.Central);
         return centralEdge != null && centralEdge.state == EdgeState.Explored;
     }
+
+    /*public void ResetCorridorPoles(string corridorId)
+    {
+        nodes.Remove($"{corridorId}_A");
+        nodes.Remove($"{corridorId}_B");
+    }*/
+
 }

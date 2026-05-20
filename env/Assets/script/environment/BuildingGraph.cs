@@ -81,8 +81,9 @@ public class VerticalConnector
 
     public ConnectorType type;
 
-    [Tooltip("ID univoco (es. 'stairs_A'). Deve matchare VerticalConnectorScript.connectorId")]
-    public string id;
+    [Tooltip("Trascina il GameObject della scala/ascensore dall'Inspector.")]
+    public GameObject idObject;
+    public string id => idObject != null ? idObject.name : string.Empty;// MESSO COSì PERCHè SE NO DOVEVAMO CAMBIARE TUTTO IL CODICE 
 
     public int   floorFrom;
     public int   floorTo;

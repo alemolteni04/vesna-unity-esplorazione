@@ -22,9 +22,11 @@ using UnityEngine;
 public class VerticalConnectorScript : MonoBehaviour
 {
     [Header("Configurazione")]
-    public string connectorId;
+    public GameObject connectorIdObject;
+    public string connectorId => connectorIdObject != null ? connectorIdObject.name : string.Empty;// MESSO COSì PERCHè SE NO DOVEVAMO CAMBIARE TUTTO IL CODICE 
     public VerticalConnector.ConnectorType connectorType;
     public int targetFloor;
+    
 
     // Evento statico: ExplorationManager si abbona
     public static event System.Action<string, int, Vector3> OnConnectorReached;
