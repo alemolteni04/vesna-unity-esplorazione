@@ -37,6 +37,8 @@ public class DoorVarcoScript : MonoBehaviour
     public bool isOpen   = false;
     public bool isLocked = false;
 
+    public bool isCorridorLink = false;
+
     // ---> AGGIUNGI QUESTA RIGA <---
     [Header("Modello 3D (Da disattivare all'apertura)")]
     public GameObject physicalModel;
@@ -75,6 +77,20 @@ public class DoorVarcoScript : MonoBehaviour
     [HideInInspector] public int    orderFW    = -1;
     [HideInInspector] public bool   discovered = false;
 
+    private static readonly string[] corridorKeywords = {
+    "corridoio", "corridor", "disimpegno", "ingresso", "entrance", "entry",
+    "atrio", "hall", "hallway", "lobby", "pianerottolo", "landing",
+    "ballatoio", "galleria", "passaggio", "passage"
+    };
+
+    private bool IsCorridorLike(string roomName)
+    {
+        string lower = roomName.ToLower();
+        foreach (var keyword in corridorKeywords)
+            if (lower.Contains(keyword)) return true;
+        return false;
+    }
+
     // --------------------------------------------------------
     // METODO CHIAVE: roomName del luogo OLTRE la porta
     //
@@ -83,6 +99,7 @@ public class DoorVarcoScript : MonoBehaviour
     //   dot < 0: agente è sul lato BACK  → entra nel FRONT
     //   dot = 0: perpendicolare, default FRONT
     // --------------------------------------------------------
+
     public string GetRoomNameBeyondDoor(Vector3 agentPos)
     {
         Vector3 toAgent = (agentPos - transform.position).normalized;
@@ -184,7 +201,11 @@ public class DoorVarcoScript : MonoBehaviour
             isOpen   = true;
             isLocked = false;
         }
-        // roomNameFront e roomNameBack sono ora proprietà derivate da roomFront/roomBack.
-        // Non serve più assegnare stringhe di default qui.
+
+       if (roomFront != null && roomBack != null)
+        {
+            if (IsCorridorLike(roomFront.name) && IsCorridorLike(roomBack.name))
+                isCorridorLink = true;
+        }
     }
 }

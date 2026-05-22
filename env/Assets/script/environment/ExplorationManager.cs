@@ -413,8 +413,7 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
         string roomBeyond = door.GetRoomNameBeyondDoor(transform.position);
         string frontName = door.roomFront?.name ?? "";
         string backName  = door.roomBack?.name  ?? "";
-        bool isCorrLink  = (frontName.ToLower().Contains("corridoio") &&
-                            backName.ToLower().Contains("corridoio") && door.elementType != DoorVarcoScript.ElementType.Door);
+        bool isCorrLink = door.isCorridorLink;
 
         registeredTransitDoors.Add(door.gameObject.name);
         if (!isCorrLink) allCorridorDoors.Add(door.gameObject.name);
@@ -1952,10 +1951,7 @@ private void ScanCorridorDoorsFromScript(string corridorId)
 
         if (frontName != corridorId && backName != corridorId) continue;
 
-        bool isCorrLink = (frontName.ToLower().Contains("corridoio") &&
-                           backName.ToLower().Contains("corridoio") &&
-                           door.elementType != DoorVarcoScript.ElementType.Door);
-
+       bool isCorrLink = door.isCorridorLink;
         if (registeredTransitDoors.Contains(door.gameObject.name) && !isCorrLink) continue;
         if (allCorridorDoors.Contains(door.gameObject.name) && !isCorrLink) continue;
 
