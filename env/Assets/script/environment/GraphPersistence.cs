@@ -42,7 +42,7 @@ public static class GraphPersistence
     private static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
     {
         Formatting        = Formatting.Indented,
-        NullValueHandling = NullValueHandling.Include,
+        NullValueHandling = NullValueHandling.Ignore,
     };
 
     // ── Path helpers ─────────────────────────────────────────
