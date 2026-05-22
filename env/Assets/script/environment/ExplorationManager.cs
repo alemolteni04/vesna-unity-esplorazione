@@ -64,6 +64,15 @@ public class ExplorationManager : MonoBehaviour
     public Animator agentAnimator;
     public string walkAnimParam = "IsWalking"; // oppure "Speed" se usi blend tree
 
+    [Header("Persistenza")]
+    public string buildingId = "building";  // es. "PalazzoRossi_P1"
+
+    [ContextMenu("Apri cartella snapshot")]
+    private void OpenSnapshotFolder()
+    {
+        System.Diagnostics.Process.Start(GraphPersistence.BaseDirectory);
+    }
+
     // --------------------------------------------------------
     // MACCHINA A STATI
     // --------------------------------------------------------
@@ -177,13 +186,45 @@ public class ExplorationManager : MonoBehaviour
     // --------------------------------------------------------
     void Start()
     {
-        if (buildingGraph == null) { Debug.LogWarning("[ExplMgr] BuildingGraph non assegnato!"); return; }
-
-        // Trova il piano cercando quale ha un roomObject vicino all'agente
-        Vector3 agentPos = navAgent.transform.position;
+        if (buildingGraph == null)
+        {
+            Debug.LogWarning("[ExplMgr] BuildingGraph non assegnato!");
+            return;
+        }
+    
+        // ── Controlla se esiste già uno snapshot su disco ────────
+        if (GraphPersistence.Exists(buildingId))
+        {
+            BuildingSnapshot snapshot = GraphPersistence.Load(buildingId);
+    
+            if (snapshot != null)
+            {
+                Debug.Log($"[ExplMgr] Snapshot trovato per '{buildingId}': " +
+                        $"trasmissione diretta a JaCaMo, esplorazione saltata.");
+    
+                var bt = GetComponent<BeliefTransmitter>();
+                bt?.TransmitSnapshot(snapshot);
+    
+                // Metti la macchina a stati in Completed:
+                // l'agente resta fermo, JaCaMo ha già tutto.
+                state = State.Completed;
+                return;
+            }
+            else
+            {
+                // File corrotto o illeggibile: procedi con esplorazione normale
+                Debug.LogWarning($"[ExplMgr] Snapshot corrotto per '{buildingId}': riesplorazione.");
+            }
+        }
+    
+        // ── Nessuno snapshot: avvio esplorazione normale ─────────
+        foreach (var floor in buildingGraph.floors)
+            floor.explored = false;
+    
+        Vector3   agentPos  = navAgent.transform.position;
         FloorNode floorData = null;
-        float minDist = float.MaxValue;
-
+        float     minDist   = float.MaxValue;
+    
         foreach (var floor in buildingGraph.floors)
         {
             foreach (var room in floor.roomObjects)
@@ -193,21 +234,23 @@ public class ExplorationManager : MonoBehaviour
                 if (d < minDist) { minDist = d; floorData = floor; }
             }
         }
-
+    
         if (floorData == null || floorData.spawnObject == null)
-        { Debug.LogWarning("[ExplMgr] Piano non trovato o spawnObject mancante!"); return; }
-
+        {
+            Debug.LogWarning("[ExplMgr] Piano non trovato o spawnObject mancante!");
+            return;
+        }
+    
         Vector3 startPos = floorData.spawnPosition;
-
         if (Vector3.Distance(agentPos, startPos) > 0.05f)
         {
-            Debug.Log($"[ExplMgr] Teleport allo spawn del piano {floorData.floorIndex}");
             navAgent.enabled = false;
             navAgent.transform.position = startPos;
             navAgent.enabled = true;
             navAgent.Warp(startPos);
         }
-        currentFloor = floorData.floorIndex;  // ← aggiungere questa riga
+    
+        currentFloor = floorData.floorIndex;
         StartExploration(floorData.spawnObject.name, startPos);
     }
     // ──────────────────────────────────────────────────────────────
@@ -1784,34 +1827,40 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
     // ====================================================
 
     private void OnAllFloorsCompleted()
-{
-    explorationVisionCone?.SetExplorationMode(false);
-    state = State.Completed;
-
-    var bt = GetComponent<BeliefTransmitter>();
-    if (bt != null)
     {
-        // 1. Trasmetti i grafi per piano (già esistente)
-        var sortedFloors = new List<int>(floorGraphs.Keys);
-        sortedFloors.Sort();
-        foreach (int f in sortedFloors)
-            bt.TransmitGraph(floorGraphs[f]);
-
-        // 2. Calcola e trasmetti le distanze porte (NUOVO)
+        explorationVisionCone?.SetExplorationMode(false);
+        state = State.Completed;
+    
+        // ── 1. Calcola distanze porte ────────────────────────────
         var ddm = GetComponent<DoorDistanceMap>();
         if (ddm != null)
-        {
             ddm.Compute(floorGraphs);
-            bt.TransmitDoorDistances(ddm.pairs);
-        }
         else
-        {
             Debug.LogWarning("[ExplMgr] DoorDistanceMap non trovato sul GameObject!");
-        }
+    
+        List<DoorDistancePair> doorPairs = ddm?.pairs ?? new List<DoorDistancePair>();
+    
+        // ── 2. Costruisci snapshot ───────────────────────────────
+        BuildingSnapshot snapshot = GraphSnapshotBuilder.Build(
+            floorGraphs,
+            ConnectorLinks,
+            doorPairs,
+            buildingId);
+    
+        // ── 3. Salva su disco ────────────────────────────────────
+        bool saved = GraphPersistence.Save(snapshot);
+        if (!saved)
+            Debug.LogWarning("[ExplMgr] Salvataggio snapshot fallito: " +
+                            "la trasmissione a JaCaMo procede comunque.");
+    
+        // ── 4. Trasmetti a JaCaMo ────────────────────────────────
+        var bt = GetComponent<BeliefTransmitter>();
+        bt?.TransmitSnapshot(snapshot);
+    
+        Debug.Log($"[ExplMgr] Edificio '{buildingId}' esplorato. " +
+                $"Piani: {floorGraphs.Count}  Link: {ConnectorLinks.Count}  " +
+                $"Distanze: {doorPairs.Count}  Snapshot salvato: {saved}");
     }
-
-    Debug.Log($"[ExplMgr] Edificio esplorato. Piani: {floorGraphs.Count} Link: {ConnectorLinks.Count}");
-}
    
     // ====================================================
     // HELPER

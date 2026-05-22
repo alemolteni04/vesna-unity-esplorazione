@@ -2404,6 +2404,7 @@ MonoBehaviour:
   elementType: 0
   isOpen: 1
   isLocked: 0
+  isCorridorLink: 0
   physicalModel: {fileID: 155574457}
   roomFront: {fileID: 0}
   roomBack: {fileID: 0}
@@ -5167,6 +5168,7 @@ MonoBehaviour:
   elementType: 0
   isOpen: 0
   isLocked: 0
+  isCorridorLink: 0
   physicalModel: {fileID: 397616390}
   roomFront: {fileID: 0}
   roomBack: {fileID: 0}
@@ -7673,6 +7675,7 @@ MonoBehaviour:
   poleTimeoutSeconds: 4
   agentAnimator: {fileID: 0}
   walkAnimParam: IsWalking
+  buildingId: CasaMartiAle
   inRoomMode: 0
   currentFloor: 0
   backtrackTimeout: 5
@@ -8673,6 +8676,7 @@ MonoBehaviour:
   elementType: 0
   isOpen: 0
   isLocked: 0
+  isCorridorLink: 0
   physicalModel: {fileID: 626070940}
   roomFront: {fileID: 0}
   roomBack: {fileID: 0}
@@ -15427,6 +15431,7 @@ MonoBehaviour:
   elementType: 0
   isOpen: 0
   isLocked: 1
+  isCorridorLink: 0
   physicalModel: {fileID: 0}
   roomFront: {fileID: 0}
   roomBack: {fileID: 0}
@@ -18914,6 +18919,7 @@ MonoBehaviour:
   elementType: 0
   isOpen: 0
   isLocked: 0
+  isCorridorLink: 0
   physicalModel: {fileID: 1410523849}
   roomFront: {fileID: 0}
   roomBack: {fileID: 0}
@@ -22719,6 +22725,10 @@ PrefabInstance:
       propertyPath: roomNameFront
       value: corridoio2
       objectReference: {fileID: 0}
+    - target: {fileID: 2773010279777088967, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
+      propertyPath: isCorridorLink
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6911390961123566864, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_Name
       value: Varco_Prefab_corr1_2
@@ -23217,6 +23227,7 @@ MonoBehaviour:
   elementType: 0
   isOpen: 0
   isLocked: 0
+  isCorridorLink: 0
   physicalModel: {fileID: 1683437945}
   roomFront: {fileID: 0}
   roomBack: {fileID: 0}
@@ -23383,6 +23394,7 @@ MonoBehaviour:
   elementType: 0
   isOpen: 0
   isLocked: 0
+  isCorridorLink: 0
   physicalModel: {fileID: 1685805363}
   roomFront: {fileID: 0}
   roomBack: {fileID: 0}
@@ -24994,6 +25006,7 @@ MonoBehaviour:
   elementType: 0
   isOpen: 0
   isLocked: 1
+  isCorridorLink: 0
   physicalModel: {fileID: 0}
   roomFront: {fileID: 0}
   roomBack: {fileID: 0}

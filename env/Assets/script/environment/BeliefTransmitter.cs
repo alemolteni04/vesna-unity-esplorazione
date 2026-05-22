@@ -6,165 +6,199 @@ using Newtonsoft.Json;
 // ============================================================
 // BeliefTransmitter.cs
 // ============================================================
-// Trasmette il grafo topologico a JaCaMo come credenze (beliefs)
-// DOPO che l'esplorazione Unity è completamente finita.
+// Trasmette lo snapshot dell'edificio a JaCaMo come credenze.
 //
-// FILOSOFIA:
-// JaCaMo durante l'esplorazione è PASSIVO.
-// Quando ExplorationManager chiama TransmitGraph(), questo script
-// serializza il grafo e lo manda a JaCaMo nodo per nodo, arco per
-// arco, in streaming incrementale.
+// MODIFICA ARCHITETTURALE:
+//   Il metodo principale è ora TransmitSnapshot(BuildingSnapshot).
+//   Non dipende più dal grafo vivo: può trasmettere dati che
+//   vengono dalla memoria, dal disco, o da qualsiasi altra fonte
+//   che produca un BuildingSnapshot.
+//
+//   TransmitGraph() è mantenuto come wrapper di compatibilità
+//   per i chiamanti che hanno ancora il grafo vivo in mano
+//   (es. OnAllFloorsCompleted in ExplorationManager). Internamente
+//   chiama GraphSnapshotBuilder.Build() + TransmitSnapshot().
 //
 // FORMATO CREDENZE (compatibile con Jason .asl):
-// Ogni nodo diventa:   node(ID, Type, X, Y, Z)
-// Ogni arco diventa:   edge(FromID, ToID, EdgeID, DoorType, DoorState)
-// Fine trasmissione:   exploration_complete
-//
-// L'agente Jason le riceve come belief nel BeliefBase e può
-// usarle per la pianificazione (es. "vai dalla stanza A alla B").
+//   node(ID, Type, X, Y, Z)
+//   edge(FromID, ToID, EdgeID, EdgeType, DoorState)
+//   connector_link(ConnectorID, FloorFrom, NodeFrom, FloorTo, NodeTo)
+//   door_dist(DoorA, DoorB, Floor, Distance)
+//   exploration_complete(TotalNodes, TotalEdges)
 // ============================================================
 
 public class BeliefTransmitter : AbstractMasElement
 {
     [Header("Trasmissione")]
-    // Quante credenze mandare per frame (throttling)
-    // Evita di congestionare il WebSocket con 100 messaggi in un tick
     public int beliefsPerFrame = 5;
 
     // --------------------------------------------------------
-    // ENTRY POINT — chiamato da ExplorationManager
+    // ENTRY POINT PRINCIPALE — accetta uno snapshot già pronto
+    // Usato sia da ExplorationManager (dopo esplorazione live)
+    // sia da ExplorationManager.Start() (caricamento da disco).
     // --------------------------------------------------------
-    public void TransmitGraph(TopologicalGraph graph)
+    public void TransmitSnapshot(BuildingSnapshot snapshot)
     {
-        StartCoroutine(TransmitCoroutine(graph));
+        if (snapshot == null)
+        {
+            Debug.LogError("[BeliefTransmitter] TransmitSnapshot: snapshot null.");
+            return;
+        }
+
+        StartCoroutine(TransmitSnapshotCoroutine(snapshot));
     }
 
-    
-    private IEnumerator TransmitCoroutine(TopologicalGraph graph)
+    // --------------------------------------------------------
+    // WRAPPER DI COMPATIBILITÀ — mantiene l'API precedente
+    // Converte il grafo vivo in snapshot e lo trasmette.
+    // --------------------------------------------------------
+    public void TransmitGraph(
+        Dictionary<int, TopologicalGraph> floorGraphs,
+        List<FloorConnectorLink>          connectorLinks,
+        List<DoorDistancePair>            doorDistances,
+        string                            buildingId = "building")
     {
-        Debug.Log("[BeliefTransmitter] Inizio trasmissione grafo a JaCaMo...");
+        var snapshot = GraphSnapshotBuilder.Build(
+            floorGraphs, connectorLinks, doorDistances, buildingId);
+
+        TransmitSnapshot(snapshot);
+    }
+
+    // --------------------------------------------------------
+    // COROUTINE PRINCIPALE
+    // --------------------------------------------------------
+    private IEnumerator TransmitSnapshotCoroutine(BuildingSnapshot snapshot)
+    {
+        Debug.Log($"[BeliefTransmitter] Inizio trasmissione snapshot '{snapshot.buildingId}' " +
+                  $"({snapshot.floors.Count} piani) a JaCaMo...");
 
         int count = 0;
 
-        // ----------------------------------------
-        // 1. Trasmetti tutti i nodi
-        // ----------------------------------------
-        foreach (var node in graph.AllNodes())
+        // ── 1. Nodi e archi per piano ────────────────────────
+        foreach (var floor in snapshot.floors)
         {
-            var msg = new BeliefMessage
+            // Nodi
+            foreach (var node in floor.nodes)
             {
-                beliefType = "node",
-                payload    = new Dictionary<string, object>
+                SendBelief(new BeliefMessage
                 {
-                    { "id",   node.id                 },
-                    { "type", node.type.ToString()    },
-                    { "x",    node.position.x         },
-                    { "y",    node.position.y         },
-                    { "z",    node.position.z         },
-                    { "fullyExplored", node.fullyExplored }
-                }
-            };
+                    beliefType = "node",
+                    payload    = new Dictionary<string, object>
+                    {
+                        { "id",               node.nodeId           },
+                        { "type",             node.nodeType         },
+                        { "floor",            floor.floorIndex      },
+                        { "x",                node.x                },
+                        { "y",                node.y                },
+                        { "z",                node.z                },
+                        { "fullyExplored",    node.fullyExplored    },
+                        { "corridorId",       node.corridorId ?? "" },
+                        { "poleLabel",        node.poleLabel  ?? "" },
+                    }
+                });
 
-            SendBelief(msg);
-            count++;
+                if (++count % beliefsPerFrame == 0) yield return null;
+            }
 
-            // Yield ogni N messaggi per non bloccare il main thread
-            if (count % beliefsPerFrame == 0)
-                yield return null;
-        }
-
-        // ----------------------------------------
-        // 2. Trasmetti tutti gli archi
-        // ----------------------------------------
-        foreach (var node in graph.AllNodes())
-        {
-            foreach (var edge in node.edges)
+            // Archi
+            foreach (var edge in floor.edges)
             {
-                var msg = new BeliefMessage
+                SendBelief(new BeliefMessage
                 {
                     beliefType = "edge",
                     payload    = new Dictionary<string, object>
                     {
-                        { "id",         edge.id                        },
-                        { "from",       edge.fromNodeId                },
-                        { "to",         edge.toNodeId ?? "unknown"     },
-                        { "isPhysical", edge.isPhysical                },
-                        { "doorState",  edge.doorState.ToString()      },
-                        { "side",       edge.side                      },
-                        { "distFromA",  edge.distFromA                 },
-                        { "distFromB",  edge.distFromB                 },
-                        { "orderFW",    edge.orderFW                   },
-                        { "orderBW",    edge.orderBW                   },
-                        { "x",          edge.position.x                },
-                        { "y",          edge.position.y                },
-                        { "z",          edge.position.z                }
+                        { "id",              edge.edgeId           },
+                        { "from",            edge.fromNodeId       },
+                        { "to",              edge.toNodeId         },
+                        { "floor",           floor.floorIndex      },
+                        { "edgeType",        edge.edgeType         },
+                        { "edgeState",       edge.edgeState        },
+                        { "doorState",       edge.doorState        },
+                        { "isPhysical",      edge.isPhysical       },
+                        { "isCorridorLink",  edge.isCorridorLink   },
+                        { "side",            edge.side ?? ""       },
+                        { "distFromA",       edge.distFromA        },
+                        { "distFromB",       edge.distFromB        },
+                        { "orderFW",         edge.orderFW          },
+                        { "orderBW",         edge.orderBW          },
+                        { "explorationOrder",edge.explorationOrder },
+                        { "x",               edge.x                },
+                        { "y",               edge.y                },
+                        { "z",               edge.z                },
                     }
-                };
+                });
 
-                SendBelief(msg);
-                count++;
-
-                if (count % beliefsPerFrame == 0)
-                    yield return null;
+                if (++count % beliefsPerFrame == 0) yield return null;
             }
         }
 
-        //-----------------------------
-        //TRASMETTI PORTE
-        //------------------------------
-        
+        // ── 2. Link cross-floor ──────────────────────────────
+        foreach (var link in snapshot.connectorLinks)
+        {
+            SendBelief(new BeliefMessage
+            {
+                beliefType = "connector_link",
+                payload    = new Dictionary<string, object>
+                {
+                    { "connectorId", link.connectorId },
+                    { "floorFrom",   link.floorFrom   },
+                    { "nodeIdFrom",  link.nodeIdFrom   },
+                    { "floorTo",     link.floorTo      },
+                    { "nodeIdTo",    link.nodeIdTo     },
+                }
+            });
 
-        // ----------------------------------------
-        // 3. Segnala completamento
-        // ----------------------------------------
-        var doneMsg = new BeliefMessage
+            if (++count % beliefsPerFrame == 0) yield return null;
+        }
+
+        // ── 3. Distanze porte ────────────────────────────────
+        foreach (var dist in snapshot.doorDistances)
+        {
+            SendBelief(new BeliefMessage
+            {
+                beliefType = "door_dist",
+                payload    = new Dictionary<string, object>
+                {
+                    { "doorA",    dist.doorA    },
+                    { "doorB",    dist.doorB    },
+                    { "floor",    dist.floor    },
+                    { "distance", dist.distance },
+                }
+            });
+
+            if (++count % beliefsPerFrame == 0) yield return null;
+        }
+
+        // ── 4. Segnale di completamento ──────────────────────
+        int totalNodes = 0, totalEdges = 0;
+        foreach (var f in snapshot.floors)
+        {
+            totalNodes += f.nodes.Count;
+            totalEdges += f.edges.Count;
+        }
+
+        SendBelief(new BeliefMessage
         {
             beliefType = "exploration_complete",
             payload    = new Dictionary<string, object>
             {
-                { "totalNodes", CountNodes(graph) },
-                { "totalEdges", CountEdges(graph) }
+                { "buildingId",   snapshot.buildingId             },
+                { "capturedAt",   snapshot.capturedAt             },
+                { "totalFloors",  snapshot.floors.Count           },
+                { "totalNodes",   totalNodes                      },
+                { "totalEdges",   totalEdges                      },
+                { "totalLinks",   snapshot.connectorLinks.Count   },
+                { "totalDists",   snapshot.doorDistances.Count    },
             }
-        };
-        SendBelief(doneMsg);
+        });
 
         Debug.Log($"[BeliefTransmitter] Trasmissione completata: {count} credenze inviate.");
     }
 
-//SALVATAGGIO DISTANZE PORTE
-    public void TransmitDoorDistances(List<DoorDistancePair> pairs)
-{
-    StartCoroutine(TransmitDoorDistancesCoroutine(pairs));
-}
-
-private IEnumerator TransmitDoorDistancesCoroutine(List<DoorDistancePair> pairs)
-{
-    Debug.Log($"[BeliefTransmitter] Invio {pairs.Count} distanze porte...");
-    int count = 0;
-
-    foreach (var p in pairs)
-    {
-        var msg = new BeliefMessage
-        {
-            beliefType = "door_dist",
-            payload    = new Dictionary<string, object>
-            {
-                { "doorA",    p.doorA    },
-                { "doorB",    p.doorB    },
-                { "floor",    p.floor    },
-                { "distance", p.distance }
-            }
-        };
-
-        SendBelief(msg);
-        count++;
-
-        if (count % beliefsPerFrame == 0)
-            yield return null;
-    }
-
-    Debug.Log($"[BeliefTransmitter] {count} distanze inviate.");
-}
+    // --------------------------------------------------------
+    // INVIO SINGOLO MESSAGGIO
+    // --------------------------------------------------------
     private void SendBelief(BeliefMessage msg)
     {
         string json = JsonConvert.SerializeObject(msg);
@@ -175,27 +209,13 @@ private IEnumerator TransmitDoorDistancesCoroutine(List<DoorDistancePair> pairs)
         );
     }
 
-    private int CountNodes(TopologicalGraph g)
-    {
-        int n = 0;
-        foreach (var _ in g.AllNodes()) n++;
-        return n;
-    }
-
-    private int CountEdges(TopologicalGraph g)
-    {
-        int n = 0;
-        foreach (var node in g.AllNodes()) n += node.edges.Count;
-        return n;
-    }
-
     // --------------------------------------------------------
-    // Messaggio strutturato per JaCaMo
+    // DTO interno
     // --------------------------------------------------------
     [System.Serializable]
     private class BeliefMessage
     {
-        public string                       beliefType;
-        public Dictionary<string, object>   payload;
+        public string                     beliefType;
+        public Dictionary<string, object> payload;
     }
 }

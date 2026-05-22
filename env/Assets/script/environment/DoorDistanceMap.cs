@@ -69,7 +69,8 @@ public class DoorDistanceMap : MonoBehaviour
                         if (!string.IsNullOrEmpty(edge.id) &&
                             !doorPositions.ContainsKey(edge.id))
                         {
-                            doorPositions[edge.id] = edge.position;
+                            if (!string.IsNullOrEmpty(edge.toNodeId))
+                                 doorPositions[edge.toNodeId] = edge.position;
                         }
                     }
                 }

@@ -1,0 +1,129 @@
+using System;
+using System.Collections.Generic;
+
+// ============================================================
+// BuildingSnapshot.cs
+// ============================================================
+// DTO (Data Transfer Object) puro per lo snapshot dell'edificio.
+//
+// PRINCIPI GUIDA:
+//   • Zero dipendenze da Unity (no MonoBehaviour, no Vector3, no
+//     classi astratte) — serializzabile con Newtonsoft senza flags.
+//   • Versionato: ogni campo aggiunto in futuro non rompe i file
+//     salvati in precedenza (Newtonsoft ignora campi mancanti).
+//   • Auto-contenuto: contiene TUTTO il necessario per ricostruire
+//     lo stato del grafo E per ritrasmetterlo a JaCaMo, senza
+//     bisogno del grafo vivo in memoria.
+//   • Scalabile a N piani, N porte, N connettori.
+//
+// ESTENDERE IN FUTURO:
+//   - Aggiungere campi in NodeSnapshot / EdgeSnapshot è sicuro
+//     purché abbiano un valore di default (es. = false, = 0).
+//   - Per cambiamenti strutturali, incrementa SCHEMA_VERSION e
+//     aggiungi logica di migrazione in GraphPersistence.Migrate().
+// ============================================================
+
+[Serializable]
+public class BuildingSnapshot
+{
+    // ── Metadati ────────────────────────────────────────────
+    public const int SCHEMA_VERSION = 1;
+
+    public int    schemaVersion = SCHEMA_VERSION;
+    public string buildingId;           // identificatore edificio (es. "Edificio_A")
+    public string capturedAt;           // DateTime.UtcNow.ToString("O") al momento del salvataggio
+    public string unityVersion;         // Application.unityVersion
+
+    // ── Dati per piano ──────────────────────────────────────
+    // Ogni FloorSnapshot è indipendente: aggiungere un piano
+    // non richiede modifiche al formato degli altri.
+    public List<FloorSnapshot>          floors          = new List<FloorSnapshot>();
+
+    // ── Link cross-floor (scale, ascensori, ecc.) ───────────
+    public List<ConnectorLinkSnapshot>  connectorLinks  = new List<ConnectorLinkSnapshot>();
+
+    // ── Distanze porte ──────────────────────────────────────
+    public List<DoorDistSnapshot>       doorDistances   = new List<DoorDistSnapshot>();
+}
+
+// ─────────────────────────────────────────────────────────────
+// SNAPSHOT DI UN SINGOLO PIANO
+// ─────────────────────────────────────────────────────────────
+[Serializable]
+public class FloorSnapshot
+{
+    public int              floorIndex;
+    public List<NodeSnapshot> nodes = new List<NodeSnapshot>();
+    public List<EdgeSnapshot> edges = new List<EdgeSnapshot>();
+}
+
+// ─────────────────────────────────────────────────────────────
+// NODO
+// Unifica RoomNode e CorridorPoleNode in un unico DTO piatto.
+// I campi corridorId e poleLabel sono validi solo se
+// nodeType == "CorridorPoleA" o "CorridorPoleB".
+// ─────────────────────────────────────────────────────────────
+[Serializable]
+public class NodeSnapshot
+{
+    public string nodeId;
+    public string nodeType;             // NodeType.ToString()
+    public float  x, y, z;             // position (no Vector3)
+    public bool   fullyExplored;
+    public bool   physicallyVisited;
+
+    // Solo per nodi polo corridoio
+    public string corridorId;
+    public string poleLabel;            // "A" o "B"
+}
+
+// ─────────────────────────────────────────────────────────────
+// ARCO
+// ─────────────────────────────────────────────────────────────
+[Serializable]
+public class EdgeSnapshot
+{
+    public string edgeId;
+    public string fromNodeId;
+    public string toNodeId;             // null → "unknown"
+    public string edgeType;             // EdgeType.ToString()
+    public string edgeState;            // EdgeState.ToString()
+    public string doorState;            // DoorState.ToString()
+    public bool   isPhysical;
+    public bool   isCorridorLink;
+    public string side;
+    public float  distFromA;
+    public float  distFromB;
+    public int    orderFW;
+    public int    orderBW;
+    public int    explorationOrder;
+    public float  navMeshDist;
+    public float  x, y, z;             // position (no Vector3)
+}
+
+// ─────────────────────────────────────────────────────────────
+// LINK CROSS-FLOOR
+// ─────────────────────────────────────────────────────────────
+[Serializable]
+public class ConnectorLinkSnapshot
+{
+    public string connectorId;
+    public int    floorFrom;
+    public string nodeIdFrom;
+    public float  posFromX, posFromY, posFromZ;
+    public int    floorTo;
+    public string nodeIdTo;
+    public float  posToX,   posToY,   posToZ;
+}
+
+// ─────────────────────────────────────────────────────────────
+// DISTANZA TRA DUE PORTE
+// ─────────────────────────────────────────────────────────────
+[Serializable]
+public class DoorDistSnapshot
+{
+    public string doorA;
+    public string doorB;
+    public int    floor;
+    public float  distance;
+}
