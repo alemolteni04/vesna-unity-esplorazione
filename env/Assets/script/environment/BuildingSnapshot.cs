@@ -91,13 +91,13 @@ public class EdgeSnapshot
     public string doorState;            // DoorState.ToString()
     public bool   isPhysical;
     public bool   isCorridorLink;
+   // Campi solo corridoio — nullable
     public string side;
-    public float  distFromA;
-    public float  distFromB;
-    public int    orderFW;
-    public int    orderBW;
-    public int    explorationOrder;
-    public float  navMeshDist;
+    public float? distFromA;
+    public float? distFromB;
+    public int?   orderFW;
+    public int?   orderBW;
+    public int?   explorationOrder;
     public float  x, y, z;             // position (no Vector3)
 }
 
@@ -108,12 +108,11 @@ public class EdgeSnapshot
 public class ConnectorLinkSnapshot
 {
     public string connectorId;
-    public int    floorFrom;
-    public string nodeIdFrom;
-    public float  posFromX, posFromY, posFromZ;
-    public int    floorTo;
-    public string nodeIdTo;
-    public float  posToX,   posToY,   posToZ;
+    public int    floorA;
+    public int    floorB;
+    public bool   bidirectional;
+    public float  posAx, posAy, posAz;  // posizione fisica lato floorA
+    public float  posBx, posBy, posBz;  // posizione fisica lato floorB
 }
 
 // ─────────────────────────────────────────────────────────────

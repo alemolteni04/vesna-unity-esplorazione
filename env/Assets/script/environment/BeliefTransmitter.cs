@@ -8,23 +8,12 @@ using Newtonsoft.Json;
 // ============================================================
 // Trasmette lo snapshot dell'edificio a JaCaMo come credenze.
 //
-// MODIFICA ARCHITETTURALE:
-//   Il metodo principale è ora TransmitSnapshot(BuildingSnapshot).
-//   Non dipende più dal grafo vivo: può trasmettere dati che
-//   vengono dalla memoria, dal disco, o da qualsiasi altra fonte
-//   che produca un BuildingSnapshot.
-//
-//   TransmitGraph() è mantenuto come wrapper di compatibilità
-//   per i chiamanti che hanno ancora il grafo vivo in mano
-//   (es. OnAllFloorsCompleted in ExplorationManager). Internamente
-//   chiama GraphSnapshotBuilder.Build() + TransmitSnapshot().
-//
 // FORMATO CREDENZE (compatibile con Jason .asl):
-//   node(ID, Type, X, Y, Z)
-//   edge(FromID, ToID, EdgeID, EdgeType, DoorState)
-//   connector_link(ConnectorID, FloorFrom, NodeFrom, FloorTo, NodeTo)
+//   node(ID, Type, Floor, X, Y, Z)                  ← nodi stanza/corridoio
+//   connector_link(ID, FloorA, FloorB, ...)          ← nodi scala/connettore (una sola volta)
+//   edge(ID, From, To, Floor, EdgeType, DoorState, ...)
 //   door_dist(DoorA, DoorB, Floor, Distance)
-//   exploration_complete(TotalNodes, TotalEdges)
+//   exploration_complete(...)
 // ============================================================
 
 public class BeliefTransmitter : AbstractMasElement
@@ -33,9 +22,7 @@ public class BeliefTransmitter : AbstractMasElement
     public int beliefsPerFrame = 5;
 
     // --------------------------------------------------------
-    // ENTRY POINT PRINCIPALE — accetta uno snapshot già pronto
-    // Usato sia da ExplorationManager (dopo esplorazione live)
-    // sia da ExplorationManager.Start() (caricamento da disco).
+    // ENTRY POINT PRINCIPALE
     // --------------------------------------------------------
     public void TransmitSnapshot(BuildingSnapshot snapshot)
     {
@@ -44,13 +31,11 @@ public class BeliefTransmitter : AbstractMasElement
             Debug.LogError("[BeliefTransmitter] TransmitSnapshot: snapshot null.");
             return;
         }
-
         StartCoroutine(TransmitSnapshotCoroutine(snapshot));
     }
 
     // --------------------------------------------------------
-    // WRAPPER DI COMPATIBILITÀ — mantiene l'API precedente
-    // Converte il grafo vivo in snapshot e lo trasmette.
+    // WRAPPER DI COMPATIBILITÀ
     // --------------------------------------------------------
     public void TransmitGraph(
         Dictionary<int, TopologicalGraph> floorGraphs,
@@ -60,7 +45,6 @@ public class BeliefTransmitter : AbstractMasElement
     {
         var snapshot = GraphSnapshotBuilder.Build(
             floorGraphs, connectorLinks, doorDistances, buildingId);
-
         TransmitSnapshot(snapshot);
     }
 
@@ -74,26 +58,65 @@ public class BeliefTransmitter : AbstractMasElement
 
         int count = 0;
 
+        // ── Costruisci set dei connectorId che sono scale/connettori ────
+        var connectorNodeIds = new HashSet<string>();
+        foreach (var link in snapshot.connectorLinks)
+            connectorNodeIds.Add(link.connectorId);
+
+        // ── Tiene traccia dei connettori già trasmessi ───────
+        var sentConnectors = new HashSet<string>();
+
         // ── 1. Nodi e archi per piano ────────────────────────
         foreach (var floor in snapshot.floors)
         {
             // Nodi
             foreach (var node in floor.nodes)
             {
+                // Nodo scala/connettore: trasmetti come connector_link una sola volta
+                if (connectorNodeIds.Contains(node.nodeId))
+                {
+                    if (sentConnectors.Contains(node.nodeId)) continue;
+                    sentConnectors.Add(node.nodeId);
+
+                    var link = snapshot.connectorLinks.Find(l => l.connectorId == node.nodeId);
+
+                    SendBelief(new BeliefMessage
+                    {
+                        beliefType = "connector_link",
+                        payload    = new Dictionary<string, object>
+                        {
+                            { "id",            node.nodeId        },
+                            { "floorA",        link.floorA        },
+                            { "floorB",        link.floorB        },
+                            { "bidirectional", link.bidirectional  },
+                            { "posAx",         link.posAx         },
+                            { "posAy",         link.posAy         },
+                            { "posAz",         link.posAz         },
+                            { "posBx",         link.posBx         },
+                            { "posBy",         link.posBy         },
+                            { "posBz",         link.posBz         },
+                        }
+                    });
+
+                    if (++count % beliefsPerFrame == 0) yield return null;
+                    continue;
+                }
+
+                // Nodo normale (stanza o polo corridoio)
                 SendBelief(new BeliefMessage
                 {
                     beliefType = "node",
                     payload    = new Dictionary<string, object>
                     {
-                        { "id",               node.nodeId           },
-                        { "type",             node.nodeType         },
-                        { "floor",            floor.floorIndex      },
-                        { "x",                node.x                },
-                        { "y",                node.y                },
-                        { "z",                node.z                },
-                        { "fullyExplored",    node.fullyExplored    },
-                        { "corridorId",       node.corridorId ?? "" },
-                        { "poleLabel",        node.poleLabel  ?? "" },
+                        { "id",            node.nodeId           },
+                        { "type",          node.nodeType         },
+                        { "floor",         floor.floorIndex      },
+                        { "x",             node.x                },
+                        { "y",             node.y                },
+                        { "z",             node.z                },
+                        { "fullyExplored", node.fullyExplored    },
+                        { "corridorId",    node.corridorId ?? "" },
+                        { "poleLabel",     node.poleLabel  ?? "" },
                     }
                 });
 
@@ -133,26 +156,7 @@ public class BeliefTransmitter : AbstractMasElement
             }
         }
 
-        // ── 2. Link cross-floor ──────────────────────────────
-        foreach (var link in snapshot.connectorLinks)
-        {
-            SendBelief(new BeliefMessage
-            {
-                beliefType = "connector_link",
-                payload    = new Dictionary<string, object>
-                {
-                    { "connectorId", link.connectorId },
-                    { "floorFrom",   link.floorFrom   },
-                    { "nodeIdFrom",  link.nodeIdFrom   },
-                    { "floorTo",     link.floorTo      },
-                    { "nodeIdTo",    link.nodeIdTo     },
-                }
-            });
-
-            if (++count % beliefsPerFrame == 0) yield return null;
-        }
-
-        // ── 3. Distanze porte ────────────────────────────────
+        // ── 2. Distanze porte ────────────────────────────────
         foreach (var dist in snapshot.doorDistances)
         {
             SendBelief(new BeliefMessage
@@ -170,7 +174,7 @@ public class BeliefTransmitter : AbstractMasElement
             if (++count % beliefsPerFrame == 0) yield return null;
         }
 
-        // ── 4. Segnale di completamento ──────────────────────
+        // ── 3. Segnale di completamento ──────────────────────
         int totalNodes = 0, totalEdges = 0;
         foreach (var f in snapshot.floors)
         {
@@ -183,13 +187,12 @@ public class BeliefTransmitter : AbstractMasElement
             beliefType = "exploration_complete",
             payload    = new Dictionary<string, object>
             {
-                { "buildingId",   snapshot.buildingId             },
-                { "capturedAt",   snapshot.capturedAt             },
-                { "totalFloors",  snapshot.floors.Count           },
-                { "totalNodes",   totalNodes                      },
-                { "totalEdges",   totalEdges                      },
-                { "totalLinks",   snapshot.connectorLinks.Count   },
-                { "totalDists",   snapshot.doorDistances.Count    },
+                { "buildingId",  snapshot.buildingId          },
+                { "capturedAt",  snapshot.capturedAt          },
+                { "totalFloors", snapshot.floors.Count        },
+                { "totalNodes",  totalNodes                   },
+                { "totalEdges",  totalEdges                   },
+                { "totalDists",  snapshot.doorDistances.Count },
             }
         });
 

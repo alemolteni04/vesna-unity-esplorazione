@@ -120,46 +120,52 @@ public static class GraphSnapshotBuilder
         return s;
     }
 
-    private static EdgeSnapshot EdgeFrom(GraphEdge edge)
+   private static EdgeSnapshot EdgeFrom(GraphEdge edge)
+{
+    var s = new EdgeSnapshot
     {
-        return new EdgeSnapshot
-        {
-            edgeId           = edge.id,
-            fromNodeId       = edge.fromNodeId,
-            toNodeId         = edge.toNodeId ?? "unknown",
-            edgeType         = edge.edgeType.ToString(),
-            edgeState        = edge.state.ToString(),
-            doorState        = edge.doorState.ToString(),
-            isPhysical       = edge.isPhysical,
-            isCorridorLink   = edge.isCorridorLink,
-            side             = edge.side,
-            distFromA        = edge.distFromA,
-            distFromB        = edge.distFromB,
-            orderFW          = edge.orderFW,
-            orderBW          = edge.orderBW,
-            explorationOrder = edge.explorationOrder,
-            navMeshDist      = edge.navMeshDist,
-            x                = edge.position.x,
-            y                = edge.position.y,
-            z                = edge.position.z,
-        };
+        edgeId         = edge.id,
+        fromNodeId     = edge.fromNodeId,
+        toNodeId       = edge.toNodeId ?? "unknown",
+        edgeType       = edge.edgeType.ToString(),
+        edgeState      = edge.state.ToString(),
+        doorState      = edge.doorState.ToString(),
+        isPhysical     = edge.isPhysical,
+        isCorridorLink = edge.isCorridorLink,
+        x              = edge.position.x,
+        y              = edge.position.y,
+        z              = edge.position.z,
+    };
+
+    // Campi solo per archi corridoio
+    if (edge.edgeType == EdgeType.DoorFW ||
+        edge.edgeType == EdgeType.DoorBW ||
+        edge.edgeType == EdgeType.Central)
+    {
+        s.side             = edge.side;
+        s.distFromA        = edge.distFromA;
+        s.distFromB        = edge.distFromB;
+        s.orderFW          = edge.orderFW;
+        s.orderBW          = edge.orderBW;
+        s.explorationOrder = edge.explorationOrder;
     }
 
-    private static ConnectorLinkSnapshot ConnectorLinkFrom(FloorConnectorLink link)
+    return s;
+}
+   private static ConnectorLinkSnapshot ConnectorLinkFrom(FloorConnectorLink link)
     {
         return new ConnectorLinkSnapshot
         {
-            connectorId = link.connectorId,
-            floorFrom   = link.floorFrom,
-            nodeIdFrom  = link.nodeIdFrom,
-            posFromX    = link.posFrom.x,
-            posFromY    = link.posFrom.y,
-            posFromZ    = link.posFrom.z,
-            floorTo     = link.floorTo,
-            nodeIdTo    = link.nodeIdTo,
-            posToX      = link.posTo.x,
-            posToY      = link.posTo.y,
-            posToZ      = link.posTo.z,
+            connectorId   = link.connectorId,
+            floorA        = link.floorFrom,
+            floorB        = link.floorTo,
+            bidirectional = link.bidirectional,
+            posAx         = link.posFrom.x,
+            posAy         = link.posFrom.y,
+            posAz         = link.posFrom.z,
+            posBx         = link.posTo.x,
+            posBy         = link.posTo.y,
+            posBz         = link.posTo.z,
         };
     }
 

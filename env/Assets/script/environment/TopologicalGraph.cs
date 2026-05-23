@@ -297,17 +297,12 @@ public class TopologicalGraph
 
     // Arco segmento tra fine corridoio N e inizio corridoio N+1
     public GraphEdge AddSegmentArc(string fromNodeId, string toNodeId,
-                                   float distance = 0.5f, string doorName = null)
+                                float distance = 0.5f, string doorName = null)
     {
         if (!nodes.ContainsKey(fromNodeId)) return null;
         var fromNode = nodes[fromNodeId];
-        string segId = $"seg_{fromNodeId}_to_{toNodeId}";
-        if (fromNode.edges.Find(e => e?.id == segId) != null) return null;
 
-        var toNode = nodes.ContainsKey(toNodeId) ? nodes[toNodeId] : null;
-
-        // Se il nome non è passato esplicitamente, cercalo tra gli archi isCorridorLink
-        // già esplorati sul nodo di partenza (caso corridoio→corridoio).
+        // Risolvi doorName prima di costruire l'id
         if (doorName == null)
         {
             var linkEdge = fromNode.edges.Find(
@@ -315,13 +310,23 @@ public class TopologicalGraph
             doorName = linkEdge?.doorName ?? "";
         }
 
+        // Id usa il nome del varco se disponibile
+        string segId = !string.IsNullOrEmpty(doorName)
+            ? $"seg_{doorName}"
+            : $"seg_{fromNodeId}_to_{toNodeId}";
+
+        if (fromNode.edges.Find(e => e?.id == segId) != null) return null;
+
+        var toNode = nodes.ContainsKey(toNodeId) ? nodes[toNodeId] : null;
+
         var edge = new GraphEdge(segId, fromNodeId, false, EdgeType.Segment,
-                                 toNode?.position ?? Vector3.zero)
+                                toNode?.position ?? Vector3.zero)
         {
             toNodeId  = toNodeId,
             distFromA = distance,
             state     = EdgeState.Explored,
-            doorName  = doorName
+            doorName  = doorName,
+            isCorridorLink = true
         };
         fromNode.edges.Add(edge);
 
@@ -329,7 +334,6 @@ public class TopologicalGraph
         Debug.Log($"[Graph] Segmento: {fromNodeId}→{toNodeId}{doorLabel} dist={distance:F2}m");
         return edge;
     }
-
     // =========================================================
     // NAVIGAZIONE (stack DFS)
     // =========================================================

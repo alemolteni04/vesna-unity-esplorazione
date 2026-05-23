@@ -2,35 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-
 // ============================================================
 // DoorDistanceMap.cs
 // ============================================================
-// Calcola e memorizza le distanze NavMesh tra tutte le porte
-// dell'edificio, piano per piano.
-//
-// COME FUNZIONA:
-//   Dopo che ExplorationManager ha completato l'esplorazione,
-//   chiama Compute(allGraphs). Il metodo scorre tutti i grafi
-//   topologici (uno per piano), estrae le posizioni delle porte
-//   dagli archi di tipo DoorFW, DoorBW e RoomDoor, e calcola
-//   la distanza NavMesh reale tra ogni coppia di porte.
-//   I risultati vengono salvati nella lista pubblica `pairs`,
-//   visibile nell'Inspector di Unity.
-//
-// OUTPUT:
-//   - `pairs`: lista di DoorDistancePair (doorA, doorB, floor,
-//     distance) consultabile da altri script in Unity.
-//   - Le distanze vengono anche inviate a JaCaMo come credenze
-//     tramite BeliefTransmitter (beliefType = "door_dist"),
-//     così l'agente può usarle per pianificare i percorsi.
-//
-// DIPENDENZE:
-//   - TopologicalGraph.cs  (grafi per piano da ExplorationManager)
-//   - NavMesh Unity        (deve essere baked nella scena)
-//   - BeliefTransmitter.cs (per la trasmissione a JaCaMo)
+// Calcola le distanze NavMesh tra stanze adiacenti (archi Door)
+// e distanze fisse tra poli corridoio adiacenti (archi Segment).
 // ============================================================
-
 
 [System.Serializable]
 public struct DoorDistancePair
@@ -54,51 +31,47 @@ public class DoorDistanceMap : MonoBehaviour
             int floor = kv.Key;
             var graph  = kv.Value;
 
-            // Raccogli le posizioni di tutte le porte dagli archi
-            var doorPositions = new Dictionary<string, Vector3>();
-
             foreach (var node in graph.AllNodes())
             {
                 foreach (var edge in node.edges)
                 {
                     if (edge == null) continue;
-                    if (edge.edgeType == EdgeType.DoorFW  ||
-                        edge.edgeType == EdgeType.DoorBW  ||
-                        edge.edgeType == EdgeType.Door)
+
+                    // Segmento corridoio→corridoio: distanza fissa 0.5m tra i due poli
+                    if (edge.edgeType == EdgeType.Segment)
                     {
-                        if (!string.IsNullOrEmpty(edge.id) &&
-                            !doorPositions.ContainsKey(edge.id))
+                        if (!string.IsNullOrEmpty(edge.fromNodeId) &&
+                            !string.IsNullOrEmpty(edge.toNodeId)   &&
+                            edge.toNodeId != "unknown")
                         {
-                            if (!string.IsNullOrEmpty(edge.toNodeId))
-                                 doorPositions[edge.toNodeId] = edge.position;
+                            pairs.Add(new DoorDistancePair {
+                                doorA    = edge.fromNodeId,
+                                doorB    = edge.toNodeId,
+                                floor    = floor,
+                                distance = 0.5f
+                            });
                         }
+                        continue;
                     }
-                }
-            }
 
-            var doorList = new List<string>(doorPositions.Keys);
-            Debug.Log($"[DoorDistMap] Piano {floor} — porte: " + string.Join(", ", doorList));
+                    // Solo archi Door diretti stanza→stanza adiacente
+                    if (edge.edgeType != EdgeType.Door) continue;
+                    if (string.IsNullOrEmpty(edge.toNodeId) ||
+                        edge.toNodeId == "unknown") continue;
 
-            for (int i = 0; i < doorList.Count; i++)
-            {
-                for (int j = i + 1; j < doorList.Count; j++)
-                {
-                    float dist = NavMeshDistance(
-                        doorPositions[doorList[i]],
-                        doorPositions[doorList[j]]);
-
+                    float dist = NavMeshDistance(node.position, edge.position);
                     if (dist < 0f) continue;
 
                     pairs.Add(new DoorDistancePair {
-                        doorA    = doorList[i],
-                        doorB    = doorList[j],
+                        doorA    = edge.fromNodeId,
+                        doorB    = edge.toNodeId,
                         floor    = floor,
                         distance = dist
                     });
                 }
             }
 
-            Debug.Log($"[DoorDistMap] Piano {floor}: {doorList.Count} porte, {pairs.Count} coppie");
+            Debug.Log($"[DoorDistMap] Piano {floor}: {pairs.Count} coppie adiacenti");
         }
     }
 

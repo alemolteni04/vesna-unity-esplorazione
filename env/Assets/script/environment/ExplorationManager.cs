@@ -36,6 +36,7 @@ public struct FloorConnectorLink
     public int     floorTo;
     public string  nodeIdTo;      // ID nodo in floorGraphs[floorTo]
     public Vector3 posTo;         // posizione fisica lato arrivo
+    public bool    bidirectional;
 }
 
 
@@ -1613,6 +1614,14 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
         var destGraph = floorGraphs[targetFloor];
         if (destGraph.GetNode(connNodeId) == null)
             destGraph.AddRoomNode(connNodeId, connPosDestFloor);
+            
+    bool alreadyExists = ConnectorLinks.Exists(l =>
+    l.connectorId == activeConnector.id &&
+    ((l.floorFrom == fromFloor   && l.floorTo == targetFloor) ||
+     (l.floorFrom == targetFloor && l.floorTo == fromFloor)));
+
+if (!alreadyExists)
+{
 
         ConnectorLinks.Add(new FloorConnectorLink
         {
@@ -1622,10 +1631,12 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
             posFrom     = connPosCurrentFloor,
             floorTo     = targetFloor,
             nodeIdTo    = connNodeId,
-            posTo       = connPosDestFloor
+            posTo       = connPosDestFloor,
+            bidirectional = activeConnector.bidirectional
         });
 
         Debug.Log($"[ExplMgr] ConnectorLink: piano {fromFloor}/'{connNodeId}' ↔ piano {targetFloor}/'{connNodeId}'");
+    }
     }
     else if (!floorGraphs.ContainsKey(targetFloor))
     {
