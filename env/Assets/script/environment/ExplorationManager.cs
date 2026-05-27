@@ -928,7 +928,9 @@ StartCoroutine(TraverseStairsThen(targetFloor, ascending));
         if (isRoom && graph != null)
         {
             var visitNode = graph.GetNode(currentNodeId);
-            if (visitNode != null) visitNode.physicallyVisited = true;
+            if (visitNode != null) 
+                visitNode.physicallyVisited = true;
+
         }
 
         Debug.Log($"[ExplMgr] 360° in '{currentNodeId}' (inRoomMode={inRoomMode})");
@@ -1023,35 +1025,54 @@ StartCoroutine(TraverseStairsThen(targetFloor, ascending));
       if (navAgent.remainingDistance < arrivalThreshold && !navAgent.pathPending || enteringRoomTimer >= enteringRoomTimeout)
         {
             enteringRoomTimer = 0f;
-            StartRotation360(isRoom: true);
-        }
-    }
-
-    private void UpdateInsideRoom() => StartRotation360(isRoom: true);
-
-    private void UpdateBacktracking()
-    {
-        if (navAgent.pathPending) return;
-
-        backtrackTimer += Time.deltaTime;
-        bool arrived    = navAgent.hasPath && navAgent.remainingDistance <= arrivalThreshold;
-        bool pathFailed = !navAgent.hasPath;
-        bool timedOut   = backtrackTimer >= backtrackTimeout;
-
-        if (arrived || pathFailed || timedOut)
+            // ← AGGIUNGI: se la stanza è già stata visitata, salta il 360°
+        var node = graph?.GetNode(currentNodeId);
+        if (node != null && node.physicallyVisited)
         {
-            backtrackTimer = 0f;
-            if (timedOut && !arrived)
-                Debug.LogWarning($"[ExplMgr] Backtrack timeout → {graph.CurrentNodeId}.");
-
-            currentNodeId = graph.CurrentNodeId;
-            if (string.IsNullOrEmpty(currentNodeId)) { CheckFloorCompletion(); return; }
-
-            Debug.Log($"[ExplMgr] Backtrack completato in {currentNodeId}. Prossima azione!");
-            state = State.Idle;
+            Debug.Log($"[ExplMgr] '{currentNodeId}' già visitata, salto 360°.");
             DecideNextAction();
+            return;
+        }
+
+        StartRotation360(isRoom: true);
         }
     }
+
+    private void UpdateInsideRoom()
+{
+    var node = graph?.GetNode(currentNodeId);
+    if (node != null && node.physicallyVisited)
+    {
+        DecideNextAction();
+        return;
+    }
+    StartRotation360(isRoom: true);
+}
+    private void UpdateBacktracking()
+{
+    if (navAgent.pathPending) return;
+
+    backtrackTimer += Time.deltaTime;
+    bool arrived    = navAgent.hasPath && navAgent.remainingDistance <= arrivalThreshold;
+    bool pathFailed = !navAgent.hasPath;
+    bool timedOut   = backtrackTimer >= backtrackTimeout;
+
+    if (arrived || pathFailed || timedOut)
+    {
+        backtrackTimer = 0f;
+        navAgent.ResetPath(); // ← AGGIUNGI QUESTO: hasPath diventa false, blocca i frame successivi
+
+        if (timedOut && !arrived)
+            Debug.LogWarning($"[ExplMgr] Backtrack timeout → {graph.CurrentNodeId}.");
+
+        currentNodeId = graph.CurrentNodeId;
+        if (string.IsNullOrEmpty(currentNodeId)) { CheckFloorCompletion(); return; }
+
+        Debug.Log($"[ExplMgr] Backtrack completato in {currentNodeId}. Prossima azione!");
+        state = State.Idle;
+        DecideNextAction();
+    }
+}
 
 private void UpdateMovingToConnector()
 {
@@ -1102,7 +1123,6 @@ private void UpdateMovingToConnector()
                 }
                 break;
             }
-Debug.Log($"[Backtrack] {targetNode} già esplorato, riavvolgo...");
             Debug.Log($"[Backtrack] {targetNode} già esplorato, riavvolgo...");
         }
 
@@ -1199,17 +1219,17 @@ Debug.Log($"[Backtrack] {targetNode} già esplorato, riavvolgo...");
 
     bool isTargetCorridor = newNodeId.ToLower().Contains("corridoio");
 
-    var existingNode = graph.GetNode(newNodeId);
-    if (existingNode != null && !existingNode.HasUndiscoveredEdges() && !isTargetCorridor && existingNode.physicallyVisited)
-    {
-        Debug.LogWarning($"[ExplMgr] LOOP EVITATO: '{newNodeId}' già completata.");
-        graph.MarkEdgeExplored(currentNodeId, edge.id, newNodeId);
-        SyncTwinCorridorEdge(edge.id, newNodeId);
-        currentEdge = null;
-        navAgent.isStopped = false;
-        DecideNextAction();
-        return;
-    }
+   var existingNode = graph.GetNode(newNodeId);
+if (existingNode != null && existingNode.physicallyVisited && !isTargetCorridor)
+{
+    Debug.LogWarning($"[ExplMgr] LOOP EVITATO: '{newNodeId}' già visitata.");
+    graph.MarkEdgeExplored(currentNodeId, edge.id, newNodeId);
+    SyncTwinCorridorEdge(edge.id, newNodeId);
+    currentEdge = null;
+    navAgent.isStopped = false;
+    DecideNextAction();
+    return;
+}
 
     graph.MarkEdgeExplored(currentNodeId, edge.id, isTargetCorridor ? null : newNodeId);
     SyncTwinCorridorEdge(edge.id, newNodeId);
@@ -1404,6 +1424,7 @@ Debug.Log($"[Backtrack] {targetNode} già esplorato, riavvolgo...");
             // Cerca il connettore tra currentFloor e midFloor
             // (può essere già traversato — vogliamo ri-attraversarlo)
             var connToMid = buildingGraph.GetConnectors(currentFloor, midFloor);
+            connToMid.RemoveAll(c => traversedConnectors.Contains(c.id));
             if (connToMid.Count == 0) continue;
 
             connToMid.Sort((a, b) => a.costUp.CompareTo(b.costUp));
@@ -1434,7 +1455,20 @@ Debug.Log($"[Backtrack] {targetNode} già esplorato, riavvolgo...");
 private bool IsCurrentFloorFullyExplored(FloorNode floorData)
 {
     // 1. Il grafo del piano corrente deve avere tutti gli archi esplorati
-    if (!graph.IsFullyExplored()) return false;
+    if (!graph.IsFullyExplored())
+    {
+        // ← AGGIUNGI per debug: scopri quale edge blocca
+        foreach (var node in graph.AllNodes())
+        {
+            if (node == null) continue;
+            foreach (var e in node.edges)
+            {
+                if (e != null && e.state != EdgeState.Explored)
+                    Debug.Log($"[FloorCheck] Edge non esplorato: {node.id} → {e.id} (stato={e.state})");
+            }
+        }
+        return false;
+    }
  
     // 2. Tutti i roomObjects del BuildingGraph per questo piano devono
     //    essere stati visitati come nodi nel grafo.
