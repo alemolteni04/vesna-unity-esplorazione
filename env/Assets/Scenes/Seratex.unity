@@ -5384,7 +5384,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1.2-U5
+      value: Door C1-U5
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -6621,7 +6621,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1.1-U1
+      value: Door C1-U1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -10721,7 +10721,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab1-C2.1
+      value: Door Lab1-C2
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -11680,7 +11680,7 @@ GameObject:
   m_Component:
   - component: {fileID: 215576292}
   m_Layer: 0
-  m_Name: Corridoio2.1
+  m_Name: Corridoio2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15881,6 +15881,11 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 1859268381}
+--- !u!4 &320551781 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
+  m_PrefabInstance: {fileID: 1149318838}
+  m_PrefabAsset: {fileID: 0}
 --- !u!43 &320698534
 Mesh:
   m_ObjectHideFlags: 0
@@ -16295,7 +16300,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door2 Lab2-C2.2
+      value: Door2 Lab2-C2
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -18873,7 +18878,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1.2-U7
+      value: Door C1-U7
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -19302,7 +19307,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab5-C2.1
+      value: Door Lab5-C2
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -24009,7 +24014,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door1 C1.1-U3
+      value: Door1 C1-U3
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -31002,7 +31007,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door1 Lab2-C2.2
+      value: Door1 Lab2-C2
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -34539,62 +34544,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 875507658}
---- !u!1 &801635758
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 801635759}
-  - component: {fileID: 801635760}
-  m_Layer: 0
-  m_Name: VarcoC1.1-C3
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &801635759
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 801635758}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.26, y: 0, z: 0.7}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 891963218}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &801635760
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 801635758}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eda7341fc32f8a44296a413853223ae6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  elementType: 0
-  isOpen: 1
-  isLocked: 0
-  isCorridorLink: 1
-  physicalModel: {fileID: 0}
-  roomFront: {fileID: 908216387}
-  roomBack: {fileID: 1383980812}
-  distFromA: -1
-  distFromB: -1
-  side: 
-  orderFW: -1
-  discovered: 0
 --- !u!43 &802888580
 Mesh:
   m_ObjectHideFlags: 0
@@ -37870,7 +37819,7 @@ Transform:
   - {fileID: 1972067456}
   - {fileID: 1416765379}
   - {fileID: 1040799490}
-  - {fileID: 801635759}
+  - {fileID: 320551781}
   m_Father: {fileID: 1152347715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &892305939
@@ -39175,7 +39124,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab6-C2.2
+      value: Door Lab6-C2
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -43135,7 +43084,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1.2-U6
+      value: Door C1-U6
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -46494,7 +46443,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door2 C1.1-U3
+      value: Door2 C1-U3
       objectReference: {fileID: 0}
     - target: {fileID: 3706487945658162064, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -46946,7 +46895,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 891963218}
     m_Modifications:
     - target: {fileID: 2773010279777088967, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: roomBack
@@ -46965,8 +46914,12 @@ PrefabInstance:
       value: VARCO CORRIDOIO1_3
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.7467513
+      value: -6.5532227
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalPosition.y
@@ -46974,7 +46927,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4
+      value: 0.91999817
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalRotation.w
@@ -46982,7 +46935,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalRotation.y
@@ -46990,7 +46943,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -63766,8 +63719,6 @@ MonoBehaviour:
   inspectionDistance: 1.2
   enterOffset: 3
   poleTimeoutSeconds: 4
-  agentAnimator: {fileID: 0}
-  walkAnimParam: IsWalking
   buildingId: UfficioMartiAle
   inRoomMode: 0
   currentFloor: 0
@@ -66449,7 +66400,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab3-C2.2
+      value: Door Lab3-C2
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -75391,7 +75342,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1870941163}
   m_Layer: 0
-  m_Name: Corridoio1.1
+  m_Name: Corridoio1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -81427,7 +81378,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1.2-Lab4
+      value: Door C1-Lab4
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -81673,7 +81624,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab1-C2.2
+      value: Door2 Lab1-C2
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -85426,4 +85377,3 @@ SceneRoots:
   - {fileID: 1859558264}
   - {fileID: 1670569960}
   - {fileID: 963824115}
-  - {fileID: 1149318838}
