@@ -407,11 +407,29 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
                 if (poleANode != null)
                 {
                     var central = poleANode.edges.Find(e => e?.id == $"central_{corridorId}");
-                    if (central != null && central.state == EdgeState.Explored)
+                    /*if (central != null && central.state == EdgeState.Explored)
                     {
                         Debug.Log($"[ExplMgr] Polo {corridorId}_{poleId} ignorato — corridoio già transitato.");
                         return;
-                    }
+                    }*/
+                    //NUOVO
+                    if (central != null && central.state == EdgeState.Explored)
+{
+    if (!string.IsNullOrEmpty(currentNodeId) &&
+        (currentNodeId.EndsWith("_A") || currentNodeId.EndsWith("_B")))
+    {
+        string poleAId = $"{corridorId}_A";
+        string poleBId = $"{corridorId}_B";
+        Vector3 doorPos = transform.position;
+        float distToA = Vector3.Distance(doorPos, graph.GetNode(poleAId)?.position ?? doorPos);
+        float distToB = Vector3.Distance(doorPos, graph.GetNode(poleBId)?.position ?? doorPos);
+        string nearestTo = distToA <= distToB ? poleAId : poleBId;
+        graph.AddSegmentArc(currentNodeId, nearestTo,
+            Vector3.Distance(transform.position, graph.GetNode(nearestTo)?.position ?? transform.position));
+    }
+    Debug.Log($"[ExplMgr] Polo {corridorId}_{poleId} ignorato — corridoio già transitato.");
+    return;
+}
                 }
             }
 
