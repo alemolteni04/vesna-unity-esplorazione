@@ -128,4 +128,5 @@ public class RoomDistSnapshot
     public string roomB;
     public int    floor;
     public float  distance;
+    public string doorName;
 }

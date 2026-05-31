@@ -16,6 +16,7 @@ public struct RoomDistancePair
     public string roomB;
     public int    floor;
     public float  distance;
+    public string doorName;
 }
 
 public class RoomDistanceMap : MonoBehaviour
@@ -48,13 +49,14 @@ public class RoomDistanceMap : MonoBehaviour
                                 roomA    = edge.fromNodeId,
                                 roomB    = edge.toNodeId,
                                 floor    = floor,
-                                distance = edge.distFromA
+                                distance = edge.distFromA,
+                                doorName = edge.id  // ← il nome della porta è l'id dell'arco
                             });
                         }
                         continue;
                     }
 
-                    // Solo archi Room diretti stanza→stanza adiacente
+                    // Solo archi Door diretti stanza→stanza adiacente
                     if (edge.edgeType != EdgeType.Door) continue;
                     if (string.IsNullOrEmpty(edge.toNodeId) ||
                         edge.toNodeId == "unknown") continue;
@@ -62,15 +64,23 @@ public class RoomDistanceMap : MonoBehaviour
                     var toNode = graph.GetNode(edge.toNodeId);
                     if (toNode == null) continue;
 
-                    float dist = NavMeshDistance(node.position, toNode.position);
-                    if (dist < 0f) continue;
+                    // Distanza NavMesh: centro stanza A → porta → centro stanza B
+                    float distADoor = NavMeshDistance(node.position, edge.position);
+                    float distDoorB = NavMeshDistance(edge.position, toNode.position);      
+
+                    Debug.Log($"[RoomDist] {edge.id}: nodePos={node.position} edgePos={edge.position} toNodePos={toNode.position} distA={distADoor} distB={distDoorB}");
+                    if (distADoor < 0f || distDoorB < 0f) continue;
+
+                    float dist = distADoor + distDoorB;
 
                     pairs.Add(new RoomDistancePair {
                         roomA    = edge.fromNodeId,
                         roomB    = edge.toNodeId,
                         floor    = floor,
-                        distance = dist
-});
+                        distance = dist,
+                        doorName = edge.id
+                    });
+
                 }
             }
 

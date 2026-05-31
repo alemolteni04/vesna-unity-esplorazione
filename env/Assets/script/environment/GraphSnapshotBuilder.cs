@@ -184,6 +184,7 @@ public static class GraphSnapshotBuilder
             roomB    = pair.roomB,
             floor    = pair.floor,
             distance = pair.distance,
+            doorName = pair.doorName,
         };
     }
 }
