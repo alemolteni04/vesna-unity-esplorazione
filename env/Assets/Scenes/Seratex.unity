@@ -48891,7 +48891,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1206960527}
   m_Layer: 0
-  m_Name: Porte-1
+  m_Name: Porte0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -50344,7 +50344,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1252067015}
   m_Layer: 0
-  m_Name: piano -1
+  m_Name: piano 0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -58887,7 +58887,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1473521506}
   m_Layer: 0
-  m_Name: pavimento piano 0
+  m_Name: pavimento piano 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -63618,7 +63618,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1570252483}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27553a6c7dc156246901ccaa180fc189, type: 3}
+  m_Script: {fileID: 11500000, guid: d9f4eb419fa8edf47b5bf5319234e7a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   pairs: []
@@ -63660,7 +63660,7 @@ MonoBehaviour:
   poleTimeoutSeconds: 4
   buildingId: UfficioMartiAle
   inRoomMode: 0
-  currentFloor: 0
+  currentFloor: 1
   backtrackTimeout: 5
 --- !u!114 &1570252489
 MonoBehaviour:
@@ -63925,15 +63925,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4342259202371163873, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.9
+      value: 1.11
       objectReference: {fileID: 0}
     - target: {fileID: 4342259202371163873, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.5
+      value: -0.44
       objectReference: {fileID: 0}
     - target: {fileID: 4423980635592111131, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.9
+      value: -2.28
       objectReference: {fileID: 0}
     - target: {fileID: 4423980635592111131, guid: 62016693539e3d14c8b53832c7d237d8, type: 3}
       propertyPath: m_LocalPosition.z
@@ -67679,7 +67679,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   floors:
-  - floorIndex: 0
+  - floorIndex: 1
     floorName: Uffici
     spawnObject: {fileID: 1756638649}
     roomObjects:
@@ -67701,7 +67701,7 @@ MonoBehaviour:
     - {fileID: 1756638649}
     - {fileID: 1018178212}
     explored: 0
-  - floorIndex: -1
+  - floorIndex: 0
     floorName: ZonaAbitabile
     spawnObject: {fileID: 1218673096}
     roomObjects:
@@ -67715,8 +67715,8 @@ MonoBehaviour:
   connectors:
   - type: 0
     idObject: {fileID: 1190407594}
-    floorFrom: 0
-    floorTo: -1
+    floorFrom: 1
+    floorTo: 0
     bidirectional: 1
     costUp: 0
     costDown: 0
@@ -68100,7 +68100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1670569960}
   m_Layer: 0
-  m_Name: SCALA0->-1
+  m_Name: SCALA1->0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -74493,7 +74493,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1859558264}
   m_Layer: 0
-  m_Name: pavimento piano -1
+  m_Name: pavimento piano 0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -84119,7 +84119,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6b2dab6698512044387c21f75ae2047b, type: 3}
       propertyPath: m_Name
-      value: seratex piano -1
+      value: seratex piano 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
