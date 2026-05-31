@@ -42,8 +42,10 @@ public class BuildingSnapshot
     // ── Link cross-floor (scale, ascensori, ecc.) ───────────
     public List<ConnectorLinkSnapshot>  connectorLinks  = new List<ConnectorLinkSnapshot>();
 
-    // ── Distanze porte ──────────────────────────────────────
-    public List<DoorDistSnapshot>       doorDistances   = new List<DoorDistSnapshot>();
+    // ── Distanze stanze ──────────────────────────────────────
+    public List<RoomDistSnapshot>       roomDistances   = new List<RoomDistSnapshot>();
+
+    
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -93,6 +95,7 @@ public class EdgeSnapshot
     public bool   isCorridorLink;
    // Campi solo corridoio — nullable
     public string side;
+    public float? distance; // solo per Central
     public float? distFromA;
     public float? distFromB;
     public int?   orderFW;
@@ -119,10 +122,10 @@ public class ConnectorLinkSnapshot
 // DISTANZA TRA DUE PORTE
 // ─────────────────────────────────────────────────────────────
 [Serializable]
-public class DoorDistSnapshot
+public class RoomDistSnapshot
 {
-    public string doorA;
-    public string doorB;
+    public string roomA;
+    public string roomB;
     public int    floor;
     public float  distance;
 }

@@ -34,12 +34,12 @@ public static class GraphSnapshotBuilder
     /// </summary>
     /// <param name="floorGraphs">Dizionario piano → grafo topologico.</param>
     /// <param name="connectorLinks">Link cross-floor (scale, ascensori).</param>
-    /// <param name="doorDistances">Coppie di distanza NavMesh tra porte.</param>
+    /// <param name="roomDistances">Coppie di distanza NavMesh tra porte.</param>
     /// <param name="buildingId">Nome/ID logico dell'edificio (es. "Edificio_A").</param>
     public static BuildingSnapshot Build(
         Dictionary<int, TopologicalGraph> floorGraphs,
         List<FloorConnectorLink>          connectorLinks,
-        List<DoorDistancePair>            doorDistances,
+        List<RoomDistancePair>            roomDistances,
         string                            buildingId = "building")
     {
         var snapshot = new BuildingSnapshot
@@ -80,15 +80,18 @@ public static class GraphSnapshotBuilder
             snapshot.connectorLinks.Add(ConnectorLinkFrom(link));
 
         // ── Distanze porte ───────────────────────────────────
-        foreach (var pair in doorDistances)
-            snapshot.doorDistances.Add(DoorDistFrom(pair));
+        foreach (var pair in roomDistances)
+            snapshot.roomDistances.Add(RoomDistFrom(pair));
 
+        
         Debug.Log($"[SnapshotBuilder] Snapshot creato: " +
                   $"{snapshot.floors.Count} piani, " +
                   $"{snapshot.connectorLinks.Count} link, " +
-                  $"{snapshot.doorDistances.Count} distanze porte.");
+                  $"{snapshot.roomDistances.Count} distanze porte.");
 
+       
         return snapshot;
+
     }
 
     // --------------------------------------------------------
@@ -139,8 +142,7 @@ public static class GraphSnapshotBuilder
 
     // Campi solo per archi corridoio
     if (edge.edgeType == EdgeType.DoorFW ||
-        edge.edgeType == EdgeType.DoorBW ||
-        edge.edgeType == EdgeType.Central)
+        edge.edgeType == EdgeType.DoorBW)
     {
         s.side             = edge.side;
         s.distFromA        = edge.distFromA;
@@ -148,6 +150,11 @@ public static class GraphSnapshotBuilder
         s.orderFW          = edge.orderFW;
         s.orderBW          = edge.orderBW;
         s.explorationOrder = edge.explorationOrder;
+    }
+
+    if (edge.edgeType == EdgeType.Central)
+    {
+        s.distance = edge.distFromA; // distFromA contiene la lunghezza totale del corridoio
     }
 
     return s;
@@ -169,12 +176,12 @@ public static class GraphSnapshotBuilder
         };
     }
 
-    private static DoorDistSnapshot DoorDistFrom(DoorDistancePair pair)
+    private static RoomDistSnapshot RoomDistFrom(RoomDistancePair pair)
     {
-        return new DoorDistSnapshot
+        return new RoomDistSnapshot
         {
-            doorA    = pair.doorA,
-            doorB    = pair.doorB,
+            roomA    = pair.roomA,
+            roomB    = pair.roomB,
             floor    = pair.floor,
             distance = pair.distance,
         };

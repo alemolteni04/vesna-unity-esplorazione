@@ -862,7 +862,11 @@ StartCoroutine(TraverseStairsThen(targetFloor, ascending));
                     float distToNewB = Vector3.Distance(doorPos, poleBPos);
                     string toNode = distToNewA <= distToNewB ? poleAId : poleBId;
 
-                    graph.AddSegmentArc(fromNode, toNode, 0.5f, lastCorridorLinkDoorName);
+                    Vector3 fromPos = graph.GetNode(fromNode)?.position ?? Vector3.zero;
+                    Vector3 toPos   = graph.GetNode(toNode)?.position   ?? Vector3.zero;
+                    float   dist    = Vector3.Distance(fromPos, toPos);
+
+                    graph.AddSegmentArc(fromNode, toNode, dist, lastCorridorLinkDoorName);
                 }
                 lastCorridorLinkDoorName = null;
             }
@@ -913,8 +917,13 @@ StartCoroutine(TraverseStairsThen(targetFloor, ascending));
                 float distToNewA = Vector3.Distance(doorPos, poleAPos);
                 float distToNewB = Vector3.Distance(doorPos, poleBPos);
                 string toNode = distToNewA <= distToNewB ? newCorrA : newCorrB;
+                Vector3 fromPos = graph.GetNode(fromNode)?.position ?? Vector3.zero;
+                Vector3 toPos   = graph.GetNode(toNode)?.position   ?? Vector3.zero;
+                float   dist    = Vector3.Distance(fromPos, toPos);
 
-                graph.AddSegmentArc(fromNode, toNode, 0.5f, door.gameObject.name);
+                graph.AddSegmentArc(fromNode, toNode, dist, door.gameObject.name);
+
+               
             }
 
             transitCorridorId = pendingCorridorId;
@@ -1916,20 +1925,20 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
         explorationVisionCone?.SetExplorationMode(false);
         state = State.Completed;
     
-        // ── 1. Calcola distanze porte ────────────────────────────
-        var ddm = GetComponent<DoorDistanceMap>();
+        // ── 1. Calcola distanze Stanze ────────────────────────────
+        var ddm = GetComponent<RoomDistanceMap>();
         if (ddm != null)
             ddm.Compute(floorGraphs);
         else
-            Debug.LogWarning("[ExplMgr] DoorDistanceMap non trovato sul GameObject!");
+            Debug.LogWarning("[ExplMgr] RoomDistanceMap non trovato sul GameObject!");
     
-        List<DoorDistancePair> doorPairs = ddm?.pairs ?? new List<DoorDistancePair>();
+        List<RoomDistancePair> roomPairs = ddm?.pairs ?? new List<RoomDistancePair>();
     
         // ── 2. Costruisci snapshot ───────────────────────────────
         BuildingSnapshot snapshot = GraphSnapshotBuilder.Build(
             floorGraphs,
             ConnectorLinks,
-            doorPairs,
+            roomPairs,
             buildingId);
     
         // ── 3. Salva su disco ────────────────────────────────────
@@ -1944,7 +1953,7 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
     
         Debug.Log($"[ExplMgr] Edificio '{buildingId}' esplorato. " +
                 $"Piani: {floorGraphs.Count}  Link: {ConnectorLinks.Count}  " +
-                $"Distanze: {doorPairs.Count}  Snapshot salvato: {saved}");
+                $"Distanze: {roomPairs.Count}  Snapshot salvato: {saved}");
     }
    
     // ====================================================

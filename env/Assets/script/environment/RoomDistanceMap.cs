@@ -3,24 +3,24 @@ using UnityEngine;
 using UnityEngine.AI;
 
 // ============================================================
-// DoorDistanceMap.cs
+// RoomDistanceMap.cs
 // ============================================================
-// Calcola le distanze NavMesh tra stanze adiacenti (archi Door)
+// Calcola le distanze NavMesh tra stanze adiacenti (archi Room)
 // e distanze fisse tra poli corridoio adiacenti (archi Segment).
 // ============================================================
 
 [System.Serializable]
-public struct DoorDistancePair
+public struct RoomDistancePair
 {
-    public string doorA;
-    public string doorB;
+    public string roomA;
+    public string roomB;
     public int    floor;
     public float  distance;
 }
 
-public class DoorDistanceMap : MonoBehaviour
+public class RoomDistanceMap : MonoBehaviour
 {
-    public List<DoorDistancePair> pairs = new List<DoorDistancePair>();
+    public List<RoomDistancePair> pairs = new List<RoomDistancePair>();
 
     public void Compute(Dictionary<int, TopologicalGraph> allGraphs)
     {
@@ -44,34 +44,37 @@ public class DoorDistanceMap : MonoBehaviour
                             !string.IsNullOrEmpty(edge.toNodeId)   &&
                             edge.toNodeId != "unknown")
                         {
-                            pairs.Add(new DoorDistancePair {
-                                doorA    = edge.fromNodeId,
-                                doorB    = edge.toNodeId,
+                            pairs.Add(new RoomDistancePair {
+                                roomA    = edge.fromNodeId,
+                                roomB    = edge.toNodeId,
                                 floor    = floor,
-                                distance = 0.5f
+                                distance = edge.distFromA
                             });
                         }
                         continue;
                     }
 
-                    // Solo archi Door diretti stanza→stanza adiacente
+                    // Solo archi Room diretti stanza→stanza adiacente
                     if (edge.edgeType != EdgeType.Door) continue;
                     if (string.IsNullOrEmpty(edge.toNodeId) ||
                         edge.toNodeId == "unknown") continue;
 
-                    float dist = NavMeshDistance(node.position, edge.position);
+                    var toNode = graph.GetNode(edge.toNodeId);
+                    if (toNode == null) continue;
+
+                    float dist = NavMeshDistance(node.position, toNode.position);
                     if (dist < 0f) continue;
 
-                    pairs.Add(new DoorDistancePair {
-                        doorA    = edge.fromNodeId,
-                        doorB    = edge.toNodeId,
+                    pairs.Add(new RoomDistancePair {
+                        roomA    = edge.fromNodeId,
+                        roomB    = edge.toNodeId,
                         floor    = floor,
                         distance = dist
-                    });
+});
                 }
             }
 
-            Debug.Log($"[DoorDistMap] Piano {floor}: {pairs.Count} coppie adiacenti");
+            Debug.Log($"[RoomDistMap] Piano {floor}: {pairs.Count} coppie adiacenti");
         }
     }
 

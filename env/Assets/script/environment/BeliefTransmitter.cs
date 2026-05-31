@@ -40,11 +40,11 @@ public class BeliefTransmitter : AbstractMasElement
     public void TransmitGraph(
         Dictionary<int, TopologicalGraph> floorGraphs,
         List<FloorConnectorLink>          connectorLinks,
-        List<DoorDistancePair>            doorDistances,
+        List<RoomDistancePair>            roomDistances,
         string                            buildingId = "building")
     {
         var snapshot = GraphSnapshotBuilder.Build(
-            floorGraphs, connectorLinks, doorDistances, buildingId);
+            floorGraphs, connectorLinks, roomDistances, buildingId);
         TransmitSnapshot(snapshot);
     }
 
@@ -157,15 +157,15 @@ public class BeliefTransmitter : AbstractMasElement
         }
 
         // ── 2. Distanze porte ────────────────────────────────
-        foreach (var dist in snapshot.doorDistances)
+        foreach (var dist in snapshot.roomDistances)
         {
             SendBelief(new BeliefMessage
             {
                 beliefType = "door_dist",
                 payload    = new Dictionary<string, object>
                 {
-                    { "doorA",    dist.doorA    },
-                    { "doorB",    dist.doorB    },
+                    { "roomA",    dist.roomA    },
+                    { "roomB",    dist.roomB    },
                     { "floor",    dist.floor    },
                     { "distance", dist.distance },
                 }
@@ -192,7 +192,7 @@ public class BeliefTransmitter : AbstractMasElement
                 { "totalFloors", snapshot.floors.Count        },
                 { "totalNodes",  totalNodes                   },
                 { "totalEdges",  totalEdges                   },
-                { "totalDists",  snapshot.doorDistances.Count },
+                { "totalDists",  snapshot.roomDistances.Count },
             }
         });
 
