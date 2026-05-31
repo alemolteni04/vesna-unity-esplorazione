@@ -473,15 +473,15 @@ Debug.Log($"[ExplMgr] Avviato da '{startNodeId}' piano {currentFloor}");
 
         string computedSide = ComputeSideRelativeToCorridorAxis(
             door.transform.position, poleAPos, poleBPos);
-
         if (!isCorrLink)
         {
             graph.AddDoorEdges(corridorId, door.gameObject.name,
-                door.elementType == DoorVarcoScript.ElementType.Door,
-                door.transform.position, computedSide,
-                door.distFromA, door.distFromB, 0,
-                isCorridorLink: false);
+            door.elementType == DoorVarcoScript.ElementType.Door,
+            door.transform.position, computedSide,
+            door.distFromA, door.distFromB, 0,
+            isCorridorLink: isCorrLink);
         }
+        
 
         Debug.Log($"[ExplMgr] Porta censita: {door.gameObject.name} " +
                 $"corridoio={corridorId} side={computedSide} corridorLink={isCorrLink}");
@@ -830,34 +830,91 @@ StartCoroutine(TraverseStairsThen(targetFloor, ascending));
             currentNodeId           = poleAId;
             graph.EnterNode(poleAId);
 
-            if (!string.IsNullOrEmpty(comingFromNodeId) && comingFromNodeId.EndsWith("_B"))
+            if (!string.IsNullOrEmpty(comingFromNodeId) && 
+    (comingFromNodeId.EndsWith("_B") || comingFromNodeId.EndsWith("_A")))
             {
-                string comingCorridor = comingFromNodeId.Replace("_B", "");
-                string poleAIdComing  = $"{comingCorridor}_A";
-                
-                // Distanza B→A del corridoio nuovo
-                float distBA = Vector3.Distance(
-                    graph.GetNode(comingFromNodeId)?.position ?? transform.position,
-                    graph.GetNode(poleAId)?.position ?? poleAPos);
-                // Distanza A→A
-                float distAA = Vector3.Distance(
-                    graph.GetNode(poleAIdComing)?.position ?? transform.position,
-                    graph.GetNode(poleAId)?.position ?? poleAPos);
+                string comingCorridor = comingFromNodeId.EndsWith("_B") 
+                    ? comingFromNodeId.Replace("_B", "") 
+                    : comingFromNodeId.Replace("_A", "");
 
-                string nearestFrom = distBA <= distAA ? comingFromNodeId : poleAIdComing;
-
-                // Determina il polo più vicino del NUOVO corridoio rispetto alla porta
-                string poleBId = $"{pendingCorridorId}_B";
-                Vector3 doorPos = transform.position;
-                var doorSc = !string.IsNullOrEmpty(lastCorridorLinkDoorName)
+                var linkDoor = !string.IsNullOrEmpty(lastCorridorLinkDoorName)
                     ? FindDoorScript(lastCorridorLinkDoorName) : null;
-                if (doorSc != null) doorPos = doorSc.transform.position;
+
+                string f = linkDoor?.roomFront?.name ?? "";
+                string b = linkDoor?.roomBack?.name  ?? "";
+                bool directlyLinked = linkDoor != null &&
+                                    (f == comingCorridor || b == comingCorridor) &&
+                                    (f == pendingCorridorId || b == pendingCorridorId);
+
+                if (directlyLinked)
+                {
+                    var nodeA = graph.GetNode($"{comingCorridor}_A");
+                    var nodeB = graph.GetNode($"{comingCorridor}_B");
+                    Vector3 doorPos = linkDoor.transform.position;
+
+                    string fromNode = null;
+                    float bestDist = float.MaxValue;
+                    if (nodeA != null) { float d = Vector3.Distance(doorPos, nodeA.position); if (d < bestDist) { bestDist = d; fromNode = $"{comingCorridor}_A"; } }
+                    if (nodeB != null) { float d = Vector3.Distance(doorPos, nodeB.position); if (d < bestDist) { bestDist = d; fromNode = $"{comingCorridor}_B"; } }
+
+                    string poleBId = $"{pendingCorridorId}_B";
+                    float distToNewA = Vector3.Distance(doorPos, poleAPos);
+                    float distToNewB = Vector3.Distance(doorPos, poleBPos);
+                    string toNode = distToNewA <= distToNewB ? poleAId : poleBId;
+
+                    graph.AddSegmentArc(fromNode, toNode, 0.5f, lastCorridorLinkDoorName);
+                }
+                lastCorridorLinkDoorName = null;
+            }
+            // Dopo aver creato i poli del nuovo corridoio,
+            // cerca corridorLink già registrati che connettono
+            // un corridoio già scoperto a questo nuovo corridoio.
+            string newCorrA = $"{pendingCorridorId}_A";
+            string newCorrB = $"{pendingCorridorId}_B";
+            foreach (var door in FindObjectsByType<DoorVarcoScript>(FindObjectsSortMode.None))
+            {
+                if (!door.isCorridorLink) continue;
+                string front = door.roomFront?.name ?? "";
+                string back  = door.roomBack?.name  ?? "";
+
+                // La porta deve avere un lato sul nuovo corridoio
+                bool newIsA = (front == pendingCorridorId || back == pendingCorridorId);
+               /* // L'altro lato deve essere esattamente un corridoio con poli già scoperti,
+                // non una stanza intermedia
+                var otherCorrDataCheck = FindCorridorData(otherCorrId);
+                if (otherCorrDataCheck == null) continue; // non è un corridoio, salta*/
+                if (!newIsA) continue;
+
+                // L'altro lato deve essere un corridoio già scoperto
+                string otherCorrId = (front == pendingCorridorId) ? back : front;
+                // ← aggiungi qui, dopo otherCorrId è dichiarato
+                var otherCorrDataCheck = FindCorridorData(otherCorrId);
+                if (otherCorrDataCheck == null) continue;
+                var otherNodeA = graph.GetNode($"{otherCorrId}_A");
+                var otherNodeB = graph.GetNode($"{otherCorrId}_B");
+                if (otherNodeA == null && otherNodeB == null) continue; // non ancora scoperto
+
+                // Trova il polo più vicino dell'altro corridoio rispetto alla porta
+                Vector3 doorPos = door.transform.position;
+                string fromNode = null;
+                float bestDist = float.MaxValue;
+                if (otherNodeA != null)
+                {
+                    float d = Vector3.Distance(doorPos, otherNodeA.position);
+                    if (d < bestDist) { bestDist = d; fromNode = $"{otherCorrId}_A"; }
+                }
+                if (otherNodeB != null)
+                {
+                    float d = Vector3.Distance(doorPos, otherNodeB.position);
+                    if (d < bestDist) { bestDist = d; fromNode = $"{otherCorrId}_B"; }
+                }
+
+                // Trova il polo più vicino del nuovo corridoio rispetto alla porta
                 float distToNewA = Vector3.Distance(doorPos, poleAPos);
                 float distToNewB = Vector3.Distance(doorPos, poleBPos);
-                string nearestTo = distToNewA <= distToNewB ? poleAId : poleBId;
+                string toNode = distToNewA <= distToNewB ? newCorrA : newCorrB;
 
-                graph.AddSegmentArc(nearestFrom, nearestTo, 0.5f, lastCorridorLinkDoorName);               
-                 lastCorridorLinkDoorName = null;
+                graph.AddSegmentArc(fromNode, toNode, 0.5f, door.gameObject.name);
             }
 
             transitCorridorId = pendingCorridorId;
@@ -1739,33 +1796,50 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
             }
         }
 
-        if (!string.IsNullOrEmpty(adjRoom))
-        {
-            if (graph.GetNode(adjRoom) == null)
-                graph.AddRoomNode(adjRoom, adjPos);
+     if (!string.IsNullOrEmpty(adjRoom))
+{
+    // Se adjRoom è un corridoio con poli, non trattarlo come stanza normale
+    var adjCorridor = FindCorridorData(adjRoom);
+    if (adjCorridor != null)
+    {
+        pendingCorridorId      = adjRoom;
+        pendingPoleId          = "1";
+        pendingPolePos         = adjCorridor.Pole1Position;
+        movingToPoleCorridorId = adjRoom;
+        movingToPoleTimer      = 0f;
+        navAgent.isStopped     = false;
+        navAgent.SetDestination(adjCorridor.Pole1Position);
+        state = State.MovingToPole;
+        Debug.Log($"[ExplMgr] Destinazione è corridoio '{adjRoom}' → vado al polo.");
+        return;
+    }
 
-            float dAdj = Vector3.Distance(graph.GetNode(connNodeId).position, adjPos);
-            var adjEdge = graph.AddRoomDoorEdge(connNodeId, adjDoorName,
-                false, adjPos, dAdj, adjRoom);
-            if (adjEdge != null)
-                graph.MarkEdgeExplored(connNodeId, adjEdge.id, adjRoom);
+    // adjRoom è una stanza normale, gestione originale
+    if (graph.GetNode(adjRoom) == null)
+        graph.AddRoomNode(adjRoom, adjPos);
 
-            graph.EnterNode(adjRoom);
-            currentNodeId = adjRoom;
+    float dAdj = Vector3.Distance(graph.GetNode(connNodeId).position, adjPos);
+    var adjEdge = graph.AddRoomDoorEdge(connNodeId, adjDoorName,
+        false, adjPos, dAdj, adjRoom);
+    if (adjEdge != null)
+        graph.MarkEdgeExplored(connNodeId, adjEdge.id, adjRoom);
 
-            inRoomMode             = false;
-            movingToPoleCorridorId = null;
-            idleTargetCorridorId   = null;
+    graph.EnterNode(adjRoom);
+    currentNodeId = adjRoom;
 
-            navAgent.isStopped = false;
-            navAgent.SetDestination(adjPos);
-            enteringRoomTimer  = 0f;
-            enteringRoomTimeout = 6f;   // forza attesa completa fino al centro stanza
-            state              = State.EnteringRoom;
+    inRoomMode             = false;
+    movingToPoleCorridorId = null;
+    idleTargetCorridorId   = null;
 
-            Debug.Log($"[ExplMgr] Cammino verso '{adjRoom}' via '{adjDoorName}'.");
-            return;
-        }
+    navAgent.isStopped = false;
+    navAgent.SetDestination(adjPos);
+    enteringRoomTimer   = 0f;
+    enteringRoomTimeout = 6f;
+    state               = State.EnteringRoom;
+
+    Debug.Log($"[ExplMgr] Cammino verso '{adjRoom}' via '{adjDoorName}'.");
+    return;
+}
     }
         // NUOVO: pre-collega le stanze già note del piano destinazione al nodo connettore
         if (!string.IsNullOrEmpty(connNodeId))
@@ -2097,6 +2171,21 @@ private void ScanRoomDoorsFromScript(string roomId)
         if (beyondNode != null && beyondNode.physicallyVisited) continue;
 
         bool leadsToCorridor = FindCorridorData(roomBeyond) != null;
+         if (leadsToCorridor)
+        {
+            // Se la stanza corrente ha poli propri, aggiungi arco dal polo B
+            bool currentHasPoles = FindCorridorData(roomId) != null;
+            if (currentHasPoles)
+            {
+                string poleBId = $"{roomId}_B";
+                float dist = door.NavMeshDistanceTo(transform.position);
+                graph.AddRoomDoorEdge(poleBId, door.gameObject.name,
+                    door.elementType == DoorVarcoScript.ElementType.Door,
+                    door.transform.position, dist,
+                    toNodeId: roomBeyond);
+            }
+            continue;
+        }
 
         registeredRoomDoors[door.gameObject.name] = roomId;
         door.discovered = true;
