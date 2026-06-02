@@ -344,7 +344,6 @@ private void ScanForRoomObjects()
     for (int i = 0; i < count; i++)
     {
         var bridge = buffer[i].GetComponent<RoomObjectBridge>();
-        Debug.Log($"[ScanForRoomObjects] collider: {buffer[i].gameObject.name}, bridge: {bridge}");  // ← aggiunto
         if (bridge == null) continue;
         if (!IsInSight(buffer[i].gameObject)) continue;
 

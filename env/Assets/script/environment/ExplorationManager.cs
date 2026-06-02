@@ -2269,7 +2269,9 @@ private float NavMeshDist(Vector3 a, Vector3 b)
 
 private void HandleRoomObjectVisible(RoomObjectBridge bridge)
 {
-    bridge.NotifySeen();
+    // Registra l'oggetto solo se l'agente è nella stessa stanza dell'oggetto
+    if (currentNodeId == bridge.roomId)
+        bridge.NotifySeen();
 }
 public void RegisterDiscoveredObject(string artifactId, string roomId, int wsPort,
                                       float x, float y, float z)

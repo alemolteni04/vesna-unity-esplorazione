@@ -72,11 +72,10 @@ public string roomId => roomNode != null ? roomNode.name : "room_unknown";
 
     public void NotifySeen()
     {
-         Debug.Log($"[RoomObjectBridge] NotifySeen chiamato su '{artifactName}', discovered={_discovered}, roomId={roomId}");  // ← aggiunto
 
     if (!_discovered)
     {
-        Debug.Log($"[RoomObjectBridge] Prima vista! Invio new_object per '{artifactName}' in '{roomId}'");  // ← aggiunto
+        Debug.Log($"[RoomObjectBridge] '{artifactName}' VISTO!!!!");
         SendNewObject();
             _explorationManager?.RegisterDiscoveredObject(
                 artifactName, roomId, int.Parse(port),
@@ -114,7 +113,6 @@ public string roomId => roomNode != null ? roomNode.name : "room_unknown";
             artifactName, roomId, int.Parse(port),
             transform.position.x, transform.position.y, transform.position.z);
 
-        Debug.Log($"[RoomObjectBridge] '{artifactName}' → new_object in '{roomId}'");
     }
 
     // ------------------------------------------------------------------

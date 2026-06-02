@@ -219,7 +219,6 @@ public void SendRoomObjectDiscovered(
     string artifactId, string roomId, int wsPort,
     float x, float y, float z)
 {
-    Debug.Log($"[BeliefTransmitter] Invio new_object: {artifactId} in {roomId} porta {wsPort}");  // ← aggiunto
     SendBelief(new BeliefMessage
     {
         beliefType = "new_object",
@@ -234,7 +233,6 @@ public void SendRoomObjectDiscovered(
         }
     });
 
-    Debug.Log($"[BeliefTransmitter] new_object: {artifactId} in {roomId}");
 }
     // --------------------------------------------------------
     // DTO interno
