@@ -297,7 +297,8 @@ public class TopologicalGraph
 
     // Arco segmento tra fine corridoio N e inizio corridoio N+1
     public GraphEdge AddSegmentArc(string fromNodeId, string toNodeId,
-                                float distance = 0.5f, string doorName = null)
+                            float distance = 0.5f, string doorName = null,
+                            Vector3 doorPos = default)
     {
         if (!nodes.ContainsKey(fromNodeId)) return null;
         var fromNode = nodes[fromNodeId];
@@ -319,8 +320,8 @@ public class TopologicalGraph
 
         var toNode = nodes.ContainsKey(toNodeId) ? nodes[toNodeId] : null;
 
-        var edge = new GraphEdge(segId, fromNodeId, false, EdgeType.Segment,
-                                toNode?.position ?? Vector3.zero)
+       var edge = new GraphEdge(segId, fromNodeId, false, EdgeType.Segment,
+                        doorPos != default ? doorPos : toNode?.position ?? Vector3.zero)
         {
             toNodeId  = toNodeId,
             distFromA = distance,

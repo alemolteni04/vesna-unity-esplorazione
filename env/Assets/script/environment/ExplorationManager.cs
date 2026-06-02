@@ -864,9 +864,13 @@ StartCoroutine(TraverseStairsThen(targetFloor, ascending));
 
                     Vector3 fromPos = graph.GetNode(fromNode)?.position ?? Vector3.zero;
                     Vector3 toPos   = graph.GetNode(toNode)?.position   ?? Vector3.zero;
-                    float   dist    = Vector3.Distance(fromPos, toPos);
+                    float distFromDoor = NavMeshDist(fromPos, doorPos);
+                    float distDoorTo   = NavMeshDist(doorPos, toPos);
+                    float dist = (distFromDoor >= 0f && distDoorTo >= 0f)
+                        ? distFromDoor + distDoorTo
+                        : Vector3.Distance(fromPos, toPos);
 
-                    graph.AddSegmentArc(fromNode, toNode, dist, lastCorridorLinkDoorName);
+                    graph.AddSegmentArc(fromNode, toNode, dist, lastCorridorLinkDoorName, doorPos);
                 }
                 lastCorridorLinkDoorName = null;
             }
@@ -917,12 +921,16 @@ StartCoroutine(TraverseStairsThen(targetFloor, ascending));
                 float distToNewA = Vector3.Distance(doorPos, poleAPos);
                 float distToNewB = Vector3.Distance(doorPos, poleBPos);
                 string toNode = distToNewA <= distToNewB ? newCorrA : newCorrB;
+        
                 Vector3 fromPos = graph.GetNode(fromNode)?.position ?? Vector3.zero;
                 Vector3 toPos   = graph.GetNode(toNode)?.position   ?? Vector3.zero;
-                float   dist    = Vector3.Distance(fromPos, toPos);
+                float distFromDoor = NavMeshDist(fromPos, doorPos);
+                float distDoorTo   = NavMeshDist(doorPos, toPos);
+                float dist = (distFromDoor >= 0f && distDoorTo >= 0f)
+                    ? distFromDoor + distDoorTo
+                    : Vector3.Distance(fromPos, toPos);
 
-                graph.AddSegmentArc(fromNode, toNode, dist, door.gameObject.name);
-
+                graph.AddSegmentArc(fromNode, toNode, dist, door.gameObject.name, doorPos);
                
             }
 
@@ -1328,7 +1336,10 @@ else
     }
     else
     {
-        graph.AddRoomNode(newNodeId, edge.position);
+       var floorData2 = buildingGraph?.GetFloor(currentFloor);
+        var roomObj2   = floorData2?.roomObjects.Find(r => r != null && r.name == newNodeId);
+        Vector3 roomCenter = roomObj2 != null ? GetRoomCenter(roomObj2) : edge.position;
+        graph.AddRoomNode(newNodeId, roomCenter);
         currentNodeId = newNodeId;
         graph.EnterNode(currentNodeId);
         state = State.EnteringRoom;
@@ -2239,5 +2250,16 @@ private string FindDoorBetweenNodes(string nodeA, string nodeB)
             return d.gameObject.name;
     }
     return null;
+}
+
+private float NavMeshDist(Vector3 a, Vector3 b)
+{
+    var path = new NavMeshPath();
+    if (!NavMesh.CalculatePath(a, b, NavMesh.AllAreas, path)) return -1f;
+    if (path.status == NavMeshPathStatus.PathInvalid) return -1f;
+    float d = 0f;
+    for (int i = 1; i < path.corners.Length; i++)
+        d += Vector3.Distance(path.corners[i - 1], path.corners[i]);
+    return d;
 }
 }
