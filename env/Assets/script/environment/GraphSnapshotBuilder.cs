@@ -109,8 +109,7 @@ public static class GraphSnapshotBuilder
             x                = node.position.x,
             y                = node.position.y,
             z                = node.position.z,
-            fullyExplored    = node.fullyExplored,
-            physicallyVisited = node.physicallyVisited,
+            
         };
 
         // Campi specifici dei nodi polo corridoio
@@ -132,13 +131,19 @@ public static class GraphSnapshotBuilder
         toNodeId       = edge.toNodeId ?? "unknown",
         edgeType       = edge.edgeType.ToString(),
         edgeState      = edge.state.ToString(),
-        doorState      = edge.doorState.ToString(),
-        isPhysical     = edge.isPhysical,
-        isCorridorLink = edge.isCorridorLink,
+        /*doorState      = edge.doorState.ToString(),
+        isCorridorLink = edge.isCorridorLink,*/
         x              = edge.position.x,
         y              = edge.position.y,
         z              = edge.position.z,
     };
+
+    // ── Logica condizionale per i campi da escludere negli archi Central ──
+    if (edge.edgeType != EdgeType.Central)
+    {
+        s.doorState      = edge.doorState.ToString();
+        s.isCorridorLink = edge.isCorridorLink;
+    }
 
     // Campi solo per archi corridoio
     if (edge.edgeType == EdgeType.DoorFW ||

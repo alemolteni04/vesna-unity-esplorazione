@@ -114,7 +114,6 @@ public class BeliefTransmitter : AbstractMasElement
                         { "x",             node.x                },
                         { "y",             node.y                },
                         { "z",             node.z                },
-                        { "fullyExplored", node.fullyExplored    },
                         { "corridorId",    node.corridorId ?? "" },
                         { "poleLabel",     node.poleLabel  ?? "" },
                     }
@@ -138,7 +137,6 @@ public class BeliefTransmitter : AbstractMasElement
                         { "edgeType",        edge.edgeType         },
                         { "edgeState",       edge.edgeState        },
                         { "doorState",       edge.doorState        },
-                        { "isPhysical",      edge.isPhysical       },
                         { "isCorridorLink",  edge.isCorridorLink   },
                         { "side",            edge.side ?? ""       },
                         { "distFromA",       edge.distFromA        },

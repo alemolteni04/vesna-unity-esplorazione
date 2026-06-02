@@ -71,8 +71,7 @@ public class NodeSnapshot
     public string nodeId;
     public string nodeType;             // NodeType.ToString()
     public float  x, y, z;             // position (no Vector3)
-    public bool   fullyExplored;
-    public bool   physicallyVisited;
+   
 
     // Solo per nodi polo corridoio
     public string corridorId;
@@ -91,7 +90,7 @@ public class EdgeSnapshot
     public string edgeType;             // EdgeType.ToString()
     public string edgeState;            // EdgeState.ToString()
     public string doorState;            // DoorState.ToString()
-    public bool   isPhysical;
+    
     public bool   isCorridorLink;
    // Campi solo corridoio — nullable
     public string side;
