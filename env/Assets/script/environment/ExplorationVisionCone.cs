@@ -60,6 +60,7 @@ public class ExplorationVisionCone : VisionCone
     [Header("Layer Esplorazione")]
     public LayerMask doorLayers;        // layer "doors"    — DoorVarcoScript
     public LayerMask corridorLayers;    // layer "corridor" — CorridorPoleScript
+    public LayerMask objectLayers; 
 
     [Header("Modalità")]
     public bool explorationMode = false;
@@ -105,6 +106,8 @@ public class ExplorationVisionCone : VisionCone
     /// </summary>
     public static event System.Action<DoorVarcoScript, string, int> OnDoorDiscovered;
 
+    public static event System.Action<RoomObjectBridge> OnRoomObjectVisible;
+
     // ── Unity lifecycle ───────────────────────────────────────────────────────
     // NOTA: Start() e Update() del VisionCone base sono private, quindi non
     // possiamo chiamare base.Start() / base.Update(). Reinizializziamo qui
@@ -125,6 +128,7 @@ public class ExplorationVisionCone : VisionCone
         // Replica la logica di VisionCone.Update() per il scan base del cono,
         // poi aggiunge i nuovi scan di esplorazione e transito.
         if (!Application.IsPlaying(gameObject)) return;
+        Debug.Log($"[EVC] explorationMode={explorationMode}, objectLayers={objectLayers.value}"); // ← aggiunto temporaneo
 
         if (explorationMode)
         {
@@ -135,6 +139,7 @@ public class ExplorationVisionCone : VisionCone
                 exploScanTimer += exploScanInterval;
                 // Scan poli corridoio — sempre in explorationMode
                 ScanForCorridorPoles();
+                ScanForRoomObjects();  
                 // Scan porte in stanza — solo durante rotazione 360° in stanza
                 if (explorationManager != null && explorationManager.inRoomMode)
                     ScanForDoorsInRoom();
@@ -325,6 +330,26 @@ public class ExplorationVisionCone : VisionCone
         }
     }
     return true;
+}
+
+private void ScanForRoomObjects()
+{
+    Collider[] buffer = new Collider[50];
+    int count = Physics.OverlapSphereNonAlloc(
+        transform.position, distance, buffer,
+        objectLayers, QueryTriggerInteraction.Collide);
+
+    Debug.Log($"[ScanForRoomObjects] trovati {count} collider nel layer objects");  // ← aggiunto
+
+    for (int i = 0; i < count; i++)
+    {
+        var bridge = buffer[i].GetComponent<RoomObjectBridge>();
+        Debug.Log($"[ScanForRoomObjects] collider: {buffer[i].gameObject.name}, bridge: {bridge}");  // ← aggiunto
+        if (bridge == null) continue;
+        if (!IsInSight(buffer[i].gameObject)) continue;
+
+        OnRoomObjectVisible?.Invoke(bridge);
+    }
 }
 
 }

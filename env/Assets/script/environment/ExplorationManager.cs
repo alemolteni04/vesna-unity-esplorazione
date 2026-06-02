@@ -137,6 +137,8 @@ public class ExplorationManager : MonoBehaviour
 
     private HashSet<string>   traversedConnectors = new HashSet<string>();
 
+    private List<RoomObjectSnapshot> _discoveredObjects = new List<RoomObjectSnapshot>();
+
     private string movingToPoleCorridorId;
     private float  movingToPoleTimer = 0f;
     private float  backtrackTimer    = 0f;
@@ -165,6 +167,7 @@ public class ExplorationManager : MonoBehaviour
         ExplorationVisionCone.OnCorridorPoleVisible += HandleCorridorPoleVisible;
         ExplorationVisionCone.OnDoorVisibleInRoom   += HandleDoorVisibleInRoom;
         VerticalConnectorScript.OnConnectorReached  += HandleConnectorReached;
+        ExplorationVisionCone.OnRoomObjectVisible   += HandleRoomObjectVisible;
     }
 
     void OnDestroy()
@@ -174,6 +177,7 @@ public class ExplorationManager : MonoBehaviour
         ExplorationVisionCone.OnCorridorPoleVisible -= HandleCorridorPoleVisible;
         ExplorationVisionCone.OnDoorVisibleInRoom   -= HandleDoorVisibleInRoom;
         VerticalConnectorScript.OnConnectorReached  -= HandleConnectorReached;
+        ExplorationVisionCone.OnRoomObjectVisible   -= HandleRoomObjectVisible;
     }
 
     // --------------------------------------------------------
@@ -1951,7 +1955,7 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
             ConnectorLinks,
             roomPairs,
             buildingId);
-    
+        snapshot.discoveredObjects.AddRange(_discoveredObjects);
         // ── 3. Salva su disco ────────────────────────────────────
         bool saved = GraphPersistence.Save(snapshot);
         if (!saved)
@@ -2261,5 +2265,31 @@ private float NavMeshDist(Vector3 a, Vector3 b)
     for (int i = 1; i < path.corners.Length; i++)
         d += Vector3.Distance(path.corners[i - 1], path.corners[i]);
     return d;
+}
+
+private void HandleRoomObjectVisible(RoomObjectBridge bridge)
+{
+    bridge.NotifySeen();
+}
+public void RegisterDiscoveredObject(string artifactId, string roomId, int wsPort,
+                                      float x, float y, float z)
+{
+    var existing = _discoveredObjects.Find(o => o.artifactId == artifactId);
+    if (existing != null)
+    {
+        existing.roomId     = roomId;
+    }
+    else
+    {
+        _discoveredObjects.Add(new RoomObjectSnapshot
+        {
+            artifactId   = artifactId,
+            roomId       = roomId,
+            wsPort       = wsPort,
+            x            = x,
+            y            = y,
+            z            = z,
+        });
+    }
 }
 }

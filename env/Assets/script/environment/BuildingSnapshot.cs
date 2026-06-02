@@ -45,7 +45,12 @@ public class BuildingSnapshot
     // ── Distanze stanze ──────────────────────────────────────
     public List<RoomDistSnapshot>       roomDistances   = new List<RoomDistSnapshot>();
 
-    
+    // ── Artefatti scoperti dall'agente ───────────────────────
+    // Popolato a runtime da RoomObjectBridge.cs ogni volta che
+    // il cono visivo vede un oggetto per la prima volta.
+    // Al riavvio NON viene usato per ricreare gli artefatti in
+    // JaCaMo: serve solo come persistenza storica su file.
+    public List<RoomObjectSnapshot>     discoveredObjects = new List<RoomObjectSnapshot>();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -128,4 +133,20 @@ public class RoomDistSnapshot
     public int    floor;
     public float  distance;
     public string doorName;
+}
+
+// ─────────────────────────────────────────────────────────────
+// ARTEFATTO SCOPERTO A RUNTIME
+// Salvato quando il cono visivo vede l'oggetto per la prima
+// volta. roomId è il nome della stanza (es. "room_lobby").
+// Se l'oggetto viene successivamente visto in una stanza
+// diversa, roomId viene aggiornato tramite UpdateDiscoveredObject().
+// ─────────────────────────────────────────────────────────────
+[Serializable]
+public class RoomObjectSnapshot
+{
+    public string artifactId;       // ID univoco (es. "chair_lobby")
+    public string roomId;           // stanza in cui è stato visto l'ultima volta
+    public float  x, y, z;         // posizione 3D al momento della scoperta
+    public int    wsPort;           // porta WebSocket del suo RoomObjectArtifact.java
 }

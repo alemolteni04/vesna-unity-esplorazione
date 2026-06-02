@@ -209,7 +209,33 @@ public class BeliefTransmitter : AbstractMasElement
             )
         );
     }
+    // --------------------------------------------------------
+// OGGETTI SCOPERTI A RUNTIME
+// Chiamato da RoomObjectBridge quando il cono visivo vede
+// un oggetto per la prima volta. Invia new_object all'agente
+// Jason che crea dinamicamente RoomObjectArtifact e fa focus.
+// --------------------------------------------------------
+public void SendRoomObjectDiscovered(
+    string artifactId, string roomId, int wsPort,
+    float x, float y, float z)
+{
+    Debug.Log($"[BeliefTransmitter] Invio new_object: {artifactId} in {roomId} porta {wsPort}");  // ← aggiunto
+    SendBelief(new BeliefMessage
+    {
+        beliefType = "new_object",
+        payload    = new Dictionary<string, object>
+        {
+            { "artifactId", artifactId },
+            { "roomId",     roomId     },
+            { "wsPort",     wsPort     },
+            { "x",          x          },
+            { "y",          y          },
+            { "z",          z          },
+        }
+    });
 
+    Debug.Log($"[BeliefTransmitter] new_object: {artifactId} in {roomId}");
+}
     // --------------------------------------------------------
     // DTO interno
     // --------------------------------------------------------
