@@ -71380,11 +71380,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1696888739}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 47223fa71ee18fd44914d345c0520c4b, type: 3}
+  m_Script: {fileID: 11500000, guid: 27bbcb0297ac0594e82c25a8bf5d4177, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objInUse: {fileID: 0}
-  port: 8801
+  objInUse: {fileID: 1696888739}
+  port: 
+  artifactType: 10
+  isGrabbable: 0
   roomNode: {fileID: 546637279}
 --- !u!65 &1696888742
 BoxCollider:

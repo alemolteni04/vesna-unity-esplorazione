@@ -2267,11 +2267,11 @@ private float NavMeshDist(Vector3 a, Vector3 b)
     return d;
 }
 
-private void HandleRoomObjectVisible(RoomObjectBridge bridge)
+private void HandleRoomObjectVisible(RoomObjectArtifact artifact)
 {
     // Registra l'oggetto solo se l'agente è nella stessa stanza dell'oggetto
-    if (currentNodeId == bridge.roomId)
-        bridge.NotifySeen();
+    if (currentNodeId == artifact.roomId)
+        artifact.NotifySeen();
 }
 public void RegisterDiscoveredObject(string artifactId, string roomId, int wsPort,
                                       float x, float y, float z)

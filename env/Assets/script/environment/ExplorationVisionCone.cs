@@ -106,7 +106,7 @@ public class ExplorationVisionCone : VisionCone
     /// </summary>
     public static event System.Action<DoorVarcoScript, string, int> OnDoorDiscovered;
 
-    public static event System.Action<RoomObjectBridge> OnRoomObjectVisible;
+    public static event System.Action<RoomObjectArtifact> OnRoomObjectVisible;
 
     // ── Unity lifecycle ───────────────────────────────────────────────────────
     // NOTA: Start() e Update() del VisionCone base sono private, quindi non
@@ -343,7 +343,7 @@ private void ScanForRoomObjects()
 
     for (int i = 0; i < count; i++)
     {
-        var bridge = buffer[i].GetComponent<RoomObjectBridge>();
+        var bridge = buffer[i].GetComponent<RoomObjectArtifact>();
         if (bridge == null) continue;
         if (!IsInSight(buffer[i].gameObject)) continue;
 

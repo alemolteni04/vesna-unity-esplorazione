@@ -9,5 +9,6 @@ public enum ArtifactTypeEnum
     Inventory,
     EnvManager,
     SnapPoint,
-    Cylinder
+    Cylinder,
+    RoomObject
 }
