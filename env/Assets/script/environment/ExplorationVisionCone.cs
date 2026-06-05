@@ -106,7 +106,6 @@ public class ExplorationVisionCone : VisionCone
     /// </summary>
     public static event System.Action<DoorVarcoScript, string, int> OnDoorDiscovered;
 
-    public static event System.Action<RoomObjectArtifact> OnRoomObjectVisible;
 
     // ── Unity lifecycle ───────────────────────────────────────────────────────
     // NOTA: Start() e Update() del VisionCone base sono private, quindi non
@@ -332,6 +331,10 @@ public class ExplorationVisionCone : VisionCone
     return true;
 }
 
+// ── AGGIUNTA: HashSet per tenere traccia degli artefatti già visti ────────
+private HashSet<string> _seenObjects = new HashSet<string>();
+private Dictionary<string, string> _lastSeenRoom = new Dictionary<string, string>();
+
 private void ScanForRoomObjects()
 {
     Collider[] buffer = new Collider[50];
@@ -339,16 +342,49 @@ private void ScanForRoomObjects()
         transform.position, distance, buffer,
         objectLayers, QueryTriggerInteraction.Collide);
 
-    Debug.Log($"[ScanForRoomObjects] trovati {count} collider nel layer objects");  // ← aggiunto
-
     for (int i = 0; i < count; i++)
     {
-        var bridge = buffer[i].GetComponent<RoomObjectArtifact>();
-        if (bridge == null) continue;
+        // ← sostituisci RoomObjectArtifact con Artifact
+        var artifact = buffer[i].GetComponent<Artifact>();
+        if (artifact == null) continue;
         if (!IsInSight(buffer[i].gameObject)) continue;
 
-        OnRoomObjectVisible?.Invoke(bridge);
+        string id     = artifact.gameObject.name;
+        string roomId = artifact.roomId;
+
+        if (!_seenObjects.Contains(id))
+        {
+            Debug.Log($"[EVC] '{id}' VISTO in '{roomId}'");
+
+            explorationManager?.RegisterDiscoveredObject(
+                id, roomId, artifact.ArtifactType.ToString(),
+                int.Parse(artifact.port),
+                artifact.transform.position.x,
+                artifact.transform.position.y,
+                artifact.transform.position.z);
+
+            var bt = transform.parent?.GetComponent<BeliefTransmitter>();
+            bt?.SendRoomObjectDiscovered(
+                id, roomId, artifact.ArtifactType.ToString(),
+                int.Parse(artifact.port),
+                artifact.transform.position.x,
+                artifact.transform.position.y,
+                artifact.transform.position.z);
+
+            _seenObjects.Add(id);
+            _lastSeenRoom[id] = roomId;
+        }
+        else if (_lastSeenRoom.TryGetValue(id, out var lastRoom) && lastRoom != roomId)
+        {
+            explorationManager?.RegisterDiscoveredObject(
+                id, roomId, artifact.ArtifactType.ToString(),
+                int.Parse(artifact.port),
+                artifact.transform.position.x,
+                artifact.transform.position.y,
+                artifact.transform.position.z);
+
+            _lastSeenRoom[id] = roomId;
+        }
     }
 }
-
 }

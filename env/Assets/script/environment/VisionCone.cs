@@ -94,7 +94,8 @@ public class VisionCone : MonoBehaviour
         else if (obj.layer == LayerMask.NameToLayer("pippo"))
         {
             obj.GetComponent<Renderer>().material.color = Color.blue;
-        }        
+        } 
+              
     }
 
     // Check if the object is inside the angle radius of the vision cone

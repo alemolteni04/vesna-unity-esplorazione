@@ -170,7 +170,7 @@ private Dictionary<string, RoomObjectSnapshot> _artifactData
         ExplorationVisionCone.OnCorridorPoleVisible += HandleCorridorPoleVisible;
         ExplorationVisionCone.OnDoorVisibleInRoom   += HandleDoorVisibleInRoom;
         VerticalConnectorScript.OnConnectorReached  += HandleConnectorReached;
-        ExplorationVisionCone.OnRoomObjectVisible   += HandleRoomObjectVisible;
+        
     }
 
     void OnDestroy()
@@ -180,7 +180,7 @@ private Dictionary<string, RoomObjectSnapshot> _artifactData
         ExplorationVisionCone.OnCorridorPoleVisible -= HandleCorridorPoleVisible;
         ExplorationVisionCone.OnDoorVisibleInRoom   -= HandleDoorVisibleInRoom;
         VerticalConnectorScript.OnConnectorReached  -= HandleConnectorReached;
-        ExplorationVisionCone.OnRoomObjectVisible   -= HandleRoomObjectVisible;
+        
     }
 
     // --------------------------------------------------------
@@ -2271,12 +2271,6 @@ private float NavMeshDist(Vector3 a, Vector3 b)
     return d;
 }
 
-private void HandleRoomObjectVisible(RoomObjectArtifact artifact)
-{
-    // Registra l'oggetto solo se l'agente è nella stessa stanza dell'oggetto
-    if (currentNodeId == artifact.roomId)
-        artifact.NotifySeen();
-}
 public void RegisterDiscoveredObject(string artifactId, string roomId,
     string artifactType, int wsPort, float x, float y, float z)
 {
