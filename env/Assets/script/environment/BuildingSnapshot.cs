@@ -45,14 +45,6 @@ public class BuildingSnapshot
     // ── Distanze stanze ──────────────────────────────────────
     public List<RoomDistSnapshot>       roomDistances   = new List<RoomDistSnapshot>();
 
-    // ── Artefatti scoperti dall'agente ───────────────────────
-    // Popolato a runtime da RoomObjectBridge.cs ogni volta che
-    // il cono visivo vede un oggetto per la prima volta.
-    // Al riavvio NON viene usato per ricreare gli artefatti in
-    // JaCaMo: serve solo come persistenza storica su file.
-    // ── Artefatti per stanza (solo nomi, per il grafo) ───────
-    // roomId → lista nomi artefatti visti in quella stanza
-    public List<RoomArtifactNamesSnapshot> roomArtifacts = new List<RoomArtifactNamesSnapshot>();
 
 }
 
@@ -79,6 +71,7 @@ public class NodeSnapshot
     public string nodeId;
     public string nodeType;             // NodeType.ToString()
     public float  x, y, z;             // position (no Vector3)
+    public List<string> artifacts = new List<string>(); 
    
 
     // Solo per nodi polo corridoio
@@ -136,12 +129,6 @@ public class RoomDistSnapshot
     public int    floor;
     public float  distance;
     public string doorName;
-}
-[Serializable]
-public class RoomArtifactNamesSnapshot
-{
-    public string       roomId;
-    public List<string> artifactNames = new List<string>();
 }
 
 // ─────────────────────────────────────────────────────────────

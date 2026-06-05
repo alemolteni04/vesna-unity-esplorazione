@@ -38,15 +38,16 @@ public class BeliefTransmitter : AbstractMasElement
     // WRAPPER DI COMPATIBILITÀ
     // --------------------------------------------------------
     public void TransmitGraph(
-        Dictionary<int, TopologicalGraph> floorGraphs,
-        List<FloorConnectorLink>          connectorLinks,
-        List<RoomDistancePair>            roomDistances,
-        string                            buildingId = "building")
-    {
-        var snapshot = GraphSnapshotBuilder.Build(
-            floorGraphs, connectorLinks, roomDistances, buildingId);
-        TransmitSnapshot(snapshot);
-    }
+    Dictionary<int, TopologicalGraph> floorGraphs,
+    List<FloorConnectorLink>          connectorLinks,
+    List<RoomDistancePair>            roomDistances,
+    Dictionary<string, HashSet<string>> roomArtifacts = null, 
+    string                            buildingId = "building")
+{
+    var snapshot = GraphSnapshotBuilder.Build(
+        floorGraphs, connectorLinks, roomDistances, roomArtifacts, buildingId); 
+    TransmitSnapshot(snapshot);
+}
 
     // --------------------------------------------------------
     // COROUTINE PRINCIPALE

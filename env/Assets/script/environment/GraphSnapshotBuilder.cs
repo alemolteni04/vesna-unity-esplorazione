@@ -40,6 +40,7 @@ public static class GraphSnapshotBuilder
         Dictionary<int, TopologicalGraph> floorGraphs,
         List<FloorConnectorLink>          connectorLinks,
         List<RoomDistancePair>            roomDistances,
+        Dictionary<string, HashSet<string>> roomArtifacts,
         string                            buildingId = "building")
     {
         var snapshot = new BuildingSnapshot
@@ -61,7 +62,14 @@ public static class GraphSnapshotBuilder
             foreach (var node in graph.AllNodes())
             {
                 if (node == null) continue;
-                floor.nodes.Add(NodeFrom(node));
+                var nodeSnap = NodeFrom(node); // ← salva in variabile locale
+
+                // Popola artefatti se il nodo è una stanza
+                if (roomArtifacts != null && roomArtifacts.TryGetValue(node.id, out var artifactNames))
+                    nodeSnap.artifacts.AddRange(artifactNames);
+
+                floor.nodes.Add(nodeSnap); // ← aggiungi dopo aver popolato
+
 
                 foreach (var edge in node.edges)
                 {

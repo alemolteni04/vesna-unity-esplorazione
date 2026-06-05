@@ -1954,24 +1954,17 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
 
     // ── 2. Costruisci snapshot ───────────────────────────────
     BuildingSnapshot snapshot = GraphSnapshotBuilder.Build(
-        floorGraphs, ConnectorLinks, roomPairs, buildingId);
+        floorGraphs, ConnectorLinks, roomPairs, _roomArtifacts, buildingId);
 
-    // ── 3. Popola artefatti nel snapshot ─────────────────────
-    foreach (var kv in _roomArtifacts)                          // solo nomi per stanza
-        snapshot.roomArtifacts.Add(new RoomArtifactNamesSnapshot
-        {
-            roomId        = kv.Key,
-            artifactNames = new List<string>(kv.Value),
-        });
-
-    // ── 4. Salva su disco ────────────────────────────────────
+    // ── 3. Salva su disco ────────────────────────────────────
     bool saved = GraphPersistence.Save(snapshot);
     if (!saved)
         Debug.LogWarning("[ExplMgr] Salvataggio snapshot fallito: " +
                         "la trasmissione a JaCaMo procede comunque.");
 
-    // ── 5. Salva JSON artefatti separato ─────────────────────
+    // ── 4. Salva JSON artefatti separato ─────────────────────
     ArtifactsPersistence.Save(buildingId, _roomArtifacts, _artifactData);
+
 
     // ── 6. Trasmetti a JaCaMo ────────────────────────────────
     var bt = GetComponent<BeliefTransmitter>();
