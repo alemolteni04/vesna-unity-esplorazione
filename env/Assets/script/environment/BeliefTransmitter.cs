@@ -216,7 +216,7 @@ public class BeliefTransmitter : AbstractMasElement
 // Jason che crea dinamicamente RoomObjectArtifact e fa focus.
 // --------------------------------------------------------
 public void SendRoomObjectDiscovered(
-    string artifactId, string roomId, int wsPort,
+    string artifactId, string roomId, string artifactType, int wsPort,
     float x, float y, float z)
 {
     SendBelief(new BeliefMessage
@@ -224,15 +224,15 @@ public void SendRoomObjectDiscovered(
         beliefType = "new_object",
         payload    = new Dictionary<string, object>
         {
-            { "artifactId", artifactId },
-            { "roomId",     roomId     },
-            { "wsPort",     wsPort     },
-            { "x",          x          },
-            { "y",          y          },
-            { "z",          z          },
+            { "artifactId",   artifactId   },
+            { "roomId",       roomId       },
+            { "artifactType", artifactType },
+            { "wsPort",       wsPort       },
+            { "x",            x            },
+            { "y",            y            },
+            { "z",            z            },
         }
     });
-
 }
     // --------------------------------------------------------
     // DTO interno

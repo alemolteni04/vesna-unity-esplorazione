@@ -137,7 +137,10 @@ public class ExplorationManager : MonoBehaviour
 
     private HashSet<string>   traversedConnectors = new HashSet<string>();
 
-    private List<RoomObjectSnapshot> _discoveredObjects = new List<RoomObjectSnapshot>();
+    private Dictionary<string, HashSet<string>> _roomArtifacts
+    = new Dictionary<string, HashSet<string>>();
+private Dictionary<string, RoomObjectSnapshot> _artifactData
+    = new Dictionary<string, RoomObjectSnapshot>();
 
     private string movingToPoleCorridorId;
     private float  movingToPoleTimer = 0f;
@@ -1936,40 +1939,48 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
     // ====================================================
 
     private void OnAllFloorsCompleted()
-    {
-        explorationVisionCone?.SetExplorationMode(false);
-        state = State.Completed;
-    
-        // ── 1. Calcola distanze Stanze ────────────────────────────
-        var ddm = GetComponent<RoomDistanceMap>();
-        if (ddm != null)
-            ddm.Compute(floorGraphs);
-        else
-            Debug.LogWarning("[ExplMgr] RoomDistanceMap non trovato sul GameObject!");
-    
-        List<RoomDistancePair> roomPairs = ddm?.pairs ?? new List<RoomDistancePair>();
-    
-        // ── 2. Costruisci snapshot ───────────────────────────────
-        BuildingSnapshot snapshot = GraphSnapshotBuilder.Build(
-            floorGraphs,
-            ConnectorLinks,
-            roomPairs,
-            buildingId);
-        snapshot.discoveredObjects.AddRange(_discoveredObjects);
-        // ── 3. Salva su disco ────────────────────────────────────
-        bool saved = GraphPersistence.Save(snapshot);
-        if (!saved)
-            Debug.LogWarning("[ExplMgr] Salvataggio snapshot fallito: " +
-                            "la trasmissione a JaCaMo procede comunque.");
-    
-        // ── 4. Trasmetti a JaCaMo ────────────────────────────────
-        var bt = GetComponent<BeliefTransmitter>();
-        bt?.TransmitSnapshot(snapshot);
-    
-        Debug.Log($"[ExplMgr] Edificio '{buildingId}' esplorato. " +
-                $"Piani: {floorGraphs.Count}  Link: {ConnectorLinks.Count}  " +
-                $"Distanze: {roomPairs.Count}  Snapshot salvato: {saved}");
-    }
+{
+    explorationVisionCone?.SetExplorationMode(false);
+    state = State.Completed;
+
+    // ── 1. Calcola distanze Stanze ────────────────────────────
+    var ddm = GetComponent<RoomDistanceMap>();
+    if (ddm != null)
+        ddm.Compute(floorGraphs);
+    else
+        Debug.LogWarning("[ExplMgr] RoomDistanceMap non trovato sul GameObject!");
+
+    List<RoomDistancePair> roomPairs = ddm?.pairs ?? new List<RoomDistancePair>();
+
+    // ── 2. Costruisci snapshot ───────────────────────────────
+    BuildingSnapshot snapshot = GraphSnapshotBuilder.Build(
+        floorGraphs, ConnectorLinks, roomPairs, buildingId);
+
+    // ── 3. Popola artefatti nel snapshot ─────────────────────
+    foreach (var kv in _roomArtifacts)                          // solo nomi per stanza
+        snapshot.roomArtifacts.Add(new RoomArtifactNamesSnapshot
+        {
+            roomId        = kv.Key,
+            artifactNames = new List<string>(kv.Value),
+        });
+
+    // ── 4. Salva su disco ────────────────────────────────────
+    bool saved = GraphPersistence.Save(snapshot);
+    if (!saved)
+        Debug.LogWarning("[ExplMgr] Salvataggio snapshot fallito: " +
+                        "la trasmissione a JaCaMo procede comunque.");
+
+    // ── 5. Salva JSON artefatti separato ─────────────────────
+    ArtifactsPersistence.Save(buildingId, _roomArtifacts, _artifactData);
+
+    // ── 6. Trasmetti a JaCaMo ────────────────────────────────
+    var bt = GetComponent<BeliefTransmitter>();
+    bt?.TransmitSnapshot(snapshot);
+
+    Debug.Log($"[ExplMgr] Edificio '{buildingId}' esplorato. " +
+            $"Piani: {floorGraphs.Count}  Link: {ConnectorLinks.Count}  " +
+            $"Distanze: {roomPairs.Count}  Snapshot salvato: {saved}");
+}
    
     // ====================================================
     // HELPER
@@ -2273,25 +2284,27 @@ private void HandleRoomObjectVisible(RoomObjectArtifact artifact)
     if (currentNodeId == artifact.roomId)
         artifact.NotifySeen();
 }
-public void RegisterDiscoveredObject(string artifactId, string roomId, int wsPort,
-                                      float x, float y, float z)
+public void RegisterDiscoveredObject(string artifactId, string roomId,
+    string artifactType, int wsPort, float x, float y, float z)
 {
-    var existing = _discoveredObjects.Find(o => o.artifactId == artifactId);
-    if (existing != null)
+    // Aggiorna dato completo
+    _artifactData[artifactId] = new RoomObjectSnapshot
     {
-        existing.roomId     = roomId;
-    }
-    else
-    {
-        _discoveredObjects.Add(new RoomObjectSnapshot
-        {
-            artifactId   = artifactId,
-            roomId       = roomId,
-            wsPort       = wsPort,
-            x            = x,
-            y            = y,
-            z            = z,
-        });
-    }
+        artifactId   = artifactId,
+        artifactType = artifactType,
+        roomId       = roomId,
+        wsPort       = wsPort,
+        x = x, y = y, z = z,
+    };
+
+    // Rimuovi da stanza precedente se cambiata
+    foreach (var kv in _roomArtifacts)
+        if (kv.Key != roomId)
+            kv.Value.Remove(artifactId);
+
+    // Aggiungi alla stanza corrente
+    if (!_roomArtifacts.ContainsKey(roomId))
+        _roomArtifacts[roomId] = new HashSet<string>();
+    _roomArtifacts[roomId].Add(artifactId);
 }
 }

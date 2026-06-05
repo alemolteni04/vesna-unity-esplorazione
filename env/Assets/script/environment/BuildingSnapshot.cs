@@ -50,7 +50,10 @@ public class BuildingSnapshot
     // il cono visivo vede un oggetto per la prima volta.
     // Al riavvio NON viene usato per ricreare gli artefatti in
     // JaCaMo: serve solo come persistenza storica su file.
-    public List<RoomObjectSnapshot>     discoveredObjects = new List<RoomObjectSnapshot>();
+    // ── Artefatti per stanza (solo nomi, per il grafo) ───────
+    // roomId → lista nomi artefatti visti in quella stanza
+    public List<RoomArtifactNamesSnapshot> roomArtifacts = new List<RoomArtifactNamesSnapshot>();
+
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -134,6 +137,12 @@ public class RoomDistSnapshot
     public float  distance;
     public string doorName;
 }
+[Serializable]
+public class RoomArtifactNamesSnapshot
+{
+    public string       roomId;
+    public List<string> artifactNames = new List<string>();
+}
 
 // ─────────────────────────────────────────────────────────────
 // ARTEFATTO SCOPERTO A RUNTIME
@@ -142,11 +151,13 @@ public class RoomDistSnapshot
 // Se l'oggetto viene successivamente visto in una stanza
 // diversa, roomId viene aggiornato tramite UpdateDiscoveredObject().
 // ─────────────────────────────────────────────────────────────
+
 [Serializable]
 public class RoomObjectSnapshot
 {
     public string artifactId;       // ID univoco (es. "chair_lobby")
     public string roomId;           // stanza in cui è stato visto l'ultima volta
+    public string artifactType;
     public float  x, y, z;         // posizione 3D al momento della scoperta
     public int    wsPort;           // porta WebSocket del suo RoomObjectArtifact.java
 }

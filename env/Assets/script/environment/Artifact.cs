@@ -28,12 +28,12 @@ public class Artifact : AbstractArtifact
     }
 
     private void OnDestroy()
-    {
-        var grabbable = GetXRGrabbable();
-
-        grabbable.selectEntered.RemoveAllListeners();
-        grabbable.selectExited.RemoveAllListeners();
-    }
+{
+    var grabbable = gameObject.GetComponent<XRGrabInteractable>();
+    if (grabbable == null) return;  // se non esiste, non fare nulla
+    grabbable.selectEntered.RemoveAllListeners();
+    grabbable.selectExited.RemoveAllListeners();
+}
 
     protected virtual void Awake()
     {
@@ -224,4 +224,10 @@ public class Artifact : AbstractArtifact
         return grabbable;
     }
     
+
+    // TENERE TRACCIA DELLA STANZA DI APPARTENENZA
+    [Header("Stanza di appartenenza")]
+    [Tooltip("Trascina qui il GameObject della stanza.")]
+    public GameObject roomNode;
+    public string roomId => roomNode != null ? roomNode.name : "room_unknown";
 }
