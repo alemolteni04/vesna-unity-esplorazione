@@ -18,6 +18,10 @@ public class VisionCone : MonoBehaviour
     public LayerMask layers;
     // Layers that occlude the object
     public LayerMask occlusionLayers;
+
+    public LayerMask roomNodeLayers;
+
+    public static event Action<string, Vector3> OnRoomNodeVisible;
     bool reachedArtifact = false;
     public bool ReachedArtifact
     {
@@ -33,6 +37,9 @@ public class VisionCone : MonoBehaviour
     // Buffer to store the colliders information that the sensor scans
     Collider[] colliders = new Collider[50];   
     int count;
+    Collider[] roomBuffer = new Collider[40];
+    int count2;
+    HashSet<string> loggedRooms = new HashSet<string>();
     // instead of updating the sensor at each frame, use scanFrequency to control how frequently the sensor scans the environment
     public int scanFrequency = 30;
     float scanInterval;
@@ -73,6 +80,24 @@ public class VisionCone : MonoBehaviour
             if (IsInSight(obj))
             {                
                 CheckLayer(obj);                
+            }
+        }
+
+        count2 = Physics.OverlapSphereNonAlloc(
+        transform.position, distance, roomBuffer, roomNodeLayers, 
+        QueryTriggerInteraction.Collide);
+
+        for (int i = 0; i < count2; i++)
+        {
+            if (IsInSight(roomBuffer[i].gameObject))
+            {
+                string roomName = roomBuffer[i].gameObject.name;
+                if (!loggedRooms.Contains(roomName))
+                {
+                    loggedRooms.Add(roomName);
+                    Debug.Log($"[RoomNode] Vedo: {roomName}");
+                }
+                OnRoomNodeVisible?.Invoke(roomName, roomBuffer[i].transform.position);
             }
         }
     }
@@ -117,7 +142,7 @@ public class VisionCone : MonoBehaviour
             return false;  
         }
 
-        origin.y += height / 2;
+       origin.y += height / 2;
         dest.y = origin.y;
         if(Physics.Linecast(origin, dest, occlusionLayers))
         {

@@ -127,7 +127,7 @@ public class ExplorationVisionCone : VisionCone
         // Replica la logica di VisionCone.Update() per il scan base del cono,
         // poi aggiunge i nuovi scan di esplorazione e transito.
         if (!Application.IsPlaying(gameObject)) return;
-        Debug.Log($"[EVC] explorationMode={explorationMode}, objectLayers={objectLayers.value}"); // ← aggiunto temporaneo
+       /* Debug.Log($"[EVC] explorationMode={explorationMode}, objectLayers={objectLayers.value}"); // ← aggiunto temporaneo*/
 
         if (explorationMode)
         {

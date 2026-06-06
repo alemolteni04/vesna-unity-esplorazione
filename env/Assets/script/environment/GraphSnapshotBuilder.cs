@@ -64,9 +64,18 @@ public static class GraphSnapshotBuilder
                 if (node == null) continue;
                 var nodeSnap = NodeFrom(node); // ← salva in variabile locale
 
-                // Popola artefatti se il nodo è una stanza
-                if (roomArtifacts != null && roomArtifacts.TryGetValue(node.id, out var artifactNames))
-                    nodeSnap.artifacts.AddRange(artifactNames);
+               if (roomArtifacts != null)
+                {
+                    // Per i nodi normali cerca per node.id; per i poli corridoio
+                    // cerca anche per corridorId (es. "Corridoio2") perché il
+                    // roomId degli artifact punta al corridoio, non al polo specifico.
+                    string lookupKey = node.id;
+                    if (node is CorridorPoleNode pole && !roomArtifacts.ContainsKey(node.id))
+                        lookupKey = pole.corridorId;
+
+                    if (roomArtifacts.TryGetValue(lookupKey, out var artifactNames))
+                        nodeSnap.artifacts.AddRange(artifactNames);
+                }
 
                 floor.nodes.Add(nodeSnap); // ← aggiungi dopo aver popolato
 
