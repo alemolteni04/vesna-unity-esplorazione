@@ -32,7 +32,7 @@ public class DoorVarcoArtifactBridge : AbstractMasElement
 {
     [Header("Configurazione JaCaMo")]
     // Nome dell'artefatto nel .jcm — deve matchare esattamente
-    public string artifactName;
+    public string artifactName => gameObject.name;
 
     [Header("Riferimento fisico")]
     public DoorVarcoScript doorScript;
@@ -44,12 +44,14 @@ public class DoorVarcoArtifactBridge : AbstractMasElement
     {
         if (!Application.IsPlaying(gameObject)) return;
          objInUse = gameObject;
+         port = PortAssigner.GetPort(gameObject.name);
 
         if (doorScript == null)
             doorScript = GetComponent<DoorVarcoScript>();
 
         // Apre la connessione WebSocket con JaCaMo
         // "port" è la variabile di AbstractMasElement
+         port = PortAssigner.GetPort(gameObject.name);
         initializeWebSocketConnection(OnMessageFromJacamo);
         _ = startServer();
 

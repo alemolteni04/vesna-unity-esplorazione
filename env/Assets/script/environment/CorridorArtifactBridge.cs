@@ -3,7 +3,7 @@ using UnityEngine;
 // Da attaccare al GameObject padre del Corridoio, insieme a CorridorData
 public class CorridorArtifactBridge : AbstractMasElement
 {
-    public string artifactName; // Es. "corridor_1"
+    public string artifactName => corridorData != null ? corridorData.corridorId : gameObject.name;
     private CorridorData corridorData;
 
     void Awake()
@@ -16,6 +16,7 @@ public class CorridorArtifactBridge : AbstractMasElement
         
         
         // Inizializza WebSocket
+        port = PortAssigner.GetPort(artifactName);
         initializeWebSocketConnection(OnMessageFromJacamo);
         _ = startServer();
     }
