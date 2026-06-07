@@ -134,6 +134,13 @@ public static class GraphSnapshotBuilder
         {
             s.corridorId = pole.corridorId;
             s.poleLabel  = pole.poleLabel;
+            var corridorGo = GameObject.Find(pole.corridorId);
+            if (corridorGo != null)
+            {
+                var bridge = corridorGo.GetComponent<CorridorArtifactBridge>();
+                if (bridge != null && int.TryParse(bridge.port, out int p))
+                    s.wsPort = p;
+            }
         }
 
         return s;
@@ -178,9 +185,20 @@ public static class GraphSnapshotBuilder
     {
         s.distance = edge.distFromA; // distFromA contiene la lunghezza totale del corridoio
     }
+    string goName = ResolveGameObjectName(edge.id);
+    if (goName != null)
+    {
+        var go = GameObject.Find(goName);
+        if (go != null)
+        {
+            var bridge = go.GetComponent<DoorVarcoArtifactBridge>();
+            if (bridge != null && int.TryParse(bridge.port, out int p))
+                s.wsPort = p;
+        }
+    }
 
-    return s;
-}
+        return s;
+    }
    private static ConnectorLinkSnapshot ConnectorLinkFrom(FloorConnectorLink link)
     {
         return new ConnectorLinkSnapshot
@@ -209,4 +227,12 @@ public static class GraphSnapshotBuilder
             doorName = pair.doorName,
         };
     }
+    private static string ResolveGameObjectName(string edgeId)
+{
+    if (edgeId.StartsWith("fw_"))      return edgeId.Substring(3);
+    if (edgeId.StartsWith("bw_"))      return edgeId.Substring(3);
+    if (edgeId.StartsWith("seg_"))     return edgeId.Substring(4);
+    if (edgeId.StartsWith("central_")) return null;
+    return edgeId;
+}
 }

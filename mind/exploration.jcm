@@ -1,0 +1,11 @@
+mas exploration {
+    agent explorer : explorer.asl {
+        ag-class: vesna.VesnaAgent
+        beliefs: address(localhost)
+                 port(8080)
+        goals: start
+        join: w
+    }
+    workspace w {
+    }
+}

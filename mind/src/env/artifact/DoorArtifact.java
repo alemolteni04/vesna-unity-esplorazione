@@ -47,18 +47,23 @@ public class DoorArtifact extends AbstractMasElementArtifact {
         defineObsProperty("z", z);
     }
 
-    @Override
+   @Override
     public void onMessageReceived(String message) {
         try {
             WsMessage wsMsg = ObjectMapperUtils.convertJsonStringToObject(
                     message, new TypeReference<>() {});
 
-            if ("update_status".equals(wsMsg.getOperation())) {
-                Object isOpen   = wsMsg.getParam("isOpen");
-                Object isLocked = wsMsg.getParam("isLocked");
-                if (isOpen   != null) getObsProperty("isOpen").updateValue(isOpen);
-                if (isLocked != null) getObsProperty("isLocked").updateValue(isLocked);
-                writeLog("[" + artifactName + "] isOpen=" + isOpen + " isLocked=" + isLocked);
+            if ("update_status".equals(wsMsg.getMessageType())) {
+                // param è una Map con isOpen e isLocked
+                java.util.Map<String, Object> params = 
+                    (java.util.Map<String, Object>) wsMsg.getParam();
+                if (params != null) {
+                    Object isOpen   = params.get("isOpen");
+                    Object isLocked = params.get("isLocked");
+                    if (isOpen   != null) getObsProperty("isOpen").updateValue(isOpen);
+                    if (isLocked != null) getObsProperty("isLocked").updateValue(isLocked);
+                    writeLog("[" + artifactName + "] isOpen=" + isOpen + " isLocked=" + isLocked);
+                }
             }
             execInternalOp("signalAgentsByTick");
         } catch (Exception e) {

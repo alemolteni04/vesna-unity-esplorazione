@@ -156,13 +156,26 @@ public class VesnaAgent extends Agent{
         String sender = log.getString( "sender" );
         String receiver = log.getString( "receiver" );
         String type = log.getString( "type" );
-        JSONObject data = log.getJSONObject( "data" );
+       JSONObject data;
+        Object rawData = log.get("data");
+        if (rawData instanceof String) {
+            data = new JSONObject((String) rawData);
+        } else {
+            data = log.getJSONObject("data");
+        }
         switch( type ){
             case "signal" -> handle_event( data );
             case "sight" -> handle_sight( data );
             case "movement" -> handle_movement( data );
             case "door" -> handle_door( data );
             case "artifactStrategy" -> handle_arts( data );
+            case "node"                 -> handle_node(data);
+            case "edge"                 -> handle_edge(data);
+            case "connector_link"       -> handle_connector_link(data);
+            case "door_dist"            -> handle_door_dist(data);
+            case "new_object"           -> handle_new_object(data);
+            case "corridor"             -> handle_corridor(data);
+            case "exploration_complete" -> handle_exploration_complete(data);
             default -> System.out.println( "Unknown message type: " + type );
         }
     }
@@ -207,4 +220,125 @@ public class VesnaAgent extends Agent{
             return parseLiteral(test);
         }
     }
+    private void handle_node(JSONObject data) {
+    try {
+        JSONObject p = data.getJSONObject("payload");
+        String lit = String.format(
+            "node(\"%s\", \"%s\", %d, %s, %s, %s, \"%s\", \"%s\", %d)",
+            p.getString("id"),
+            p.getString("type"),
+            p.getInt("floor"),
+            p.get("x"), p.get("y"), p.get("z"),
+            p.optString("corridorId", ""),
+            p.optString("poleLabel", ""),
+            p.optInt("wsPort", 0)
+        );
+        addBel(parseLiteral(lit));
+    } catch (Exception e) { e.printStackTrace(); }
+}
+
+private void handle_edge(JSONObject data) {
+    try {
+        JSONObject p = data.getJSONObject("payload");
+        String edgeId = p.getString("id");
+        String goName = edgeId;
+        String direction = "none";
+        if      (edgeId.startsWith("fw_"))      { goName = edgeId.substring(3); direction = "fw"; }
+        else if (edgeId.startsWith("bw_"))      { goName = edgeId.substring(3); direction = "bw"; }
+        else if (edgeId.startsWith("seg_"))     { goName = edgeId.substring(4); direction = "seg"; }
+        else if (edgeId.startsWith("central_")) { goName = edgeId.substring(8); direction = "central"; }
+
+        String lit = String.format(
+            "edge(\"%s\", \"%s\", \"%s\", %d, \"%s\", \"%s\", \"%s\", \"%s\", %s, %s, %d)",
+            goName,
+            p.getString("from"),
+            p.getString("to"),
+            p.getInt("floor"),
+            p.optString("edgeType", ""),
+            p.optString("doorState", ""),
+            p.optString("side", ""),
+            direction,
+            p.optDouble("distFromA", 0.0),
+            p.optDouble("distFromB", 0.0),
+            p.optInt("wsPort", 0)
+        );
+        addBel(parseLiteral(lit));
+    } catch (Exception e) { e.printStackTrace(); }
+}
+
+private void handle_connector_link(JSONObject data) {
+    try {
+        JSONObject p = data.getJSONObject("payload");
+        String lit = String.format(
+            "connector_link(\"%s\", %d, %d, %s, %s, %s, %s, %s, %s, %s)",
+            p.getString("id"),
+            p.getInt("floorA"),
+            p.getInt("floorB"),
+            p.get("bidirectional"),
+            p.get("posAx"), p.get("posAy"), p.get("posAz"),
+            p.get("posBx"), p.get("posBy"), p.get("posBz")
+        );
+        addBel(parseLiteral(lit));
+    } catch (Exception e) { e.printStackTrace(); }
+}
+
+private void handle_door_dist(JSONObject data) {
+    try {
+        JSONObject p = data.getJSONObject("payload");
+        String lit = String.format(
+            "door_dist(\"%s\", \"%s\", %d, %s)",
+            p.getString("roomA"),
+            p.getString("roomB"),
+            p.getInt("floor"),
+            p.get("distance")
+        );
+        addBel(parseLiteral(lit));
+    } catch (Exception e) { e.printStackTrace(); }
+}
+
+private void handle_new_object(JSONObject data) {
+    try {
+        JSONObject p = data.getJSONObject("payload");
+        String lit = String.format(
+            "new_object(\"%s\", \"%s\", \"%s\", %d, %s, %s, %s)",
+            p.getString("artifactId"),
+            p.getString("roomId"),
+            p.getString("artifactType"),
+            p.getInt("wsPort"),
+            p.get("x"), p.get("y"), p.get("z")
+        );
+        addBel(parseLiteral(lit));
+    } catch (Exception e) { e.printStackTrace(); }
+}
+
+private void handle_corridor(JSONObject data) {
+    try {
+        JSONObject p = data.getJSONObject("payload");
+        String lit = String.format(
+            "corridor(\"%s\", \"%s\", \"%s\", %d, %d)",
+            p.getString("corridorId"),
+            p.getString("poleA"),
+            p.getString("poleB"),
+            p.getInt("floor"),
+            p.optInt("wsPort", 0)
+        );
+        addBel(parseLiteral(lit));
+    } catch (Exception e) { e.printStackTrace(); }
+}
+
+private void handle_exploration_complete(JSONObject data) {
+    try {
+        JSONObject p = data.getJSONObject("payload");
+        String lit = String.format(
+            "exploration_complete(\"%s\", \"%s\", %d, %d, %d, %d)",
+            p.getString("buildingId"),
+            p.getString("capturedAt"),
+            p.getInt("totalFloors"),
+            p.getInt("totalNodes"),
+            p.getInt("totalEdges"),
+            p.getInt("totalDists")
+        );
+        addBel(parseLiteral(lit));
+    } catch (Exception e) { e.printStackTrace(); }
+}
 }

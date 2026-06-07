@@ -33,7 +33,7 @@ public class BuildingSnapshot
     public string buildingId;           // identificatore edificio (es. "Edificio_A")
     public string capturedAt;           // DateTime.UtcNow.ToString("O") al momento del salvataggio
     public string unityVersion;         // Application.unityVersion
-
+    
     // ── Dati per piano ──────────────────────────────────────
     // Ogni FloorSnapshot è indipendente: aggiungere un piano
     // non richiede modifiche al formato degli altri.
@@ -77,6 +77,7 @@ public class NodeSnapshot
     // Solo per nodi polo corridoio
     public string corridorId;
     public string poleLabel;            // "A" o "B"
+    public int wsPort;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -102,6 +103,7 @@ public class EdgeSnapshot
     public int?   orderBW;
     public int?   explorationOrder;
     public float  x, y, z;             // position (no Vector3)
+    public int wsPort; // porta WebSocket del bridge corrispondente
 }
 
 // ─────────────────────────────────────────────────────────────

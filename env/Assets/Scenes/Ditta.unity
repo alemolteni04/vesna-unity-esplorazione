@@ -45934,7 +45934,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2456589319865467698, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2461382583679995558, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       propertyPath: m_LocalPosition.x
@@ -66057,7 +66057,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   objInUse: {fileID: 0}
-  port: 
+  port: 8080
   beliefsPerFrame: 5
 --- !u!114 &1570252488
 MonoBehaviour:

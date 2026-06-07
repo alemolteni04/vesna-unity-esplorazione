@@ -278,6 +278,15 @@ class UnityJacamoIntegrationUtil : MonoBehaviour
 			case "grabbableStatus":
 				wsMsg = new BrainMessage( "body", agentName, "grabbable_status", (bool) param );
 				break;
+			case "node":
+			case "edge":
+			case "connector_link":
+			case "door_dist":
+			case "new_object":
+			case "corridor":
+			case "exploration_complete":
+				wsMsg = new BrainMessage("body", agentName, messageType, param);
+				break;
 
 			default:
 				wsMsg = new BrainMessage( "body", "vesna", "error", null );

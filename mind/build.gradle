@@ -54,6 +54,7 @@ dependencies {
     // Apache Commons
     implementation('org.apache.commons:commons-lang3:3.18.0') // Potentially useless!
     implementation('org.apache.commons:commons-text:1.11.0') // Used for unescaping strings!
+    implementation('com.fasterxml.jackson.core:jackson-databind:2.15.2')
 }
 
 sourceSets {
@@ -79,7 +80,7 @@ task run (type: JavaExec, dependsOn: 'classes') {
     }
     
     mainClass = 'jacamo.infra.JaCaMoLauncher'
-    args 'testGrabbableArtifact.jcm'
+    args 'exploration.jcm'
     // jvmArgs '-Xss15m'
     classpath sourceSets.main.runtimeClasspath
 }

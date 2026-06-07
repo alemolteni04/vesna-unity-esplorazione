@@ -49,6 +49,18 @@ public class BeliefTransmitter : AbstractMasElement
     TransmitSnapshot(snapshot);
 }
 
+void Awake()
+{
+    if (!Application.IsPlaying(gameObject)) return;
+    objInUse = gameObject;
+    initializeWebSocketConnection(OnMessageFromJacamo);
+    _ = startServer();
+}
+private void OnMessageFromJacamo(object sender, WebSocketSharp.MessageEventArgs e)
+{
+    // BeliefTransmitter non riceve messaggi, solo invia
+}
+
     // --------------------------------------------------------
     // COROUTINE PRINCIPALE
     // --------------------------------------------------------
@@ -122,6 +134,33 @@ public class BeliefTransmitter : AbstractMasElement
 
                 if (++count % beliefsPerFrame == 0) yield return null;
             }
+            // ── Credenze corridoio ───────────────────────────────
+            var corridorsSent = new HashSet<string>();
+          foreach (var floorSnap in snapshot.floors)
+            {
+                foreach (var node in floorSnap.nodes)
+                {
+                    if (node.nodeType != "CorridorPoleA") continue;
+                    if (corridorsSent.Contains(node.corridorId)) continue;
+                    var poleB = floorSnap.nodes.Find(n =>
+                        n.corridorId == node.corridorId && n.nodeType == "CorridorPoleB");
+                    if (poleB == null) continue;
+                    corridorsSent.Add(node.corridorId);
+                    SendBelief(new BeliefMessage
+                    {
+                        beliefType = "corridor",
+                        payload = new Dictionary<string, object>
+                        {
+                            { "corridorId", node.corridorId      },
+                            { "poleA",      node.nodeId           },
+                            { "poleB",      poleB.nodeId          },
+                            { "floor",      floorSnap.floorIndex  },
+                            { "wsPort",     node.wsPort           },
+                        }
+                    });
+                    if (++count % beliefsPerFrame == 0) yield return null;
+                }
+            }
 
             // Archi
             foreach (var edge in floor.edges)
@@ -148,6 +187,7 @@ public class BeliefTransmitter : AbstractMasElement
                         { "x",               edge.x                },
                         { "y",               edge.y                },
                         { "z",               edge.z                },
+                        { "wsPort",          edge.wsPort           },
                     }
                 });
 
