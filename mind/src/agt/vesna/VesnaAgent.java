@@ -176,7 +176,9 @@ public class VesnaAgent extends Agent{
             case "new_object"           -> handle_new_object(data);
             case "corridor"             -> handle_corridor(data);
             case "exploration_complete" -> handle_exploration_complete(data);
+            case "current_room" -> handle_current_room(data);
             default -> System.out.println( "Unknown message type: " + type );
+
         }
     }
 
@@ -339,6 +341,20 @@ private void handle_exploration_complete(JSONObject data) {
             p.getInt("totalDists")
         );
         addBel(parseLiteral(lit));
+    } catch (Exception e) { e.printStackTrace(); }
+}
+
+private void handle_current_room(JSONObject data) {
+    try {
+        JSONObject p = data.getJSONObject("payload");
+        String roomId = p.getString("roomId");
+        
+        // Rimuovi la vecchia belief e aggiungi la nuova
+        try { delBel(parseLiteral("current_room(_)")); } 
+        catch (Exception ignored) {}
+        
+        addBel(parseLiteral(String.format("current_room(\"%s\")", roomId)));
+        System.out.println("[VesnaAgent] Stanza corrente: " + roomId);
     } catch (Exception e) { e.printStackTrace(); }
 }
 }

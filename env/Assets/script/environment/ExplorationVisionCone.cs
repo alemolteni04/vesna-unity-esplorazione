@@ -106,7 +106,6 @@ public class ExplorationVisionCone : VisionCone
     /// </summary>
     public static event System.Action<DoorVarcoScript, string, int> OnDoorDiscovered;
 
-
     // ── Unity lifecycle ───────────────────────────────────────────────────────
     // NOTA: Start() e Update() del VisionCone base sono private, quindi non
     // possiamo chiamare base.Start() / base.Update(). Reinizializziamo qui
@@ -123,39 +122,38 @@ public class ExplorationVisionCone : VisionCone
     }
 
     protected new void Update()
+{
+    if (!Application.IsPlaying(gameObject)) return;
+
+    // ── AGGIUNTA: chiama Scan() del base per roomNodeLayers e OnRoomNodeVisible ──
+    // Necessario perché base.Update() è private — ExplorationVisionCone lo nasconde
+    // con new, quindi il Scan() base non verrebbe mai chiamato senza questa riga.
+    Scan();
+    // ──────────────────────────────────────────────────────────────────────────────
+
+    if (explorationMode)
     {
-        // Replica la logica di VisionCone.Update() per il scan base del cono,
-        // poi aggiunge i nuovi scan di esplorazione e transito.
-        if (!Application.IsPlaying(gameObject)) return;
-       /* Debug.Log($"[EVC] explorationMode={explorationMode}, objectLayers={objectLayers.value}"); // ← aggiunto temporaneo*/
-
-        if (explorationMode)
+        exploScanTimer -= Time.deltaTime;
+        if (exploScanTimer < 0f)
         {
-            // ── Scan base del cono (timer propri — base.scanTimer è private) ──
-            exploScanTimer -= Time.deltaTime;
-            if (exploScanTimer < 0f)
-            {
-                exploScanTimer += exploScanInterval;
-                // Scan poli corridoio — sempre in explorationMode
-                ScanForCorridorPoles();
-                ScanForRoomObjects();  
-                // Scan porte in stanza — solo durante rotazione 360° in stanza
-                if (explorationManager != null && explorationManager.inRoomMode)
-                    ScanForDoorsInRoom();
-            }
-        }
-
-        // Scan transito A→B — indipendente da explorationMode
-        if (isTransitScanning)
-        {
-            transitScanTimer -= Time.deltaTime;
-            if (transitScanTimer <= 0f)
-            {
-                transitScanTimer = transitScanInterval;
-                TransitScan();
-            }
+            exploScanTimer += exploScanInterval;
+            ScanForCorridorPoles();
+            ScanForRoomObjects();
+            if (explorationManager != null && explorationManager.inRoomMode)
+                ScanForDoorsInRoom();
         }
     }
+
+    if (isTransitScanning)
+    {
+        transitScanTimer -= Time.deltaTime;
+        if (transitScanTimer <= 0f)
+        {
+            transitScanTimer = transitScanInterval;
+            TransitScan();
+        }
+    }
+}
 
     // ── API pubblica — Modalità esplorazione ──────────────────────────────────
 
@@ -387,4 +385,5 @@ private void ScanForRoomObjects()
         }
     }
 }
+
 }

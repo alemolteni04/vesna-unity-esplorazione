@@ -54,7 +54,14 @@ void Awake()
     if (!Application.IsPlaying(gameObject)) return;
     objInUse = gameObject;
     initializeWebSocketConnection(OnMessageFromJacamo);
+    StartCoroutine(StartServerCoroutine());
+}
+
+private IEnumerator StartServerCoroutine()
+{
     _ = startServer();
+    yield return new WaitForSeconds(2f);
+    Debug.Log($"[BeliefTransmitter] Server WebSocket pronto sulla porta {port}");
 }
 private void OnMessageFromJacamo(object sender, WebSocketSharp.MessageEventArgs e)
 {
@@ -129,6 +136,7 @@ private void OnMessageFromJacamo(object sender, WebSocketSharp.MessageEventArgs 
                         { "z",             node.z                },
                         { "corridorId",    node.corridorId ?? "" },
                         { "poleLabel",     node.poleLabel  ?? "" },
+                        { "wsPort",        node.wsPort           },
                     }
                 });
 
@@ -274,6 +282,19 @@ public void SendRoomObjectDiscovered(
             { "z",            z            },
         }
     });
+}
+
+public void SendCurrentRoom(string roomId)
+{
+    SendBelief(new BeliefMessage
+    {
+        beliefType = "current_room",
+        payload    = new Dictionary<string, object>
+        {
+            { "roomId", roomId }
+        }
+    });
+    Debug.Log($"[BeliefTransmitter] Stanza corrente inviata: {roomId}");
 }
     // --------------------------------------------------------
     // DTO interno

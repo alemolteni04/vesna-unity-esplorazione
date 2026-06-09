@@ -66,7 +66,7 @@ public class VisionCone : MonoBehaviour
 
     }
 
-    private void Scan()
+    protected void Scan()
     {
         // Physics.OverlapSphereNonAlloc Computes and stores colliders touching or inside the sphere into the provided buffer
         // Use the center of the sphere, the main point of the cone

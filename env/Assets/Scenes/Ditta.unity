@@ -7110,6 +7110,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ArtifactObject
       objectReference: {fileID: 0}
+    - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: port
       value: 8081
@@ -66012,6 +66016,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2456589319865467698, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1570252486}
+    - targetCorrespondingSourceObject: {fileID: 2456589319865467698, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1570252496}
     - targetCorrespondingSourceObject: {fileID: 751420899373808819, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1570252489}
@@ -66108,7 +66115,7 @@ MonoBehaviour:
     m_Bits: 1
   roomNodeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1024
   foundArtifacts: []
   scanFrequency: 30
   doorLayers:
@@ -66122,6 +66129,19 @@ MonoBehaviour:
     m_Bits: 512
   explorationMode: 0
   transitScanFrequency: 10
+--- !u!114 &1570252496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1570252483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff637fbf7b471e74791f6adb7b24aff3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visionCone: {fileID: 1570252489}
 --- !u!43 &1577557252
 Mesh:
   m_ObjectHideFlags: 0
@@ -73753,6 +73773,10 @@ PrefabInstance:
     - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_Name
       value: ArtifactObject corridoio2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: port
@@ -90075,6 +90099,10 @@ PrefabInstance:
     - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_Name
       value: Artefatto ufficio5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: port

@@ -1,5 +1,5 @@
 mas exploration {
-    agent explorer : explorer.asl {
+    agent explorer : explorer_v1.asl {
         ag-class: vesna.VesnaAgent
         beliefs: address(localhost)
                  port(8080)
