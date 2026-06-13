@@ -94,6 +94,7 @@ public class VesnaMover : MonoBehaviour
         {
             string name = Path.GetFileName(file);
             if (name.Equals("target.json", System.StringComparison.OrdinalIgnoreCase)) continue;
+            if (name.Equals("pathfinder_state.json", System.StringComparison.OrdinalIgnoreCase)) continue;   
             if (name.EndsWith("_artifacts.json", System.StringComparison.OrdinalIgnoreCase)) continue;
 
             var mtime = File.GetLastWriteTimeUtc(file);
