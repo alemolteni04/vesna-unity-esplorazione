@@ -1,106 +1,69 @@
-// RCC Rules
-po( X, Y ) :- map_po( X, Y ).
-po( Y, X ) :- map_po( X, Y ).
+// vesna.asl
+//
+// Agente navigante. Riceve comandi target dall'AI bridge (target.json,
+// letto tramite l'internal action checkTarget), calcola il percorso
+// minimo con A* (computePath) partendo dalla stanza corrente
+// (belief current_room, aggiornata da LocalizationTest.cs) e lo segue
+// nodo per nodo, aspettando la confermata di arrivo da Unity prima di
+// proseguire al nodo successivo.
 
-ntpp( X, Y ) :- map_ntpp( X, Y ).
-ntppi( Y, X ) :- map_ntpp( X, Y ).
+// ── Avvio: localizzazione iniziale + loop di controllo comandi ───────────
+!start.
 
-ec( X, Y ) :- map_ec( X, Y ).
-ec( Y, X ) :- map_ec( X, Y ).
++!start <-
+    .print("[vesna] avvio, attendo localizzazione iniziale...");
+    lookupArtifact("pathfinder", PfId);
+    focus(PfId);
+    +pathfinder(PfId);
+    .print("[vesna] attendo che il grafo sia pronto (graphReady)...");
+    .wait(graphReady(true), 600000, _);
+    .print("[vesna] grafo pronto.");
+    .wait(current_room(_), 60000, _);
+    ?current_room(Start);
+    .print("[vesna] posizione iniziale: ", Start);
+    !check_target_loop.
 
-// Check if two regions are subregions of the same one
-same_region( Region1, Region2 ) :- ntpp( Region1, SuperRegion ) & ntpp( Region2, SuperRegion ).
 
-+!go_to( Target )
-    :   .my_name( Me ) & same_region( Me, Target )
-    <-  .print( "I want to go to ", Target, " and we are in the same region" );
-        vesna.walk( Target, _ );
-        .wait( {+movement( completed, destination_reached ) } );
-        -at( Me, _ );
-        +at( Me, Target );
-        .print( "I arrived to ", Target ).
+// ── Loop: controlla periodicamente se è arrivato un nuovo target ─────────
++!check_target_loop <-
+    .wait(2000);
+    if (vesna.CheckTarget(Target)) {
+        .print("[vesna] nuovo comando ricevuto: ", Target);
+        !go_to(Target);
+    };
+    !check_target_loop.
 
-+!go_to( Target )
-    :   .my_name( Me ) & ntpp( Me, MyRegion ) & ntpp( Target, TargetRegion ) & po( MyRegion, Door ) & po( Door, TargetRegion )
-    <-  .print( "I want to go to ", TargetRegion, " and I know there is ", Door, " that can lead me there");
-        vesna.walk( Door, _ );
-        .wait( { +movement( completed, destination_reached ) } );
-        .print( "I arrived to ", Door , " and I go inside" );
-        vesna.walk( TargetRegion, _ );
-        .wait( { +movement( completed, destination_reached ) } );
-        .print( "I arrived to final region ", TargetRegion );
-        -ntpp( Me, _ );
-        +ntpp( Me, TargetRegion ).
 
-+!go_to( Target )
-    :   .my_name( Me ) & ntpp( Me, MyRegion ) & ntpp( Target, TargetRegion ) & ec( MyRegion, Corridor) & ec( Corridor, TargetRegion )
-    <-  .print( "I want to go to ", TargetRegion, " and I know there is ", Corridor, " that can lead me there");
-        Path = [ Corridor, TargetRegion ];
-        !follow_path( Path );
-        !go_to( Target ).
+// ── Goal principale: vai verso Target (stanza o corridoio) ────────────────
++!go_to(Target) : current_room(Start) & pathfinder(PfId) <-
+    .print("[vesna] da ", Start, " verso ", Target);
+    computePath(Start, Target)[artifact_id(PfId)];
+    .wait({+path(Start, _, _, _)}, 5000, _);
+    ?path(Start, ResolvedGoal, Path, Cost);
+    if (Path == []) {
+        .print("[vesna] ERRORE: nessun percorso trovato verso ", Target);
+    } else {
+        .print("[vesna] percorso verso ", ResolvedGoal, " (", Cost, "m): ", Path);
+        Path = [_First|StepsToWalk];
+        !follow_path(StepsToWalk);
+        .print("[vesna] arrivata a destinazione: ", Target);
+    }.
 
-+!go_to( Target )
-    :   .my_name( Me ) & ntpp( Me, MyRegion ) & ntpp( Target, TargetRegion )
-    <-  .print( "I am really far away, I have to reason a bit logically...");
-        if ( TargetRegion == office ){
-            ?find_path( MyRegion, Target, RPath );
-        } else {
-            ?find_path( MyRegion, TargetRegion, RPath );
-        }
-        .delete( MyRegion, RPath, LPath );
-        .reverse( LPath, Path );
-        !follow_path( Path );
-        if ( not TargetRegion == office ) {
-            !go_to( Target );
-        }.
+// Se per qualche motivo current_room non è ancora disponibile
++!go_to(Target) <-
+    .print("[vesna] posizione attuale non nota, ignoro comando: ", Target).
 
-+!follow_path( [] )
-    <-  .print( "Destination reached").
 
-+!follow_path( [ Head | Tail ] )
-    :   .my_name( Me )
-    <-  .print( "Moving to ", Head, " : ", Tail );
-        vesna.walk( Head );
-        .wait( {+movement( completed, destination_reached ) } );
-        -ntpp( Me, _ );
-        +ntpp( Me, Head );
-        !follow_path( Tail ).
+// ── Segui il percorso nodo per nodo ───────────────────────────────────────
++!follow_path([]).
 
-// ARTIFACT INTERACTIONS
-+!use( ArtName )
-    :   .my_name( Me ) & ntpp( Me, MyRegion )
-    <-  lookupArtifact( ArtName, ArtId );
-        focus( ArtId );
-        use( MyRegion )[ artifact_id( ArtId ) ].
++!follow_path([Next | Rest]) <-
+    .print("[vesna] -> ", Next);
+    vesna.walk(Next, _);
+    .wait({+movement(completed, destination_reached)}, 30000, _);
+    !follow_path(Rest).
 
--!use( ArtName )
-    <-  .print( "I cannot use ", ArtName ).
 
-+!free( ArtName )
-    <-  lookupArtifact( ArtName, ArtId );
-        stopFocus( ArtId );
-        free[ artifact_id( ArtId ) ].
-
-+!grab( ArtName )
-    :   .my_name( Me ) & ntpp( Me, MyRegion )
-    <-  lookupArtifact( ArtName, ArtId );
-        grab( MyRegion )[ artifact_id( ArtId ) ].
-
--!grab( ArtName )
-    <-  .print( "I cannot grab ", ArtName ).
-
-+!release( ArtName )
-    :   .my_name( Me ) & ntpp( Me, MyRegion )
-    <-  lookupArtifact( ArtName, ArtId );
-        release( MyRegion )[ artifact_id( ArtId ) ].
-
--!release( ArtName )
-    <-  .print( "Cannot release ", ArtName ).
-
-find_path( Start, Target, Path ) :- find_path_recursive( Start, Target, [ Start ], Path ).
-
-find_path_recursive( Target, Target, Visited, Visited ).
-find_path_recursive( Current, Target, Visited, Path ) :- ( po( Current, Next ) | ec( Current, Next ) ) & not .member( Next, Visited ) & find_path_recursive( Next, Target, [ Next | Visited ], Path ).
-
-{ include("$jacamoJar/templates/common-cartago.asl") }
-{ include("$jacamoJar/templates/common-moise.asl") }
+// ── Log di debug sugli aggiornamenti di posizione ─────────────────────────
++current_room(Room) <-
+    .print("[vesna] ora sono in: ", Room).

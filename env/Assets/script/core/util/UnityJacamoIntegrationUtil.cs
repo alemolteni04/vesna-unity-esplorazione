@@ -261,7 +261,7 @@ class UnityJacamoIntegrationUtil : MonoBehaviour
 				} else {
 					moveData = new MoveData( "error", "error" );
 				}
-				wsMsg = new BrainMessage( "body", "vesna", "movement", moveData );
+				wsMsg = new BrainMessage( "body", agentName, "movement", moveData );
 				break;
 			
 			case "supermarketDoorStatus":
@@ -285,6 +285,7 @@ class UnityJacamoIntegrationUtil : MonoBehaviour
 			case "new_object":
 			case "corridor":
 			case "exploration_complete":
+			case "current_room":
 				wsMsg = new BrainMessage("body", agentName, messageType, param);
 				break;
 

@@ -118,9 +118,40 @@ public class ComputePath extends DefaultInternalAction {
         System.out.println("[ComputePath] Vicini di Ufficio1: " + pathfinder.getAdjacency("Ufficio1"));
         System.out.println("[ComputePath] Vicini di Laboratorio3: " + pathfinder.getAdjacency("Laboratorio3"));
 
-        // ── Calcola il percorso con A* ─────────────────────────────────────
-        List<String> path = pathfinder.computePath(startId, goalId);
-        double cost = pathfinder.pathCost(path);
+        // ── Risolvi il goal: se non è un nodo reale (es. "Corridoio2"),
+        //    provo i poli _A e _B e scelgo il percorso più economico ───────
+        List<String> path;
+        double cost;
+
+        if (pathfinder.getNodeIds().contains(goalId)) {
+            path = pathfinder.computePath(startId, goalId);
+            cost = pathfinder.pathCost(path);
+        } else {
+            String poleA = goalId + "_A";
+            String poleB = goalId + "_B";
+
+            List<String> pathA = pathfinder.getNodeIds().contains(poleA)
+                    ? pathfinder.computePath(startId, poleA) : List.of();
+            double costA = pathA.isEmpty() ? Double.MAX_VALUE : pathfinder.pathCost(pathA);
+
+            List<String> pathB = pathfinder.getNodeIds().contains(poleB)
+                    ? pathfinder.computePath(startId, poleB) : List.of();
+            double costB = pathB.isEmpty() ? Double.MAX_VALUE : pathfinder.pathCost(pathB);
+
+            if (costA == Double.MAX_VALUE && costB == Double.MAX_VALUE) {
+                path = List.of();
+                cost = 0.0;
+            } else if (costA <= costB) {
+                path = pathA;
+                cost = costA;
+            } else {
+                path = pathB;
+                cost = costB;
+            }
+
+            System.out.println("[ComputePath] Goal '" + goalId + "' è un corridoio -> "
+                    + poleA + " (" + costA + "m) vs " + poleB + " (" + costB + "m)");
+        }
 
         pathfinder.printPath(path);
 

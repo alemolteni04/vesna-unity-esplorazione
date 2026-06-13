@@ -117,15 +117,15 @@ public class VesnaAgent extends Agent{
     }
 
     private void handle_movement( JSONObject data ) {
-        String type = data.getString( "type" );
-        String target = data.getString( "name" ); 
-        try {
-            Literal percept = parseLiteral( "reached(" + type + ", " + target + ")" );
-            sense( percept );
-        } catch ( Exception e ) {
-            e.printStackTrace();
-        }
+    String type = data.getString( "type" );
+    String target = data.getString( "name" ); 
+    try {
+        Literal percept = parseLiteral( "movement(completed, destination_reached)" );
+        sense( percept );
+    } catch ( Exception e ) {
+        e.printStackTrace();
     }
+}
 
     private void handle_door( JSONObject data ) {
         try {
@@ -157,7 +157,13 @@ public class VesnaAgent extends Agent{
         String receiver = log.getString( "receiver" );
         String type = log.getString( "type" );
        JSONObject data;
-        Object rawData = log.get("data");
+        Object rawData = log.isNull("data") ? null : log.get("data");
+        if (rawData == null) {
+            if (!type.equals("error")) {
+                System.out.println("[VesnaAgent] Messaggio '" + type + "' senza data, ignorato.");
+            }
+            return;
+        }
         if (rawData instanceof String) {
             data = new JSONObject((String) rawData);
         } else {

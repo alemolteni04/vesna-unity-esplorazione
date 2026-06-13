@@ -2,15 +2,38 @@
 // explorer.asl — Variante 1: agente intelligente
 // Il percorso viene calcolato nella mente dell'agente
 // tramite l'internal action vesna.ComputePath (A*)
+//
+// + Specchio del grafo verso PathFinderArtifact (additivo,
+//   non sostituisce la logica di navigazione esistente)
 // ============================================================
 
-+!start <- .print("[explorer] in attesa del grafo...").
++!start <-
+    .print("[explorer] in attesa del grafo...");
+    makeArtifact("pathfinder", "artifact.PathFinderArtifact", [], PathHandle);
+    focus(PathHandle);
+    +pathfinder(PathHandle).
 
 +node(Id, Type, Floor, X, Y, Z, CorridorId, PoleLabel, WsPort) <-
-    .print("[explorer] nodo: ", Id).
+    .print("[explorer] nodo: ", Id);
+    ?pathfinder(H);
+    addNode(Id, Type, Floor, X, Y, Z)[artifact_id(H)].
 
 +edge(GoName, From, To, Floor, EdgeType, DoorState, Side, Dir, DistA, DistB, WsPort) <-
-    .print("[explorer] arco: ", GoName, " da ", From, " a ", To).
+    .print("[explorer] arco: ", GoName, " da ", From, " a ", To);
+    ?pathfinder(H);
+    addEdge(From, To, EdgeType, Dir, DistA, DistB)[artifact_id(H)].
+
++connector_link(Id, FloorA, FloorB, Bidirectional, PosAx, PosAy, PosAz, PosBx, PosBy, PosBz) <-
+    .print("[explorer] connettore: ", Id, " piano ", FloorA, " <-> ", FloorB);
+    ?pathfinder(H);
+    addNode(Id, "Connector", FloorA, PosAx, PosAy, PosAz)[artifact_id(H)].
+
+// ── NUOVO: door_dist non aveva un piano dedicato, ora viene anche
+//           inoltrato al PathFinderArtifact per la risoluzione
+//           dei pesi sugli archi "none"/"seg"
++door_dist(RoomA, RoomB, Floor, Dist) <-
+    ?pathfinder(H);
+    addDoorDist(RoomA, RoomB, Dist)[artifact_id(H)].
 
 +corridor(CorridorId, PoleA, PoleB, Floor, WsPort) <-
     .print("[explorer] corridoio: ", CorridorId);
@@ -23,19 +46,23 @@
     .print("[explorer] oggetto: ", ArtifactId);
     makeArtifact(ArtifactId, "artifact.RoomObjectArtifact",
                  [ArtifactId, WsPort, RoomId, X, Y, Z], Handle);
-    focus(Handle).
+    focus(Handle);
+    ?pathfinder(H);
+    addNewObject(ArtifactId, RoomId)[artifact_id(H)].
 
 +exploration_complete(BuildingId, _, _, TotalNodes, TotalEdges, _) <-
     .print("[explorer] grafo completo: ", TotalNodes, " nodi, ", TotalEdges, " archi");
-    !create_door_artifacts.
-    // Nota: navigate_to viene chiamato quando arriva current_room
+    !create_door_artifacts;
+    ?pathfinder(H);
+    graphReady[artifact_id(H)].
+    // Nota: navigate_to viene chiamato quando arriva current_room    // Nota: navigate_to viene chiamato quando arriva current_room
 
 // Quando riceviamo la stanza corrente → calcola il percorso
 +current_room(StartId) <-
     .print("[explorer] Sono in: ", StartId);
     !navigate_to(StartId, "Laboratorio3").  // ← test, cambia con goal dinamico
 
-    
+
 // ── Crea artefatti porte/varchi ───────────────────────────────────────────
 +!create_door_artifacts <-
     for( edge(GoName, From, To, Floor, EdgeType, DoorState, Side, Dir, DistA, DistB, WsPort) &

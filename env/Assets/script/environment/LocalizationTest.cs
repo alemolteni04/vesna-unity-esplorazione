@@ -11,10 +11,15 @@ public class LocalizationTest : MonoBehaviour
 private BeliefTransmitter _beliefTransmitter;
     public string CurrentRoom => currentRoom;
 
+    public void SetCurrentRoom(string roomId)
+{
+    currentRoom = roomId;
+}
+
     void Start()
 {
     VisionCone.OnRoomNodeVisible += OnRoomSeen;
-    _beliefTransmitter = FindObjectOfType<BeliefTransmitter>();
+    _beliefTransmitter = GetComponent<BeliefTransmitter>();
     StartCoroutine(LocalizeOnce());
 }
     void OnDestroy()
@@ -70,6 +75,27 @@ private BeliefTransmitter _beliefTransmitter;
     }
 
     Debug.Log($"[Localizer] Sono in: {currentRoom}");
-    _beliefTransmitter?.SendCurrentRoom(currentRoom);
+    StartCoroutine(ResendCurrentRoom());
+}
+private IEnumerator ResendCurrentRoom()
+{
+    string lastSent = null;
+    float elapsed = 0f;
+    float warmupDuration = 60f;
+
+    while (true)
+    {
+        bool changed = currentRoom != lastSent;
+        bool inWarmup = elapsed < warmupDuration;
+
+        if (changed || inWarmup)
+        {
+            _beliefTransmitter?.SendCurrentRoom(currentRoom);
+            lastSent = currentRoom;
+        }
+
+        yield return new WaitForSeconds(2f);
+        elapsed += 2f;
+    }
 }
 }

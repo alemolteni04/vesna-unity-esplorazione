@@ -300,4 +300,35 @@ public class AStarPathfinder {
     public List<EdgeData> getAdjacency(String nodeId) {
     return adjacency.getOrDefault(nodeId, Collections.emptyList());
 }
+
+    /**
+     * Riempie un JSONObject con i dati del nodo (type, floor, x, y, z).
+     * Usato da PathfinderArtifact per serializzare lo stato su disco.
+     */
+    public void fillNodeJson(String id, org.json.JSONObject out) {
+        NodeData n = nodes.get(id);
+        if (n == null) return;
+        out.put("type", n.type);
+        out.put("floor", n.floor);
+        out.put("x", n.x);
+        out.put("y", n.y);
+        out.put("z", n.z);
+    }
+
+    /**
+     * Restituisce tutti gli archi del grafo come array {from, to, weight, edgeType}.
+     * Nota: addEdge aggiunge sempre l'arco in entrambe le direzioni, quindi
+     * questo metodo ritorna anche l'inverso (ridondanza accettabile per
+     * la persistenza: ricaricandolo, addEdge raddoppierebbe ancora —
+     * ma il grafo resta corretto, solo con archi duplicati equivalenti).
+     */
+    public List<Object[]> getAllEdges() {
+        List<Object[]> result = new ArrayList<>();
+        for (List<EdgeData> edges : adjacency.values()) {
+            for (EdgeData e : edges) {
+                result.add(new Object[]{ e.from, e.to, e.weight, e.edgeType });
+            }
+        }
+        return result;
+    }
 }

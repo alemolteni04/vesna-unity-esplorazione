@@ -10,8 +10,8 @@ public class CorridorArtifact extends AbstractMasElementArtifact {
 
     @OPERATION
     void init(String id, int port,
-              float p1x, float p1y, float p1z,
-              float p2x, float p2y, float p2z) {
+            double p1x, double p1y, double p1z,
+            double p2x, double p2y, double p2z) {
         super.init(id, port);
         defineObsProperty("corridorId",       id);
         defineObsProperty("pole1x",           p1x);

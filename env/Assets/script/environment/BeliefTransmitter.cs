@@ -18,6 +18,8 @@ using Newtonsoft.Json;
 
 public class BeliefTransmitter : AbstractMasElement
 {
+    private readonly Queue<string> _pendingTargets = new Queue<string>();
+    private readonly object _queueLock = new object();
     [Header("Trasmissione")]
     public int beliefsPerFrame = 5;
 
@@ -65,7 +67,74 @@ private IEnumerator StartServerCoroutine()
 }
 private void OnMessageFromJacamo(object sender, WebSocketSharp.MessageEventArgs e)
 {
-    // BeliefTransmitter non riceve messaggi, solo invia
+    string msg = e.Data;
+    if (string.IsNullOrEmpty(msg)) return;
+
+    try
+    {
+        var json = JsonConvert.DeserializeObject<Dictionary<string, object>>(msg);
+        if (json == null || !json.ContainsKey("type")) return;
+
+        string type = json["type"].ToString();
+        if (type != "walk") return;
+
+        var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(json["data"].ToString());
+        string goType = data.ContainsKey("type") ? data["type"].ToString() : "";
+
+       if (goType == "goto" && data.ContainsKey("target"))
+        {
+            string targetNode = data["target"].ToString();
+            lock (_queueLock)
+            {
+                _pendingTargets.Enqueue(targetNode);
+            }
+        }
+    }
+    catch (System.Exception ex)
+    {
+        Debug.LogWarning($"[BeliefTransmitter] Messaggio non gestito ({ex.Message}): {msg}");
+    }
+}
+void Update()
+{
+    string target = null;
+    lock (_queueLock)
+    {
+        if (_pendingTargets.Count > 0)
+            target = _pendingTargets.Dequeue();
+    }
+    if (target != null)
+    {
+        var mover = GetComponent<VesnaMover>();
+        if (mover != null)
+            mover.MoveTo(target);
+        else
+            Debug.LogWarning("[BeliefTransmitter] Ricevuto walk/goto ma VesnaMover non è presente.");
+    }
+}
+// --------------------------------------------------------
+// Notifica a JaCaMo che il movimento è completato.
+// Manda un "signal" che VesnaAgent traduce in
+// movement(completed, destination_reached).
+// --------------------------------------------------------
+public void SendMovementCompleted(string targetNode)
+{
+    string json = JsonConvert.SerializeObject(new Dictionary<string, object>
+    {
+        { "type", "movement" },
+        { "status", "completed" },
+        { "reason", "destination_reached" },
+        { "name", targetNode }
+    });
+
+   wsChannel?.sendMessage(
+    UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
+        "destinationReached", null, "reached_destination", "vesna_agent", targetNode
+    )
+);
+
+    // Aggiorna anche current_room, così go_to/RCC sa dove è arrivata
+    SendCurrentRoom(targetNode);
 }
 
     // --------------------------------------------------------
@@ -249,15 +318,17 @@ private void OnMessageFromJacamo(object sender, WebSocketSharp.MessageEventArgs 
     // --------------------------------------------------------
     // INVIO SINGOLO MESSAGGIO
     // --------------------------------------------------------
-    private void SendBelief(BeliefMessage msg)
-    {
-        string json = JsonConvert.SerializeObject(msg);
-        wsChannel?.sendMessage(
-            UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
-                msg.beliefType, null, null, "explorer_agent", json
-            )
-        );
-    }
+    private void SendBeliefTo(BeliefMessage msg, string receiver)
+{
+    string json = JsonConvert.SerializeObject(msg);
+    wsChannel?.sendMessage(
+        UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
+            msg.beliefType, null, null, receiver, json
+        )
+    );
+}
+
+private void SendBelief(BeliefMessage msg) => SendBeliefTo(msg, "explorer_agent");
     // --------------------------------------------------------
 // OGGETTI SCOPERTI A RUNTIME
 // Chiamato da RoomObjectBridge quando il cono visivo vede
@@ -286,14 +357,14 @@ public void SendRoomObjectDiscovered(
 
 public void SendCurrentRoom(string roomId)
 {
-    SendBelief(new BeliefMessage
+    SendBeliefTo(new BeliefMessage
     {
         beliefType = "current_room",
         payload    = new Dictionary<string, object>
         {
             { "roomId", roomId }
         }
-    });
+    }, "vesna_agent");
     Debug.Log($"[BeliefTransmitter] Stanza corrente inviata: {roomId}");
 }
     // --------------------------------------------------------

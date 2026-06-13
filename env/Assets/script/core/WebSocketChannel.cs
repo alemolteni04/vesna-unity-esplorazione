@@ -108,6 +108,7 @@ public class WebSocketChannel
 
     public void StartServer()
     {
+        wss.KeepClean = false; // ← aggiunge questa riga
         wss.AddWebSocketService<CustomWebSocketBehavior>("/", () => new CustomWebSocketBehavior( onMessageHandler ) );
         wss.Start();
         IsServerRunning = true;

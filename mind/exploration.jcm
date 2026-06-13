@@ -6,6 +6,13 @@ mas exploration {
         goals: start
         join: w
     }
+    agent vesna_agent : vesna.asl {
+        ag-class: vesna.VesnaAgent
+        beliefs: address(localhost)
+                 port(8081)
+        goals: start
+        join: w
+    }
     workspace w {
     }
 }

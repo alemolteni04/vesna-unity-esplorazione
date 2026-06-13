@@ -134,13 +134,8 @@ public static class GraphSnapshotBuilder
         {
             s.corridorId = pole.corridorId;
             s.poleLabel  = pole.poleLabel;
-            var corridorGo = GameObject.Find(pole.corridorId);
-            if (corridorGo != null)
-            {
-                var bridge = corridorGo.GetComponent<CorridorArtifactBridge>();
-                if (bridge != null && int.TryParse(bridge.port, out int p))
-                    s.wsPort = p;
-            }
+           if (int.TryParse(PortAssigner.GetPort(pole.corridorId), out int p))
+                s.wsPort = p;
         }
 
         return s;
