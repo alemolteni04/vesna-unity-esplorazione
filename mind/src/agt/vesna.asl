@@ -11,17 +11,23 @@
 !start.
 
 +!start <-
-    .print("[vesna] avvio, attendo localizzazione iniziale...");
-    lookupArtifact("pathfinder", PfId);
-    focus(PfId);
-    +pathfinder(PfId);
-    .print("[vesna] attendo che il grafo sia pronto (graphReady)...");
+   !ensure_pathfinder;
+	?pathfinder(PfId);
+	focus(PfId);
+    .print("[vesna] attendo graphReady...");
     .wait(graphReady(true), 600000, _);
-    .print("[vesna] grafo pronto.");
     .wait(current_room(_), 60000, _);
     ?current_room(Start);
     .print("[vesna] posizione iniziale: ", Start);
     !check_target_loop.
+
++!ensure_pathfinder <-
+    makeArtifact("pathfinder", "artifact.PathFinderArtifact", [], PfId);
+    +pathfinder(PfId).
+
+-!ensure_pathfinder <-
+    lookupArtifact("pathfinder", PfId);
+    +pathfinder(PfId).
 
 
 // ── Loop: controlla periodicamente se è arrivato un nuovo target ─────────

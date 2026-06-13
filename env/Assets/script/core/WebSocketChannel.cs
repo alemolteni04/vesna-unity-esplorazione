@@ -104,7 +104,11 @@ public class WebSocketChannel
         wss = new WebSocketServer(uri.Port);
     }
 
-    private bool IsServerRunning { get; set; } = false;
+    public bool IsServerRunning { get; private set; } = false;
+
+    public bool HasConnectedClients =>
+        IsServerRunning &&
+        wss.WebSocketServices["/"].Sessions.Count > 0;
 
     public void StartServer()
     {

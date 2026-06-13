@@ -9,9 +9,15 @@
 
 +!start <-
     .print("[explorer] in attesa del grafo...");
-    makeArtifact("pathfinder", "artifact.PathFinderArtifact", [], PathHandle);
-    focus(PathHandle);
+    !wait_for_pathfinder.
+
++!wait_for_pathfinder <-
+    lookupArtifact("pathfinder", PathHandle);
     +pathfinder(PathHandle).
+
+-!wait_for_pathfinder <-
+    .wait(500);
+    !wait_for_pathfinder.
 
 +node(Id, Type, Floor, X, Y, Z, CorridorId, PoleLabel, WsPort) <-
     .print("[explorer] nodo: ", Id);
@@ -60,6 +66,11 @@
 // Quando riceviamo la stanza corrente → calcola il percorso
 +current_room(StartId) <-
     .print("[explorer] Sono in: ", StartId);
+    // AGGIUNTA: se il grafo non è ancora completo, aspetta prima di navigare
+    if (not exploration_complete(_, _, _, _, _, _)) {
+        .print("[explorer] grafo non ancora completo, attendo exploration_complete...");
+        .wait({+exploration_complete(_, _, _, _, _, _)}, 60000, _)
+    };
     !navigate_to(StartId, "Laboratorio3").  // ← test, cambia con goal dinamico
 
 

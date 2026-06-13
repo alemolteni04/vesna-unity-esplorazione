@@ -33,7 +33,7 @@ public class BeliefTransmitter : AbstractMasElement
             Debug.LogError("[BeliefTransmitter] TransmitSnapshot: snapshot null.");
             return;
         }
-        StartCoroutine(TransmitSnapshotCoroutine(snapshot));
+        StartCoroutine(WaitUntilReadyThenTransmit(snapshot));
     }
 
     // --------------------------------------------------------
@@ -136,6 +136,44 @@ public void SendMovementCompleted(string targetNode)
     // Aggiorna anche current_room, così go_to/RCC sa dove è arrivata
     SendCurrentRoom(targetNode);
 }
+
+private const float _readyPollInterval = 0.5f;
+private const float _readyMaxWait      = 30f;
+
+private IEnumerator WaitUntilReadyThenTransmit(BuildingSnapshot snapshot)
+{
+    float elapsed = 0f;
+
+    while (!IsServerReady())
+    {
+        if (elapsed >= _readyMaxWait)
+        {
+            Debug.LogError("[BeliefTransmitter] Timeout: server non pronto. Trasmissione annullata.");
+            yield break;
+        }
+        Debug.Log($"[BeliefTransmitter] Attesa server... ({elapsed:F1}s)");
+        yield return new WaitForSeconds(_readyPollInterval);
+        elapsed += _readyPollInterval;
+    }
+
+    while (!IsClientConnected())
+    {
+        if (elapsed >= _readyMaxWait)
+        {
+            Debug.LogError("[BeliefTransmitter] Timeout: nessun client connesso. Trasmissione annullata.");
+            yield break;
+        }
+        Debug.Log($"[BeliefTransmitter] Attesa client... ({elapsed:F1}s)");
+        yield return new WaitForSeconds(_readyPollInterval);
+        elapsed += _readyPollInterval;
+    }
+
+    Debug.Log("[BeliefTransmitter] Server pronto e client connesso. Avvio trasmissione.");
+    yield return StartCoroutine(TransmitSnapshotCoroutine(snapshot));
+}
+
+private bool IsServerReady()      => wsChannel != null && wsChannel.IsServerRunning;
+private bool IsClientConnected()  => wsChannel != null && wsChannel.HasConnectedClients;
 
     // --------------------------------------------------------
     // COROUTINE PRINCIPALE

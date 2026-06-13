@@ -156,6 +156,19 @@ public class VesnaAgent extends Agent{
         String sender = log.getString( "sender" );
         String receiver = log.getString( "receiver" );
         String type = log.getString( "type" );
+
+        // AGGIUNTA: ignora i messaggi non destinati a questo agente.
+        // Il body manda tutti i messaggi su entrambi i canali; qui ogni
+        // agente scarta quelli il cui "receiver" non corrisponde al
+        // proprio nome (es. explorer ignora i messaggi per vesna_agent
+        // e viceversa), così le belief di un agente non vengono
+        // "inquinate" con dati destinati all'altro.
+        if ( !receiver.contains( my_name ) && !my_name.contains( receiver ) ) {
+            System.out.println( "[" + my_name + "] messaggio di tipo '" + type
+                    + "' destinato a '" + receiver + "', ignorato." );
+            return;
+        }
+
        JSONObject data;
         Object rawData = log.isNull("data") ? null : log.get("data");
         if (rawData == null) {
