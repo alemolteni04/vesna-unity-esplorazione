@@ -18,7 +18,7 @@ using Newtonsoft.Json;
 
 public class BeliefTransmitter : AbstractMasElement
 {
-    private readonly Queue<string> _pendingTargets = new Queue<string>();
+    private readonly Queue<string> _pendingTargets = new Queue<string>(); //coda dei comandi di movimento che arrivano da jacamo 
     private readonly object _queueLock = new object();
     [Header("Trasmissione")]
     public int beliefsPerFrame = 5;
@@ -33,13 +33,13 @@ public class BeliefTransmitter : AbstractMasElement
             Debug.LogError("[BeliefTransmitter] TransmitSnapshot: snapshot null.");
             return;
         }
-        StartCoroutine(WaitUntilReadyThenTransmit(snapshot));
+        StartCoroutine(WaitUntilReadyThenTransmit(snapshot));//non trasmette subito, aspetta che ci sia qualcuno in ascolto(corutine)
     }
 
     // --------------------------------------------------------
     // WRAPPER DI COMPATIBILITÀ
     // --------------------------------------------------------
-    public void TransmitGraph(
+    public void TransmitGraph(//wrapper di compatibilità
     Dictionary<int, TopologicalGraph> floorGraphs,
     List<FloorConnectorLink>          connectorLinks,
     List<RoomDistancePair>            roomDistances,
@@ -119,13 +119,13 @@ void Update()
 // --------------------------------------------------------
 public void SendMovementCompleted(string targetNode)
 {
-    string json = JsonConvert.SerializeObject(new Dictionary<string, object>
+    /*string json = JsonConvert.SerializeObject(new Dictionary<string, object>
     {
         { "type", "movement" },
         { "status", "completed" },
         { "reason", "destination_reached" },
         { "name", targetNode }
-    });
+    });*/
 
    wsChannel?.sendMessage(
     UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
@@ -255,12 +255,11 @@ private bool IsClientConnected()  => wsChannel != null && wsChannel.HasConnected
             {
                 foreach (var node in floorSnap.nodes)
                 {
-                    if (node.nodeType != "CorridorPoleA") continue;
-                    if (corridorsSent.Contains(node.corridorId)) continue;
-                    var poleB = floorSnap.nodes.Find(n =>
-                        n.corridorId == node.corridorId && n.nodeType == "CorridorPoleB");
-                    if (poleB == null) continue;
-                    corridorsSent.Add(node.corridorId);
+                       if (node.nodeType != "CorridorPoleA") continue;
+
+                            var poleB = floor.nodes.Find(n =>
+                                n.corridorId == node.corridorId && n.nodeType == "CorridorPoleB");
+                            if (poleB == null) continue;
                     SendBelief(new BeliefMessage
                     {
                         beliefType = "corridor",
@@ -298,7 +297,7 @@ private bool IsClientConnected()  => wsChannel != null && wsChannel.HasConnected
                         { "distFromB",       edge.distFromB        },
                         { "orderFW",         edge.orderFW          },
                         { "orderBW",         edge.orderBW          },
-                        { "explorationOrder",edge.explorationOrder },
+                        //{ "explorationOrder",edge.explorationOrder },
                         { "x",               edge.x                },
                         { "y",               edge.y                },
                         { "z",               edge.z                },
