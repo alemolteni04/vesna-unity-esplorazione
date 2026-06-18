@@ -48,6 +48,7 @@ public abstract class AgentAvatarWithEyesAndVoice : AgentAvatar
     // Unity avatar receives message from jacamo agent
     protected override void OnMessage(object sender, MessageEventArgs e)
     {
+        print(">>> AgentAvatarWithEyesAndVoice.OnMessage chiamato: " + e.Data);
         string data = e.Data;
         print("Received message: " + data);
         WsMessage message = null;
@@ -80,6 +81,7 @@ public abstract class AgentAvatarWithEyesAndVoice : AgentAvatar
         catch (Exception ex)
         {
             print("Error: " + ex.Message);
+             print("StackTrace: " + ex.StackTrace);
             print("Message could not be converted.");
             return;
         }

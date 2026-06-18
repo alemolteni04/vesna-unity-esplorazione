@@ -28,6 +28,8 @@ public class VesnaAgent extends Agent{
     private WsClient client;
     private String my_name;
 
+    
+
     // Override loadInitialAS method to connect to the WebSocket server (body)
     @Override
     public void loadInitialAS( String asSrc ) throws Exception {
@@ -71,7 +73,22 @@ public class VesnaAgent extends Agent{
             }
         }  );
         // Connect the body
-        client.connect();
+        // In loadInitialAS, sostituisci client.connect() con:
+        boolean connected = false;
+        for (int i = 0; i < 10; i++) {
+            try {
+                client.connect();
+                connected = true;
+                break;
+            } catch (Exception e) {
+                System.out.printf("[%s] Tentativo %d fallito, ritento...%n", my_name, i+1);
+                Thread.sleep(1000);
+            }
+        }
+        if (!connected) {
+            stop("impossibile connettersi dopo 10 tentativi");
+            return;
+        }
     }
 
     // perform sends an action to the body
@@ -116,12 +133,14 @@ public class VesnaAgent extends Agent{
         }
     }
 
-    private void handle_movement( JSONObject data ) {
-    String type = data.getString( "type" );
-    String target = data.getString( "name" ); 
+   private void handle_movement( JSONObject data ) {
     try {
-        Literal percept = parseLiteral( "movement(completed, destination_reached)" );
+        String name = data.getString("name");
+        Literal percept = parseLiteral(
+            String.format("reached(place, \"%s\")", name)
+        );
         sense( percept );
+        System.out.println("[VesnaAgent] reached(place, " + name + ") segnalato.");
     } catch ( Exception e ) {
         e.printStackTrace();
     }
@@ -209,9 +228,17 @@ public class VesnaAgent extends Agent{
 
     // Handles a connection error: prints a message and kills the agent
     public void vesna_handle_error( Exception ex ){
-        System.out.println( "[" + my_name + " ERROR] " + ex.getMessage() );
+    System.out.println( "[" + my_name + " ERROR] " + ex.getMessage() );
+    // Invece di kill_agent(), riprova la connessione
+    try {
+        Thread.sleep(2000);
+        System.out.println( "[" + my_name + "] Riprovo connessione..." );
+        client.reconnect();
+    } catch (Exception e) {
+        System.out.println( "[" + my_name + " ERROR] Retry fallito, killing agent" );
         kill_agent();
     }
+}
 
     // Kills the agent calling the internal actions to drop all desires, intentions and events and then kill the agent;
     // This is necessary to avoid the agent to keep running after the kill_agent call ( that otherwise is simply enqueued ).

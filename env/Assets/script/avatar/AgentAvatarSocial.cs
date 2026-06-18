@@ -178,40 +178,65 @@ public class AgentAvatarSocial : AgentAvatarWithEyesAndVoice
         }
     }
 
-    private void HandleTargetedWalk(WalkData walkData)
+   private void HandleTargetedWalk(WalkData walkData)
+{
+    Debug.Log($"[HandleTargetedWalk] TARGET: {walkData.Target}");
+    Debug.Log($"[HandleTargetedWalk] agent.isStopped prima: {agent.isStopped}");
+    Debug.Log($"[HandleTargetedWalk] nodePositions count: {nodePositions.Count}");
+    
+    SetBaloonText("New destination: " + walkData.Target);
+    
+    if (movementModel != null)
     {
-        SetBaloonText("New destination: " + walkData.Target);
         movementModel.IsStopped = true;
-        agent.ResetPath();
-        EnableDisableVisionCone(false);
-        ReachDestination(walkData.Target);
-
-        // Se il target e' un friend, aggiorna stoppingDistance e avvia il controllo specifico
-        if (AgentBeliefs != null && AgentBeliefs.Friends.Contains(walkData.Target))
-        {
-            agent.stoppingDistance = 8.0f;
-            //animationController.SetAnimationState("say");
-            ReachDestination(walkData.Target);
-                            
-            // CheckIfReachedTarget should be the same as CheckIfReachedFriend, but in the eventuality that
-            // we want to differentiate them in the future, I'm leaving both the methods available.
-            // Uncomment if the other method is not working properly.
-            //StartCoroutine(CheckIfReachedFriend(walkData.Target));
-                            
-            StartCoroutine(WaitUntilReachedTarget(walkData.Target, true));
-            if (Mathf.Approximately(agent.stoppingDistance, 8.0f)) //da perfezionare
-            {
-                animationController.SetAnimationState("stop");
-            }
-        }
-        else
-        {
-            resetStoppingDistance(); // stoppingDistance = 1.0f
-            ReachDestination(walkData.Target);
-            StartCoroutine(WaitUntilReachedTarget(walkData.Target));
-        }
+        var behaviour = movementModel as MonoBehaviour;
+        if (behaviour != null) behaviour.enabled = false;
     }
 
+    agent.ResetPath();
+    EnableDisableVisionCone(false);
+
+    if (AgentBeliefs != null && AgentBeliefs.Friends.Contains(walkData.Target))
+    {
+        agent.stoppingDistance = 8.0f;
+        ReachDestination(walkData.Target);
+        StartCoroutine(WaitUntilReachedTarget(walkData.Target, true));
+        if (Mathf.Approximately(agent.stoppingDistance, 8.0f))
+        {
+            if (animationController != null) animationController.SetAnimationState("stop");
+        }
+    }
+    else
+    {
+        resetStoppingDistance();
+        StartCoroutine(DelayedReachDestination(walkData.Target));
+    }
+    }
+private IEnumerator DelayedReachDestination(string target)
+{
+    yield return null;
+    ReachDestination(target);
+    agent.isStopped = false;
+    yield return null;
+    
+    Debug.Log($"[DelayedReach] pathPending: {agent.pathPending}, remainingDist: {agent.remainingDistance}, hasPath: {agent.hasPath}, velocity: {agent.velocity.sqrMagnitude}");
+    
+    yield return new WaitForSeconds(0.5f);
+    
+    Debug.Log($"[DelayedReach] dopo 0.5s - pathPending: {agent.pathPending}, remainingDist: {agent.remainingDistance}");
+    
+    yield return new WaitUntil(() =>
+        !agent.pathPending && 
+        agent.remainingDistance <= agent.stoppingDistance &&
+        (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
+    );
+    
+    Debug.Log($"[DelayedReach] ARRIVATO a {target}");
+    
+    var bt = GetComponent<BeliefTransmitter>();
+    if (bt != null)
+        bt.SendMovementCompleted(target);
+}
     private void HandleRandomWalk()
     {
         resetStoppingDistance();

@@ -12,7 +12,7 @@ public class EnvironmentManagerArtifact : Artifact
 {
     List<Artifact> artifacts = new List<Artifact>();
     string mindPath = Path.Combine("..", "mind");
-    public string jcmFilePath = Path.Combine("..", "mind", "supermarket.jcm");
+    public string jcmFilePath = Path.Combine("..", "mind", "exploration.jcm");
     
     public string JcmFilePath
     {

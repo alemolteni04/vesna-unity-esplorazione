@@ -1,45 +1,53 @@
 // ============================================================
-// explorer.asl — Variante 1: agente intelligente
-// Il percorso viene calcolato nella mente dell'agente
-// tramite l'internal action vesna.ComputePath (A*)
-//
-// + Specchio del grafo verso PathFinderArtifact (additivo,
-//   non sostituisce la logica di navigazione esistente)
+// explorer.asl — Variante 1
 // ============================================================
+!start.
 
 +!start <-
-    .print("[explorer] in attesa del grafo...");
-    !wait_for_pathfinder.
+    !ensure_env_manager;
+    .print("[explorer] pronto, ricevo il grafo da Unity...").
 
-+!wait_for_pathfinder <-
-    lookupArtifact("pathfinder", PathHandle);
-    +pathfinder(PathHandle).
+// ── Aggancio manuale all'envManager: lookup + focus esplicito ────────────
+// Senza il focus nel JCM, lo facciamo qui direttamente.
++!ensure_env_manager <-
+	joinWorkspace("/main/main", _);
+    lookupArtifact("envManager", EnvId);
+    focus(EnvId);
+    +env_manager(EnvId);
+    .print("[explorer] envManager agganciato: ", EnvId).
 
--!wait_for_pathfinder <-
+
+	
+-!ensure_env_manager <-
+    .print("[explorer] ensure_env_manager fallito, ritento...");
     .wait(500);
-    !wait_for_pathfinder.
+    !ensure_env_manager.
 
+// ── Helper: attende env_manager se non ancora disponibile ────────────────
++!get_env(E) : env_manager(E).
++!get_env(E) <-
+    .wait({+env_manager(_)}, 10000, _);
+    ?env_manager(E).
+
+// ── Ricezione grafo da Unity ──────────────────────────────────────────────
 +node(Id, Type, Floor, X, Y, Z, CorridorId, PoleLabel, WsPort) <-
     .print("[explorer] nodo: ", Id);
-    ?pathfinder(H);
-    addNode(Id, Type, Floor, X, Y, Z)[artifact_id(H)].
+    !get_env(E);
+    addNode(Id, Type, Floor, X, Y, Z)[artifact_id(E)].
 
 +edge(GoName, From, To, Floor, EdgeType, DoorState, Side, Dir, DistA, DistB, WsPort) <-
     .print("[explorer] arco: ", GoName, " da ", From, " a ", To);
-    ?pathfinder(H);
-    addEdge(From, To, EdgeType, Dir, DistA, DistB)[artifact_id(H)].
+    !get_env(E);
+    addEdge(From, To, EdgeType, Dir, DistA, DistB)[artifact_id(E)].
 
 +connector_link(Id, FloorA, FloorB, Bidirectional, PosAx, PosAy, PosAz, PosBx, PosBy, PosBz) <-
     .print("[explorer] connettore: ", Id, " piano ", FloorA, " <-> ", FloorB);
-    ?pathfinder(H);
-    addNode(Id, "Connector", FloorA, PosAx, PosAy, PosAz)[artifact_id(H)].
+    !get_env(E);
+    addNode(Id, "Connector", FloorA, PosAx, PosAy, PosAz)[artifact_id(E)].
 
-// ── NUOVO: door_dist non aveva un piano dedicato, ora viene anche
-//           inoltrato al PathFinderArtifact per la risoluzione
-//           dei pesi sugli archi "none"/"seg"
 +door_dist(RoomA, RoomB, Floor, Dist) <-
-    ?pathfinder(H);
-    addDoorDist(RoomA, RoomB, Dist)[artifact_id(H)].
+    !get_env(E);
+    addDoorDist(RoomA, RoomB, Dist)[artifact_id(E)].
 
 +corridor(CorridorId, PoleA, PoleB, Floor, WsPort) <-
     .print("[explorer] corridoio: ", CorridorId);
@@ -53,26 +61,22 @@
     makeArtifact(ArtifactId, "artifact.RoomObjectArtifact",
                  [ArtifactId, WsPort, RoomId, X, Y, Z], Handle);
     focus(Handle);
-    ?pathfinder(H);
-    addNewObject(ArtifactId, RoomId)[artifact_id(H)].
+    !get_env(E);
+    addNewObject(ArtifactId, RoomId)[artifact_id(E)].
 
 +exploration_complete(BuildingId, _, _, TotalNodes, TotalEdges, _) <-
     .print("[explorer] grafo completo: ", TotalNodes, " nodi, ", TotalEdges, " archi");
-    !create_door_artifacts;
-    ?pathfinder(H);
-    graphReady[artifact_id(H)].
-    // Nota: navigate_to viene chiamato quando arriva current_room    // Nota: navigate_to viene chiamato quando arriva current_room
+    !get_env(E);
+    graphReady[artifact_id(E)];
+    !create_door_artifacts.
 
-// Quando riceviamo la stanza corrente → calcola il percorso
+// ── Due piani per current_room ────────────────────────────────────────────
++current_room(StartId) : exploration_complete(_, _, _, _, _, _) <-
+    .print("[explorer] Sono in: ", StartId, " — grafo pronto, navigo");
+    !navigate_to(StartId, "Laboratorio3").
+
 +current_room(StartId) <-
-    .print("[explorer] Sono in: ", StartId);
-    // AGGIUNTA: se il grafo non è ancora completo, aspetta prima di navigare
-    if (not exploration_complete(_, _, _, _, _, _)) {
-        .print("[explorer] grafo non ancora completo, attendo exploration_complete...");
-        .wait({+exploration_complete(_, _, _, _, _, _)}, 60000, _)
-    };
-    !navigate_to(StartId, "Laboratorio3").  // ← test, cambia con goal dinamico
-
+    .print("[explorer] Sono in: ", StartId, " — grafo non ancora pronto").
 
 // ── Crea artefatti porte/varchi ───────────────────────────────────────────
 +!create_door_artifacts <-
@@ -87,8 +91,7 @@
         }
     }.
 
-// ── Variante 1: naviga verso una stanza usando A* nella mente ────────────
-// L'internal action vesna.ComputePath legge le beliefs e calcola il percorso
+// ── Naviga verso una stanza usando A* nella mente ────────────────────────
 +!navigate_to(StartId, GoalId) <-
     .print("[explorer] Calcolo percorso: ", StartId, " → ", GoalId);
     vesna.ComputePath(StartId, GoalId, Path, Cost);
@@ -99,7 +102,6 @@
         !follow_path(Path)
     }.
 
-// ── Naviga verso un artefatto ─────────────────────────────────────────────
 +!navigate_to_artifact(StartId, ArtifactId) <-
     ?new_object(ArtifactId, RoomId, _, _, _, _, _);
     .print("[explorer] Artefatto '", ArtifactId, "' in stanza '", RoomId, "'");
@@ -111,5 +113,4 @@
 
 +!follow_path([NextNode | Rest]) <-
     .print("[explorer] Prossimo nodo: ", NextNode);
-    // Qui andranno i comandi a Unity per muovere l'agente fisicamente
     !follow_path(Rest).

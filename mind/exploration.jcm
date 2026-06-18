@@ -3,16 +3,15 @@ mas exploration {
         ag-class: vesna.VesnaAgent
         beliefs: address(localhost)
                  port(8080)
-        goals: start
-        join: w
+        join: main
     }
     agent vesna_agent : vesna.asl {
         ag-class: vesna.VesnaAgent
         beliefs: address(localhost)
                  port(8081)
-        goals: start
-        join: w
+        join: main
     }
-    workspace w {
+    workspace main {
+        artifact envManager: artifact.EnvManagerArtifact("envManager")
     }
 }

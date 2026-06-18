@@ -148,11 +148,19 @@ public class WebSocketChannel
      		this.onMessageHandler = onMessageHandler;
      	}
 
-        protected override void OnMessage(MessageEventArgs e)
-        {
-            Debug.Log("Server received message: " + e.Data);
-            onMessageHandler?.Invoke( this, e );
-        }
+      protected override void OnMessage(MessageEventArgs e)
+{
+    Debug.Log("Server received message: " + e.Data);
+    Debug.Log($"[WS] handler null: {onMessageHandler == null}");
+    try
+    {
+        onMessageHandler?.Invoke(this, e);
+    }
+    catch (Exception ex)
+    {
+        Debug.Log($"[WS] ECCEZIONE in handler: {ex.Message}\n{ex.StackTrace}");
+    }
+}
 
         protected override void OnOpen()
         {

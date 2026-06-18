@@ -81,21 +81,30 @@ private IEnumerator ResendCurrentRoom()
 {
     string lastSent = null;
     float elapsed = 0f;
-    float warmupDuration = 60f;
+    float warmupDuration = 9f;
 
     while (true)
     {
-        bool changed = currentRoom != lastSent;
+        string roomToSend = _beliefTransmitter?.LastArrivedNode ?? currentRoom;
+        
+        if (roomToSend == null)
+        {
+            yield return new WaitForSeconds(3f);
+            elapsed += 3f;
+            continue;
+        }
+
+        bool changed = roomToSend != lastSent;
         bool inWarmup = elapsed < warmupDuration;
 
         if (changed || inWarmup)
         {
-            _beliefTransmitter?.SendCurrentRoom(currentRoom);
-            lastSent = currentRoom;
+            _beliefTransmitter?.SendCurrentRoom(roomToSend);
+            lastSent = roomToSend;
         }
 
-        yield return new WaitForSeconds(2f);
-        elapsed += 2f;
+        yield return new WaitForSeconds(3f);
+        elapsed += 3f;
     }
 }
 }

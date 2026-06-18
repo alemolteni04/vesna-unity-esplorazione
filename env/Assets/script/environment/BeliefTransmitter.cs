@@ -20,8 +20,17 @@ public class BeliefTransmitter : AbstractMasElement
 {
     private readonly Queue<string> _pendingTargets = new Queue<string>(); //coda dei comandi di movimento che arrivano da jacamo 
     private readonly object _queueLock = new object();
+
+    // Aggiungi in cima alla classe:
+    private ShopperAvatarScript _shopper;
+
+  
+
     [Header("Trasmissione")]
     public int beliefsPerFrame = 5;
+    
+    [Header("Configurazione")]
+    public bool useShopperChannel = false;
 
     // --------------------------------------------------------
     // ENTRY POINT PRINCIPALE
@@ -55,8 +64,15 @@ void Awake()
 {
     if (!Application.IsPlaying(gameObject)) return;
     objInUse = gameObject;
-    initializeWebSocketConnection(OnMessageFromJacamo);
-    StartCoroutine(StartServerCoroutine());
+    _shopper = GetComponent<ShopperAvatarScript>();
+    
+    if (!useShopperChannel)
+    {
+        // comportamento normale — apre il suo server (usato dall'explorer)
+        initializeWebSocketConnection(OnMessageFromJacamo);
+        StartCoroutine(StartServerCoroutine());
+    }
+    // se useShopperChannel == true, non apre nessun server
 }
 
 private IEnumerator StartServerCoroutine()
@@ -105,35 +121,49 @@ void Update()
     }
     if (target != null)
     {
-        var mover = GetComponent<VesnaMover>();
-        if (mover != null)
-            mover.MoveTo(target);
-        else
-            Debug.LogWarning("[BeliefTransmitter] Ricevuto walk/goto ma VesnaMover non è presente.");
+        if (_shopper != null)
+        {
+            _shopper.ReachDestination(target);
+            StartCoroutine(WaitAndNotify(target));
+        }
     }
+}
+
+private IEnumerator WaitAndNotify(string target)
+{
+    // Aspetta che il NavMesh del GameObject principale finisca
+    yield return null;
+    yield return new WaitForSeconds(0.5f);
+    
+    var navAgent = _shopper.GetComponent<UnityEngine.AI.NavMeshAgent>();
+    if (navAgent != null)
+    {
+        yield return new WaitUntil(() =>
+            !navAgent.pathPending &&
+            navAgent.remainingDistance <= navAgent.stoppingDistance &&
+            (!navAgent.hasPath || navAgent.velocity.sqrMagnitude == 0f)
+        );
+    }
+    
+    Debug.Log($"[BeliefTransmitter] Arrivato a {target}, notifico JaCaMo");
+    SendMovementCompleted(target);
 }
 // --------------------------------------------------------
 // Notifica a JaCaMo che il movimento è completato.
 // Manda un "signal" che VesnaAgent traduce in
 // movement(completed, destination_reached).
 // --------------------------------------------------------
+private string _lastArrivedNode = null;
+public string LastArrivedNode => _lastArrivedNode;
 public void SendMovementCompleted(string targetNode)
 {
-    /*string json = JsonConvert.SerializeObject(new Dictionary<string, object>
-    {
-        { "type", "movement" },
-        { "status", "completed" },
-        { "reason", "destination_reached" },
-        { "name", targetNode }
-    });*/
-
-   wsChannel?.sendMessage(
-    UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
-        "destinationReached", null, "reached_destination", "vesna_agent", targetNode
-    )
-);
-
-    // Aggiorna anche current_room, così go_to/RCC sa dove è arrivata
+    _lastArrivedNode = targetNode;
+    
+    wsChannel?.sendMessage(
+        UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
+            "destinationReached", null, "reached_destination", "vesna_agent", targetNode
+        )
+    );
     SendCurrentRoom(targetNode);
 }
 
@@ -355,17 +385,29 @@ private bool IsClientConnected()  => wsChannel != null && wsChannel.HasConnected
     // --------------------------------------------------------
     // INVIO SINGOLO MESSAGGIO
     // --------------------------------------------------------
-    private void SendBeliefTo(BeliefMessage msg, string receiver)
+private void SendBeliefTo(BeliefMessage msg, string receiver)
 {
     string json = JsonConvert.SerializeObject(msg);
-    wsChannel?.sendMessage(
-        UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
-            msg.beliefType, null, null, receiver, json
-        )
+    string fullMsg = UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
+        msg.beliefType, null, null, receiver, json
     );
+
+    if (receiver == "vesna_agent" 
+        && _shopper != null 
+        && _shopper.WsChannel != null 
+        && _shopper.WsChannel.IsServerRunning
+        && _shopper.WsChannel.HasConnectedClients)
+    {
+        _shopper.SendMessageToJaCaMoBrain(fullMsg);
+    }
+    else
+    {
+        // fallback: usa il proprio canale (che è sempre attivo sulla 8081)
+        wsChannel?.sendMessage(fullMsg);
+    }
 }
 
-private void SendBelief(BeliefMessage msg) => SendBeliefTo(msg, "explorer_agent");
+private void SendBelief(BeliefMessage msg) => SendBeliefTo(msg, "explorer");
     // --------------------------------------------------------
 // OGGETTI SCOPERTI A RUNTIME
 // Chiamato da RoomObjectBridge quando il cono visivo vede
@@ -394,15 +436,14 @@ public void SendRoomObjectDiscovered(
 
 public void SendCurrentRoom(string roomId)
 {
+    // usa sempre l'ultimo nodo arrivato se disponibile
+    string toSend = _lastArrivedNode ?? roomId;
     SendBeliefTo(new BeliefMessage
     {
         beliefType = "current_room",
-        payload    = new Dictionary<string, object>
-        {
-            { "roomId", roomId }
-        }
+        payload = new Dictionary<string, object> { { "roomId", toSend } }
     }, "vesna_agent");
-    Debug.Log($"[BeliefTransmitter] Stanza corrente inviata: {roomId}");
+    Debug.Log($"[BeliefTransmitter] Stanza corrente inviata: {toSend}");
 }
     // --------------------------------------------------------
     // DTO interno
