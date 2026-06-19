@@ -29,8 +29,7 @@ public class BeliefTransmitter : AbstractMasElement
     [Header("Trasmissione")]
     public int beliefsPerFrame = 5;
     
-    [Header("Configurazione")]
-    public bool useShopperChannel = false;
+
 
     // --------------------------------------------------------
     // ENTRY POINT PRINCIPALE
@@ -66,12 +65,10 @@ void Awake()
     objInUse = gameObject;
     _shopper = GetComponent<ShopperAvatarScript>();
     
-    if (!useShopperChannel)
-    {
         // comportamento normale — apre il suo server (usato dall'explorer)
         initializeWebSocketConnection(OnMessageFromJacamo);
         StartCoroutine(StartServerCoroutine());
-    }
+    
     // se useShopperChannel == true, non apre nessun server
 }
 
