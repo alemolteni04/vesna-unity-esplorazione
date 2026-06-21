@@ -19,7 +19,10 @@ genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 
 # --- Configurazione percorsi --------------------------------------------
-GRAPH_DIR = r"C:\Users\alemo\AppData\LocalLow\DefaultCompany\JaCaMoIntegration\graph_snapshots"
+GRAPH_DIR = os.path.join(
+    os.path.expandvars("%USERPROFILE%"),
+    "AppData", "LocalLow", "DefaultCompany", "JaCaMoIntegration", "graph_snapshots"
+)
 TARGET_JSON = os.path.join(GRAPH_DIR, "target.json")
 
 def find_building_json():

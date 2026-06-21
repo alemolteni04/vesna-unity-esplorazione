@@ -155,19 +155,15 @@ public class ComputePath extends DefaultInternalAction {
 
         pathfinder.printPath(path);
 
-        // ── Costruisci la lista Jason [N1, N2, ...] ───────────────────────
-        ListTerm pathList = ASSyntax.createList();
-        if (!path.isEmpty()) {
-            // Costruisci la lista in ordine inverso (addFirst)
-            for (int i = path.size() - 1; i >= 0; i--) {
-                pathList = ASSyntax.createList(
-                    ASSyntax.createString(path.get(i)), pathList);
-            }
+       // ── Costruisci la lista Jason [N1, N2, ...] ───────────────────────
+        ListTerm pathList = new ListTermImpl();
+        for (String nodeId : path) {
+            pathList.add(ASSyntax.createString(nodeId));
         }
 
         // ── Unifica i risultati con i parametri di output ─────────────────
         return un.unifies(args[2], pathList) &&
-               un.unifies(args[3], ASSyntax.createNumber(cost));
+            un.unifies(args[3], ASSyntax.createNumber(cost));
     }
 
 

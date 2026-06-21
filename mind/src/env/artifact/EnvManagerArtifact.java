@@ -227,7 +227,7 @@ protected void init(String artifactName) {
                 case "fw"      -> weight = distA;
                 case "bw"      -> weight = distB;
                 case "seg"     -> weight = distA > 0 ? distA : distB;
-                case "central" -> { continue; }
+                case "central" -> weight = distA;
                 case "none"    -> weight = getDoorDist(from, to);
                 default        -> weight = 0.0;
             }
