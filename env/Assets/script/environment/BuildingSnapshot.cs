@@ -44,6 +44,8 @@ public class BuildingSnapshot
 
     // ── Distanze stanze ──────────────────────────────────────
     public List<RoomDistSnapshot>       roomDistances   = new List<RoomDistSnapshot>();
+    public List<RoomObjectSnapshot>     discoveredObjects = new List<RoomObjectSnapshot>(); // ← aggiungi
+
 
 
 }

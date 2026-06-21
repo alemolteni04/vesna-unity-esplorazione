@@ -1956,12 +1956,14 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
     BuildingSnapshot snapshot = GraphSnapshotBuilder.Build(
         floorGraphs, ConnectorLinks, roomPairs, _roomArtifacts, buildingId);
 
+    snapshot.discoveredObjects.AddRange(_artifactData.Values);
     // ── 3. Salva su disco ────────────────────────────────────
     bool saved = GraphPersistence.Save(snapshot);
     if (!saved)
         Debug.LogWarning("[ExplMgr] Salvataggio snapshot fallito: " +
                         "la trasmissione a JaCaMo procede comunque.");
 
+    
     // ── 4. Salva JSON artefatti separato ─────────────────────
     ArtifactsPersistence.Save(buildingId, _roomArtifacts, _artifactData);
 

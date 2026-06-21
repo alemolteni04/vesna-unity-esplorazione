@@ -353,6 +353,17 @@ private bool IsClientConnected()  => wsChannel != null && wsChannel.HasConnected
 
             if (++count % beliefsPerFrame == 0) yield return null;
         }
+                // ── 2.5 Oggetti scoperti nelle stanze ────────────────
+            if (snapshot.discoveredObjects != null)
+            {
+                foreach (var obj in snapshot.discoveredObjects)
+                {
+                    SendRoomObjectDiscovered(
+                        obj.artifactId, obj.roomId, obj.artifactType, obj.wsPort,
+                        obj.x, obj.y, obj.z);
+                    if (++count % beliefsPerFrame == 0) yield return null;
+                }
+            }
 
         // ── 3. Segnale di completamento ──────────────────────
         int totalNodes = 0, totalEdges = 0;
@@ -361,6 +372,7 @@ private bool IsClientConnected()  => wsChannel != null && wsChannel.HasConnected
             totalNodes += f.nodes.Count;
             totalEdges += f.edges.Count;
         }
+
 
         SendBelief(new BeliefMessage
         {
