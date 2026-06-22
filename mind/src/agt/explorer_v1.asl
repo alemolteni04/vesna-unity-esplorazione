@@ -80,14 +80,19 @@
 
 // ── Crea artefatti porte/varchi ───────────────────────────────────────────
 +!create_door_artifacts <-
-    for( edge(GoName, From, To, Floor, EdgeType, DoorState, Side, Dir, DistA, DistB, WsPort) &
-         Dir == "fw" ) {
-        if (DoorState == "Open") {
-            makeArtifact(GoName, "artifact.VarcoArtifact",
-                         [GoName, WsPort, 0.0, 0.0, 0.0], _)
-        } else {
-            makeArtifact(GoName, "artifact.DoorArtifact",
-                         [GoName, WsPort, "false", "false", 0.0, 0.0, 0.0], _)
+    for( edge(GoName, From, To, Floor, EdgeType, DoorState, Side, Dir, DistA, DistB, WsPort) ) {
+        
+        // Controlla se è una faccia frontale di una porta (fw), una porta tra stanze (none) o un varco (seg)
+        // Ignoriamo i "bw" (backwards) per non creare cloni doppi della stessa porta
+        if (Dir == "fw" | Dir == "none" | Dir == "seg") {
+            
+            if (DoorState == "Open") {
+                makeArtifact(GoName, "artifact.VarcoArtifact",
+                             [GoName, WsPort, 0.0, 0.0, 0.0], _)
+            } else {
+                makeArtifact(GoName, "artifact.DoorArtifact",
+                             [GoName, WsPort, "false", "false", 0.0, 0.0, 0.0], _)
+            }
         }
     }.
 

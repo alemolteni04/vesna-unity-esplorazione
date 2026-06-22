@@ -5384,7 +5384,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1-U5
+      value: Door_C1_U5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -6665,7 +6669,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1-U1
+      value: Door_C1_U1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -11076,7 +11084,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab1-C2
+      value: Door_Lab1_C2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -11179,7 +11191,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C5-R1
+      value: Door_C5_R1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -12670,7 +12686,7 @@ PrefabInstance:
       objectReference: {fileID: 1218673096}
     - target: {fileID: 6911390961123566864, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_Name
-      value: varco scala0 corridoio5
+      value: varco_scala0_corridoio5
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -14579,7 +14595,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C5-Cuc
+      value: Door_C5_Cuc
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -14621,7 +14641,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6911390961123566864, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_Name
-      value: Varco_C1-C2
+      value: Varco_C1_C2
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -16894,7 +16914,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door2 Lab2-C2
+      value: Door2_Lab2_C2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -16998,6 +17022,10 @@ PrefabInstance:
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
       value: DoorIngresso
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -19168,6 +19196,50 @@ Mesh:
     offset: 0
     size: 0
     path: 
+--- !u!1 &400342934
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 400342936}
+  - component: {fileID: 400342935}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &400342935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 400342934}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 476cfad8d68490141a181ece61a126b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &400342936
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 400342934}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!64 &405089340
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -19582,7 +19654,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1-U7
+      value: Door_C1_U7
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -20011,7 +20087,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab5-C2
+      value: Door_Lab5_C2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -24806,7 +24886,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door1 C1-U3
+      value: Door1_C1_U3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -25475,6 +25559,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1716518085720301965, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2085553386495400356, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -25521,7 +25609,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_Name
-      value: finalavatarWithEyes Martina
+      value: finalavatarWithEyes Esploratore
       objectReference: {fileID: 0}
     - target: {fileID: 6748385173456011789, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_AnchorMax.y
@@ -25547,7 +25635,9 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2085553386495400356, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+    - {fileID: 1716518085720301965, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -25563,6 +25653,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       insertIndex: -1
       addedObject: {fileID: 565101095}
+    - targetCorrespondingSourceObject: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 565101105}
+    - targetCorrespondingSourceObject: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 565101104}
+    - targetCorrespondingSourceObject: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 565101106}
     - targetCorrespondingSourceObject: {fileID: 4085149768395771333, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       insertIndex: -1
       addedObject: {fileID: 565101097}
@@ -25597,9 +25696,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc44cb6938ebf564dada1fca57c56ce5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objInUse: {fileID: 0}
+  objInUse: {fileID: 565101092}
   port: 8080
-  beliefsPerFrame: 5
+  avatar: {fileID: 0}
+  beliefsPerFrame: 10
 --- !u!114 &565101096
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25613,6 +25713,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   visionCone: {fileID: 565101097}
+  roomColliderMask:
+    serializedVersion: 2
+    m_Bits: 0
+  searchRadius: 100
 --- !u!114 &565101097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25626,7 +25730,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   distance: 10
-  angle: 30
+  angle: 60
   height: 1
   meshColor: {r: 1, g: 0, b: 0, a: 1}
   layers:
@@ -25689,6 +25793,51 @@ MonoBehaviour:
   inRoomMode: 0
   currentFloor: 0
   backtrackTimeout: 5
+--- !u!114 &565101104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 565101092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09f3294f51e9f944ab6d84de49051b6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agent: {fileID: 565101094}
+  arrivalThreshold: 5
+  graphSnapshotsFolder: '%USERPROFILE%\AppData\LocalLow\DefaultCompany\JaCaMoIntegration\graph_snapshots'
+--- !u!114 &565101105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 565101092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41d324f95dfdda446b4d45a1516ac5e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objInUse: {fileID: 565101092}
+  port: 8080
+  agentFile: explorer_v1.asl
+  focusedArtifacts: []
+  goals: 
+--- !u!114 &565101106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 565101092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d42777db0d787d4cbac650ee766fdaa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  jacamoReceiver: explorer
 --- !u!64 &570112475
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -30492,11 +30641,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   visionCone: {fileID: 819600646}
---- !u!195 &654177322 stripped
-NavMeshAgent:
-  m_CorrespondingSourceObject: {fileID: 3122878888467996851, guid: 96b7fd6af0afdd04aad4af0278e0cc42, type: 3}
-  m_PrefabInstance: {fileID: 1077816615}
-  m_PrefabAsset: {fileID: 0}
+  roomColliderMask:
+    serializedVersion: 2
+    m_Bits: 0
+  searchRadius: 100
 --- !u!114 &654177324
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30509,10 +30657,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff335fd76829a3840a07c4077a47d26d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  agent: {fileID: 654177322}
-  beliefTransmitter: {fileID: 654177325}
-  arrivalThreshold: 0.5
-  graphSnapshotsFolder: '%LOCALAPPDATA%Low\DefaultCompany\JaCaMoIntegration\graph_snapshots'
 --- !u!114 &654177325
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30520,13 +30664,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 654177311}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc44cb6938ebf564dada1fca57c56ce5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   objInUse: {fileID: 0}
   port: 999
+  avatar: {fileID: 0}
   beliefsPerFrame: 5
 --- !u!114 &654177326
 MonoBehaviour:
@@ -32339,7 +32484,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door1 Lab2-C2
+      value: Door1_Lab2_C2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -40710,7 +40859,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab6-C2
+      value: Door_Lab6_C2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -44890,7 +45043,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1-U6
+      value: Door_C1_U6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -45334,7 +45491,7 @@ PrefabInstance:
       objectReference: {fileID: 1190407594}
     - target: {fileID: 6911390961123566864, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_Name
-      value: Varco scala0-corridoio1
+      value: Varco_scala0_corridoio1
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -46535,7 +46692,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab5-Lab6
+      value: Door_Lab5_Lab6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -46942,11 +47103,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C6-Cuc
+      value: Door_C6_Cuc
       objectReference: {fileID: 0}
     - target: {fileID: 3706487945658162064, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.17
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -48023,7 +48188,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C6-R2
+      value: Door_C6_R2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -48545,11 +48714,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door2 C1-U3
+      value: Door2_C1_U3
       objectReference: {fileID: 0}
     - target: {fileID: 3706487945658162064, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.17
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -49058,7 +49231,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6911390961123566864, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_Name
-      value: VARCO CORRIDOIO1_3
+      value: VARCO_CORRIDOIO1_3
       objectReference: {fileID: 0}
     - target: {fileID: 8692132617121755973, guid: bf085af6825ec1f45bc3ad9bddcaeba6, type: 3}
       propertyPath: m_LocalScale.z
@@ -52291,7 +52464,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab2-Lab3
+      value: Door_Lab2_Lab3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -60519,7 +60696,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Cuc-B
+      value: Door_Cuc_B
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -66462,6 +66643,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   objInUse: {fileID: 0}
   port: 8080
+  avatar: {fileID: 0}
   beliefsPerFrame: 5
 --- !u!114 &1570252488
 MonoBehaviour:
@@ -66539,6 +66721,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   visionCone: {fileID: 1570252489}
+  roomColliderMask:
+    serializedVersion: 2
+    m_Bits: 0
+  searchRadius: 100
 --- !u!43 &1577557252
 Mesh:
   m_ObjectHideFlags: 0
@@ -68004,11 +68190,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1485044670212778296, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 43.739998
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1485044670212778296, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 31.18
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1716518085720301965, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_Enabled
@@ -68021,6 +68207,10 @@ PrefabInstance:
     - target: {fileID: 2085553386495400356, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: agentFile
       value: vesna.asl
+      objectReference: {fileID: 0}
+    - target: {fileID: 2085553386495400356, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2085553386495400356, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: goals.Array.size
@@ -68084,7 +68274,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_Name
-      value: finalavatarWithEyes
+      value: finalavatarWithEyes Navigatore
       objectReference: {fileID: 0}
     - target: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_Layer
@@ -68092,7 +68282,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3917585294321058404, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_Radius
@@ -68100,33 +68290,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6748385173456011789, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6748385173456011789, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6748385173456011789, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 23.739998
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6748385173456011789, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 11.18
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6748385173456011789, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 21.869999
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6748385173456011789, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -15.59
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6782409416081869282, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_Height
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2085553386495400356, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+    - {fileID: 1716518085720301965, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -68135,7 +68327,13 @@ PrefabInstance:
       addedObject: {fileID: 1604139956}
     - targetCorrespondingSourceObject: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1604139955}
+      addedObject: {fileID: 1604139964}
+    - targetCorrespondingSourceObject: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1604139963}
+    - targetCorrespondingSourceObject: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1604139965}
     - targetCorrespondingSourceObject: {fileID: 4085149768395771333, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1604139957}
@@ -68153,21 +68351,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4085149768395771333, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
   m_PrefabInstance: {fileID: 1604139952}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1604139955
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1604139953}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc44cb6938ebf564dada1fca57c56ce5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  objInUse: {fileID: 0}
-  port: 8081
-  beliefsPerFrame: 5
 --- !u!114 &1604139956
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -68181,6 +68364,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   visionCone: {fileID: 1604139957}
+  roomColliderMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  searchRadius: 100
 --- !u!114 &1604139957
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -68208,6 +68395,56 @@ MonoBehaviour:
     m_Bits: 1024
   foundArtifacts: []
   scanFrequency: 30
+--- !u!195 &1604139961 stripped
+NavMeshAgent:
+  m_CorrespondingSourceObject: {fileID: 6782409416081869282, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+  m_PrefabInstance: {fileID: 1604139952}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1604139963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1604139953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09f3294f51e9f944ab6d84de49051b6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agent: {fileID: 1604139961}
+  arrivalThreshold: 10
+  graphSnapshotsFolder: '%USERPROFILE%\AppData\LocalLow\DefaultCompany\JaCaMoIntegration\graph_snapshots'
+--- !u!114 &1604139964
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1604139953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb400d9da8525964ba84c183d17f51dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objInUse: {fileID: 1604139953}
+  port: 8081
+  agentFile: vesna.asl
+  focusedArtifacts: []
+  goals: 
+--- !u!114 &1604139965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1604139953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d42777db0d787d4cbac650ee766fdaa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  jacamoReceiver: vesna_agent
 --- !u!43 &1606072625
 Mesh:
   m_ObjectHideFlags: 0
@@ -69579,7 +69816,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab3-C2
+      value: Door_Lab3_C2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -80841,7 +81082,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door U3-U4
+      value: Door_U3_U4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -82381,7 +82626,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C3-Lab1
+      value: Door_C3_Lab1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -83963,7 +84212,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door Lab1-Lab2
+      value: Door_Lab1_Lab2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -85188,7 +85441,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door C1-Lab4
+      value: Door_C1_Lab4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -85434,7 +85691,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door2 Lab1-C2
+      value: Door2_Lab1_C2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: roomBack
@@ -86593,7 +86854,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2872925684756226618, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: m_Name
-      value: Door U1-U2
+      value: Door_U1_U2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598816324118280950, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8611224872404926898, guid: c73e2f2c4d059bb4e85ded043071e3b6, type: 3}
       propertyPath: isOpen
@@ -90729,7 +90994,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: port
@@ -90906,6 +91171,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 105952133}
     m_Modifications:
+    - target: {fileID: 6309744331904992486, guid: b8729f123e53997438a161d2a919a6ce, type: 3}
+      propertyPath: m_Size.y
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 7771627014958444478, guid: b8729f123e53997438a161d2a919a6ce, type: 3}
       propertyPath: m_LocalPosition.x
       value: -8.518997
@@ -90978,3 +91247,4 @@ SceneRoots:
   - {fileID: 1077816615}
   - {fileID: 209200851}
   - {fileID: 1604139952}
+  - {fileID: 400342936}

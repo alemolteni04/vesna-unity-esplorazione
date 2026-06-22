@@ -12,7 +12,8 @@ public class LocalizationTest : MonoBehaviour
 
     private Dictionary<string, Vector3> seenRooms = new Dictionary<string, Vector3>();
     private string currentRoom = null;
-    private BeliefTransmitter _beliefTransmitter;
+    private AgentJacamoBridge _bridge;
+    
     public string CurrentRoom => currentRoom;
 
     public void SetCurrentRoom(string roomId)
@@ -23,8 +24,10 @@ public class LocalizationTest : MonoBehaviour
     void Start()
     {
         VisionCone.OnRoomNodeVisible += OnRoomSeen;
-        _beliefTransmitter = GetComponent<BeliefTransmitter>();
-        StartCoroutine(LocalizeOnce());
+        _bridge = GetComponent<AgentJacamoBridge>();
+        
+        // Esegue la localizzazione una volta all'avvio
+        RunLocalization();
     }
 
     void OnDestroy()
@@ -32,21 +35,29 @@ public class LocalizationTest : MonoBehaviour
         VisionCone.OnRoomNodeVisible -= OnRoomSeen;
     }
 
-    private void OnRoomSeen(string roomName, Vector3 position)
-{
-    if (visionCone == null) return;
-
-    GameObject go = ResolveRoomNode(roomName, position);
-    if (go == null) { Debug.Log($"[Loc TEST] {roomName}: resolver NULL"); return; }
-    if (!visionCone.IsInSight(go)) { Debug.Log($"[Loc TEST] {roomName}: scartata (non in sight dal MIO cono)"); return; }
-
-    if (!seenRooms.ContainsKey(roomName))
+    // Metodo pubblico: puoi chiamarlo da altri script se serve ri-localizzare a comando
+    public void RunLocalization()
     {
-        seenRooms[roomName] = position;
+        StopAllCoroutines(); // Ferma eventuali ricerche e invii precedenti
+        seenRooms.Clear();   // Pulisce le stanze viste in precedenza
+        StartCoroutine(LocalizeRoutine());
     }
-}
 
-    // Recupera il GameObject del room node dalla sua posizione (l'evento dà solo nome+pos)
+    private void OnRoomSeen(string roomName, Vector3 position)
+    {
+        if (visionCone == null) return;
+
+        GameObject go = ResolveRoomNode(roomName, position);
+        if (go == null) return; 
+        if (!visionCone.IsInSight(go)) return; 
+
+        if (!seenRooms.ContainsKey(roomName))
+        {
+            seenRooms[roomName] = position;
+        }
+    }
+
+    // Recupera il GameObject del room node dalla sua posizione
     private GameObject ResolveRoomNode(string roomName, Vector3 position)
     {
         Collider[] near = Physics.OverlapSphere(
@@ -59,11 +70,11 @@ public class LocalizationTest : MonoBehaviour
         return null;
     }
 
-    IEnumerator LocalizeOnce()
+    private IEnumerator LocalizeRoutine()
     {
         yield return new WaitForSeconds(1f);
 
-        // 360° per far entrare nel cono tutte le stanze intorno (il cono è direzionale)
+        // 360° per far entrare nel cono tutte le stanze intorno
         float rotated = 0f;
         float speed = 90f;
         while (rotated < 360f)
@@ -74,7 +85,7 @@ public class LocalizationTest : MonoBehaviour
             yield return null;
         }
 
-        // aspetta che almeno una stanza venga vista (e validata dal mio cono)
+        // aspetta che almeno una stanza venga vista
         float timeout = 5f;
         while (seenRooms.Count == 0 && timeout > 0f)
         {
@@ -82,22 +93,17 @@ public class LocalizationTest : MonoBehaviour
             yield return null;
         }
 
-        if (seenRooms.Count == 0)
-        {
-            Debug.LogWarning("[Localizer] Nessuna stanza vista! Controlla VisionCone / roomColliderMask / occlusionLayers.");
-            yield break;
-        }
+        if (seenRooms.Count == 0) yield break;
 
         currentRoom = NearestVisibleRoomByCollider();
 
-        if (currentRoom == null)
-        {
-            Debug.LogWarning("[Localizer] Stanze viste ma nessun collider corrispondente nel raggio.");
-            yield break;
-        }
+        if (currentRoom == null) yield break;
     
-        Debug.Log($"[Localizer] Sono in: {currentRoom}");
-        StartCoroutine(ResendCurrentRoom());
+        // L'UNICO LOG STAMPATO
+        Debug.Log($"stanza corrente = {currentRoom}");
+        
+        // Avvia l'invio ripetuto a tempo (10 secondi totali)
+        StartCoroutine(SendRoomDataWithRetries());
     }
 
     // Tra le sole stanze VISTE dal mio cono, sceglie la più vicina per distanza sul collider
@@ -111,22 +117,19 @@ public class LocalizationTest : MonoBehaviour
 
         foreach (var col in cols)
         {
-            // scarta i collider di stanze che il mio cono NON ha visto (muri in mezzo ecc.)
             if (!seenRooms.ContainsKey(col.gameObject.name)) continue;
 
-            // ClosestPoint == posizione -> dist 0 -> sono DENTRO la stanza
             Vector3 cp = col.ClosestPoint(transform.position);
             float d = Vector3.Distance(transform.position, cp);
 
             if (d < minDist)
             {
                 minDist = d;
-                best = col.gameObject.name;   // id stanza = nome GameObject (es. "Ufficio2")
-                if (d == 0f) break;           // dentro la stanza: vince subito
+                best = col.gameObject.name;   
+                if (d == 0f) break;           
             }
         }
 
-        // fallback: se il collider non è nel raggio, usa la posizione del nodo vista dal cono
         if (best == null)
         {
             foreach (var kv in seenRooms)
@@ -139,30 +142,19 @@ public class LocalizationTest : MonoBehaviour
         return best;
     }
 
-    private IEnumerator ResendCurrentRoom()
+    // Trasmette la stanza corrente ogni 3 secondi per un massimo di 10 secondi
+    private IEnumerator SendRoomDataWithRetries()
     {
-        string lastSent = null;
         float elapsed = 0f;
-        float warmupDuration = 9f;
+        float maxDuration = 10f; // Durata massima dei tentativi
 
-        while (true)
+        while (elapsed <= maxDuration)
         {
-            string roomToSend = _beliefTransmitter?.LastArrivedNode ?? currentRoom;
+            string roomToSend = _bridge?.LastArrivedNode ?? currentRoom;
 
-            if (roomToSend == null)
+            if (roomToSend != null)
             {
-                yield return new WaitForSeconds(3f);
-                elapsed += 3f;
-                continue;
-            }
-
-            bool changed = roomToSend != lastSent;
-            bool inWarmup = elapsed < warmupDuration;
-
-            if (changed || inWarmup)
-            {
-                _beliefTransmitter?.SendCurrentRoom(roomToSend);
-                lastSent = roomToSend;
+                _bridge?.SendCurrentRoom(roomToSend);
             }
 
             yield return new WaitForSeconds(3f);

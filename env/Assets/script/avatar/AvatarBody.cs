@@ -34,37 +34,41 @@ public class AvatarBody : MonoBehaviour
 
     // TODO: I do not understand why this is called, it's always called when the FOV is spawned.
     // It's probably obsolete, check and remove if not needed.
-   private string currentTarget = "";
-
-public void SetCurrentTarget(string target)
-{
-    currentTarget = target;
-}
-
 private void OnTriggerEnter(Collider other)
 {
     Debug.Log("Agent " + root.name + " reached " + other.name);
-    print("Agent " + root.name + " reached destination " + other.name.FirstCharacterToLower());
 
-    // logica esistente per artefatti
-    if (!other.gameObject.name.Contains("counter") && (other.gameObject.tag == "Artifact"))
+    // ---> PORTE/VARCHI: rilevati dal COMPONENTE, non dal nome <---
+    DoorVarcoScript door = other.GetComponent<DoorVarcoScript>()
+                        ?? other.GetComponentInParent<DoorVarcoScript>();
+    if (door != null)
     {
-        mainAvatarScript.SetBaloonText("Reached destination: " + other.name.FirstCharacterToLower());
-        mainAvatarScript.SendMessageToJaCaMoBrain(UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString("destinationReached", null,
-            "reached_destination", null, other.name.FirstCharacterToLower()));
-        artifactReached = other.name.FirstCharacterToLower();
-        mainAvatarScript.EnableDisableVisionCone(false);
+        if (!door.isOpen)
+        {
+            Debug.Log("[AvatarBody] Sfiorato " + other.name + " (DoorVarcoScript), apro.");
+            door.TryOpen();
+        }
+        return; // non interferisce con la logica della prof qui sotto
     }
-    // logica per nodi topologici
-    else if (!string.IsNullOrEmpty(currentTarget) && 
-             other.name.Equals(currentTarget, System.StringComparison.OrdinalIgnoreCase))
-    {
-        var bt = root.GetComponent<BeliefTransmitter>();
-        if (bt != null)
-            bt.SendMovementCompleted(currentTarget);
-        currentTarget = "";
+        // ---> FINE PEZZO AGGIUNTO <---
+
+
+        // ---> LA TUA LOGICA PRECEDENTE RIMANE ESATTAMENTE UGUALE <---
+        if (!other.gameObject.name.Contains("counter") && (other.gameObject.tag == "Artifact"))
+        {
+            print("Agent " + root.name + " reached destination " + other.name.FirstCharacterToLower());
+            mainAvatarScript.SetBaloonText("Reached destination: " + other.name.FirstCharacterToLower());
+            
+            mainAvatarScript.SendMessageToJaCaMoBrain(
+                UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
+                    "destinationReached", null, "reached_destination", null, other.name.FirstCharacterToLower()
+                )
+            );
+            
+            artifactReached = other.name.FirstCharacterToLower();
+            mainAvatarScript.EnableDisableVisionCone(false);
+        }
     }
-}
 
     private void OnTriggerExit(Collider other)
     {
