@@ -53,7 +53,8 @@ public class CheckTarget extends DefaultInternalAction {
         lastTarget = target;
 
         // args[0] = Target (variabile da unificare nel piano Jason)
-        Term targetTerm = new Atom(target);
+        //Term targetTerm = new Atom(target);
+        Term targetTerm = ASSyntax.createString(target);
         return un.unifies(args[0], targetTerm);
     }
 

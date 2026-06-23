@@ -1,6 +1,13 @@
 // ============================================================
 // explorer.asl — Variante 1
 // ============================================================
+
+// Piani di movimento della libreria (reach_dest -> walk(goto,Next) a Unity)
+{ include("libraryPlans.asl") }
+
+// L'explorer non vaga: sopprime l'eventuale start_walking della libreria
++!start_walking <- true.
+
 !start.
 
 +!start <-
@@ -8,16 +15,13 @@
     .print("[explorer] pronto, ricevo il grafo da Unity...").
 
 // ── Aggancio manuale all'envManager: lookup + focus esplicito ────────────
-// Senza il focus nel JCM, lo facciamo qui direttamente.
 +!ensure_env_manager <-
-	joinWorkspace("/main/main", _);
+    joinWorkspace("/main/main", _);
     lookupArtifact("envManager", EnvId);
     focus(EnvId);
     +env_manager(EnvId);
     .print("[explorer] envManager agganciato: ", EnvId).
 
-
-	
 -!ensure_env_manager <-
     .print("[explorer] ensure_env_manager fallito, ritento...");
     .wait(500);
@@ -68,24 +72,40 @@
     .print("[explorer] grafo completo: ", TotalNodes, " nodi, ", TotalEdges, " archi");
     !get_env(E);
     graphReady[artifact_id(E)];
-    !create_door_artifacts.
+    !create_door_artifacts;
+    !poll_target.
 
-// ── Due piani per current_room ────────────────────────────────────────────
-+current_room(StartId) : exploration_complete(_, _, _, _, _, _) <-
-    .print("[explorer] Sono in: ", StartId, " — grafo pronto, navigo");
-    !navigate_to(StartId, "Laboratorio3").
+// ── Posizione corrente: belief singola, aggiornata da Unity ad ogni arrivo ─
++current_room(Where) <-
+    .abolish(at(_));
+    +at(Where);
+    .print("[explorer] posizione corrente: ", Where).
 
-+current_room(StartId) <-
-    .print("[explorer] Sono in: ", StartId, " — grafo non ancora pronto").
+// ── Polling del target dal bridge (ai_bridge.py → target.json) ────────────
++!poll_target <-
+    .wait(1500);
+    !try_navigate;
+    !poll_target.
+
++!try_navigate : at(Start) & not navigating <-
+    vesna.CheckTarget(Goal);
+    +navigating;
+    .print("[explorer] nuovo target dal bridge: ", Goal, " (da ", Start, ")");
+    !navigate_to(Start, Goal);
+    -navigating.
+
++!try_navigate <- true.          // posizione sconosciuta o navigazione in corso → riprovo al giro dopo
+
+-!try_navigate <- -navigating.   // CheckTarget vuoto o errore in navigate_to → ripulisco il flag
 
 // ── Crea artefatti porte/varchi ───────────────────────────────────────────
 +!create_door_artifacts <-
     for( edge(GoName, From, To, Floor, EdgeType, DoorState, Side, Dir, DistA, DistB, WsPort) ) {
-        
-        // Controlla se è una faccia frontale di una porta (fw), una porta tra stanze (none) o un varco (seg)
-        // Ignoriamo i "bw" (backwards) per non creare cloni doppi della stessa porta
+
+        // fw = faccia frontale porta, none = porta tra stanze, seg = varco
+        // Ignoriamo i "bw" per non creare cloni doppi della stessa porta
         if (Dir == "fw" | Dir == "none" | Dir == "seg") {
-            
+
             if (DoorState == "Open") {
                 makeArtifact(GoName, "artifact.VarcoArtifact",
                              [GoName, WsPort, 0.0, 0.0, 0.0], _)
@@ -104,7 +124,9 @@
         .print("[explorer] Nessun percorso trovato da ", StartId, " a ", GoalId)
     } else {
         .print("[explorer] Percorso (", Cost, "m): ", Path);
-        !follow_path(Path)
+        Path = [_First | StepsToWalk];   // scarta il nodo di partenza (ci sono già)
+        !follow_path(StepsToWalk);
+        .print("[explorer] arrivato a: ", GoalId)
     }.
 
 +!navigate_to_artifact(StartId, ArtifactId) <-
@@ -112,10 +134,13 @@
     .print("[explorer] Artefatto '", ArtifactId, "' in stanza '", RoomId, "'");
     !navigate_to(StartId, RoomId).
 
-// ── Segui il percorso nodo per nodo ──────────────────────────────────────
+// ── Segui il percorso nodo per nodo (movimento fisico reale) ─────────────
 +!follow_path([]) <-
     .print("[explorer] Percorso completato.").
 
-+!follow_path([NextNode | Rest]) <-
-    .print("[explorer] Prossimo nodo: ", NextNode);
++!follow_path([Next | Rest]) <-
+    .print("[explorer] -> ", Next);
+    !!reach_dest(Next);                  // invia walk(goto,Next) a Unity
+    .wait({ +reached(place, Next) });    // aspetta conferma arrivo dal framework
+    -movement_in_progress(Next);
     !follow_path(Rest).

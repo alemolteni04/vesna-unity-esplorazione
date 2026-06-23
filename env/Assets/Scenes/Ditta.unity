@@ -25715,7 +25715,7 @@ MonoBehaviour:
   visionCone: {fileID: 565101097}
   roomColliderMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1024
   searchRadius: 100
 --- !u!114 &565101097
 MonoBehaviour:
@@ -30626,8 +30626,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db577b27c07c35a45ae7b0484a18cf51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  explorationManager: {fileID: 0}
-  visionCone: {fileID: 819600646}
 --- !u!114 &654177318
 MonoBehaviour:
   m_ObjectHideFlags: 0
