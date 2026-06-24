@@ -1,15 +1,27 @@
 """
 AI Bridge (artefatti) - traduce un comando in linguaggio naturale in un
-artefatto valido (building_artifacts.json) e scrive il risultato in target.json,
-che verra' letto da JaCaMo.
+ARTEFATTO-oggetto valido (building_artifacts.json) e scrive il risultato in
+target.json, letto da JaCaMo.
 
-Identico ad ai_bridge.py, ma la lista dei target validi viene presa dagli
-artefatti scoperti (file *_artifacts.json) invece che dai nodi del grafo.
+DIFFERENZA da ai_bridge.py:
+    - ai_bridge.py            lavora SOLO su STANZE (nodi del grafo).
+    - ai_bridge_artifacts.py  lavora SOLO su ARTEFATTI-oggetto.
+
+L'artefatto NON e' un nodo del grafo. Per calcolare il percorso si usa la
+STANZA in cui l'oggetto si trova (nodo navigabile -> A* nella mente), e la
+POSIZIONE (x,y,z) dell'oggetto per l'avvicinamento finale dell'avatar.
+
+target.json (formato esteso, retro-compatibile con CheckTarget):
+    {
+      "target":   "Ufficio5",            <- STANZA (nodo navigabile per A*)
+      "artifact": "ArtefattoUfficio5",   <- quale oggetto stiamo raggiungendo
+      "x": -8.425, "y": 0.5, "z": 12.98  <- posizione per l'avvicinamento finale
+    }
 
 Uso:
     python ai_bridge_artifacts.py
     > portami all'artefatto dell'ufficio5
-    -> scritto target.json con {"target": "Artefatto ufficio5"}
+    -> target.json: stanza 'Ufficio5', oggetto 'ArtefattoUfficio5'
 """
 
 import json
@@ -30,13 +42,11 @@ TARGET_JSON = os.path.join(GRAPH_DIR, "target.json")
 
 
 def find_artifacts_json():
-    """Trova il file *_artifacts.json nella cartella, prendendo il piu' recente
-    per data di modifica."""
+    """Trova il file *_artifacts.json piu' recente nella cartella."""
     candidates = []
     for fname in os.listdir(GRAPH_DIR):
         if fname.lower().endswith("_artifacts.json"):
-            full = os.path.join(GRAPH_DIR, fname)
-            candidates.append(full)
+            candidates.append(os.path.join(GRAPH_DIR, fname))
 
     if not candidates:
         raise FileNotFoundError("Nessun file *_artifacts.json trovato in " + GRAPH_DIR)
@@ -47,16 +57,16 @@ def find_artifacts_json():
 
 def load_valid_artifacts():
     """Legge il file degli artefatti e ritorna:
-       - la lista dei nomi validi (artifactId)
-       - un dizionario {artifactId: roomId} usato come hint per l'LLM."""
+       - lista dei nomi validi (artifactId)
+       - dict {artifactId: roomId}  (hint per l'LLM)
+       - dict {artifactId: {...}}   (dettagli: stanza, tipo, x, y, z, porta)."""
     artifacts_json = find_artifacts_json()
     print(f"File artefatti trovato: {artifacts_json}")
 
     with open(artifacts_json, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    names = []
-    rooms = {}
+    names, rooms, info = [], {}, {}
 
     for a in data.get("artifacts", []):
         art_id = a.get("artifactId")
@@ -64,25 +74,31 @@ def load_valid_artifacts():
             continue
         names.append(art_id)
         rooms[art_id] = a.get("roomId", "")
+        info[art_id] = {
+            "roomId":       a.get("roomId", ""),
+            "artifactType": a.get("artifactType", ""),
+            "x": a.get("x"),
+            "y": a.get("y"),
+            "z": a.get("z"),
+            "wsPort": a.get("wsPort"),
+        }
 
     # dedup mantenendo l'ordine
-    seen = set()
-    unique = []
+    seen, unique = set(), []
     for n in names:
         if n not in seen:
             seen.add(n)
             unique.append(n)
 
-    return sorted(unique), rooms
+    return sorted(unique), rooms, info
 
 
-def _local_match(user_input: str, valid_names: list[str]) -> str | None:
+def _local_match(user_input, valid_names):
     """Fuzzy matching locale di fallback (no API)."""
     text = user_input.lower()
     text_norm = re.sub(r"[^a-z0-9]", "", text)
 
-    best_match = None
-    best_score = 0.0
+    best_match, best_score = None, 0.0
 
     for name in valid_names:
         name_lower = name.lower()
@@ -97,17 +113,13 @@ def _local_match(user_input: str, valid_names: list[str]) -> str | None:
 
         score = difflib.SequenceMatcher(None, name_compact, text_norm).ratio()
         if score > best_score:
-            best_score = score
-            best_match = name
+            best_score, best_match = score, name
 
-    if best_score >= 0.5:
-        return best_match
-    return None
+    return best_match if best_score >= 0.5 else None
 
 
-def ask_llm_for_target(user_input: str, valid_names: list[str],
-                       rooms: dict[str, str]) -> str | None:
-    """Chiede a Gemini di mappare l'input utente su un nome di artefatto valido.
+def ask_llm_for_target(user_input, valid_names, rooms):
+    """Chiede a Gemini di mappare l'input utente su un artefatto valido.
     Se l'LLM non e' disponibile (errore/quota), usa il matching locale."""
     elenco = "\n".join(
         f"{n}  (stanza: {rooms.get(n, '')})" if rooms.get(n) else n
@@ -141,9 +153,33 @@ def ask_llm_for_target(user_input: str, valid_names: list[str],
     return text
 
 
-def write_target(target: str):
+def write_target(artifact_id, info):
+    """Scrive target.json per raggiungere un ARTEFATTO.
+       'target'   = STANZA dell'artefatto (nodo navigabile: il path lo fa A* nella mente)
+       'artifact' = quale oggetto stiamo raggiungendo
+       'x/y/z'    = posizione dell'oggetto per l'avvicinamento finale dell'avatar
+    Ritorna la stanza usata come destinazione del path.
+    """
+    meta = info.get(artifact_id, {})
+    room = meta.get("roomId", "")
+    if not room:
+        raise ValueError(
+            f"L'artefatto '{artifact_id}' non ha una stanza (roomId) nel json: "
+            f"impossibile calcolare il percorso."
+        )
+
+    payload = {
+        "target":   room,          # destinazione navigabile (stanza = nodo)
+        "artifact": artifact_id,    # oggetto da raggiungere (per dedup + log)
+        "x": meta.get("x"),
+        "y": meta.get("y"),
+        "z": meta.get("z"),
+    }
+
     with open(TARGET_JSON, "w", encoding="utf-8") as f:
-        json.dump({"target": target}, f, ensure_ascii=False, indent=2)
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    return room
 
 
 def main():
@@ -151,7 +187,7 @@ def main():
     print(f"Cerco il file degli artefatti in: {GRAPH_DIR}")
 
     try:
-        valid_names, rooms = load_valid_artifacts()
+        valid_names, rooms, info = load_valid_artifacts()
     except FileNotFoundError as e:
         print(f"ERRORE: {e}")
         return
@@ -163,8 +199,12 @@ def main():
 
     print(f"Artefatti validi trovati ({len(valid_names)}):")
     for n in valid_names:
-        stanza = rooms.get(n, "")
-        print(f"  - {n}" + (f"  (stanza: {stanza})" if stanza else ""))
+        meta = info.get(n, {})
+        stanza = meta.get("roomId", "")
+        pos = ""
+        if meta.get("x") is not None:
+            pos = f"  @({meta['x']:.2f}, {meta['y']:.2f}, {meta['z']:.2f})"
+        print(f"  - {n}" + (f"  (stanza: {stanza})" if stanza else "") + pos)
 
     print("\nScrivi un comando (es. 'portami all'artefatto dell'ufficio5'), "
           "oppure 'exit' per uscire.")
@@ -177,13 +217,20 @@ def main():
             continue
 
         target = ask_llm_for_target(user_input, valid_names, rooms)
-
         if target is None:
             print("Non ho capito a quale artefatto ti riferisci. Riprova.")
             continue
 
-        write_target(target)
-        print(f"-> Target impostato: {target}  (scritto in {TARGET_JSON})")
+        try:
+            room = write_target(target, info)
+        except ValueError as e:
+            print(f"ERRORE: {e}")
+            continue
+
+        meta = info.get(target, {})
+        print(f"-> Artefatto: {target}  →  stanza '{room}'  "
+              f"@({meta.get('x')}, {meta.get('y')}, {meta.get('z')})")
+        print(f"   (scritto in {TARGET_JSON})")
 
 
 if __name__ == "__main__":

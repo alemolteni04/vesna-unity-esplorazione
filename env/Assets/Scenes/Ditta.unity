@@ -7116,20 +7116,20 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_Name
-      value: ArtifactObject Ufficio4
+      value: ArtifactObject_Ufficio4
       objectReference: {fileID: 0}
     - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: port
-      value: 8081
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: roomNode
       value: 
-      objectReference: {fileID: 1037419861}
+      objectReference: {fileID: 182922321}
     - target: {fileID: 4967006580743046256, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_LocalPosition.x
       value: 6.21
@@ -7140,7 +7140,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4967006580743046256, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 11.97
+      value: 12.81
       objectReference: {fileID: 0}
     - target: {fileID: 4967006580743046256, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_LocalRotation.w
@@ -25807,6 +25807,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   agent: {fileID: 565101094}
   arrivalThreshold: 5
+  objectArrivalThreshold: 0.6
   graphSnapshotsFolder: '%USERPROFILE%\AppData\LocalLow\DefaultCompany\JaCaMoIntegration\graph_snapshots'
 --- !u!114 &565101105
 MonoBehaviour:
@@ -68412,6 +68413,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   agent: {fileID: 1604139961}
   arrivalThreshold: 10
+  objectArrivalThreshold: 0.6
   graphSnapshotsFolder: '%USERPROFILE%\AppData\LocalLow\DefaultCompany\JaCaMoIntegration\graph_snapshots'
 --- !u!114 &1604139964
 MonoBehaviour:
@@ -74638,7 +74640,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_Name
-      value: ArtifactObject corridoio2
+      value: ArtifactObject_corridoio2
       objectReference: {fileID: 0}
     - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_IsActive
@@ -74646,7 +74648,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: port
-      value: 8081
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: roomNode
@@ -90988,7 +90990,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_Name
-      value: Artefatto ufficio5
+      value: ArtifactObject_Ufficio5
       objectReference: {fileID: 0}
     - target: {fileID: 1209022518118653260, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_IsActive
@@ -90996,7 +90998,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: port
-      value: 8083
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1432033754695486035, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: roomNode
@@ -91004,7 +91006,7 @@ PrefabInstance:
       objectReference: {fileID: 546637279}
     - target: {fileID: 4967006580743046256, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -8.425
+      value: -6.71
       objectReference: {fileID: 0}
     - target: {fileID: 4967006580743046256, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_LocalPosition.y
@@ -91012,7 +91014,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4967006580743046256, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 12.98
+      value: 13.85
       objectReference: {fileID: 0}
     - target: {fileID: 4967006580743046256, guid: 77c81a6f13333c745b756b0ceaf11f84, type: 3}
       propertyPath: m_LocalRotation.w

@@ -38,6 +38,10 @@ public class TopologicalMovement : MovementModel
              "Alzalo per passare più larghi, abbassalo per passare più vicino al nodo.")]
     public float arrivalThreshold = 1.5f;
 
+    [Tooltip("Raggio entro cui l'avvicinamento finale a un OGGETTO si considera concluso. " +
+         "Più piccolo di arrivalThreshold: qui ci si vuole fermare VICINO all'oggetto.")]
+    public float objectArrivalThreshold = 0.6f;
+
     [Tooltip("Cartella dei file *.json del grafo (graph_snapshots)")]
     public string graphSnapshotsFolder =
         @"%USERPROFILE%\AppData\LocalLow\DefaultCompany\JaCaMoIntegration\graph_snapshots";
@@ -46,6 +50,7 @@ public class TopologicalMovement : MovementModel
     private readonly Dictionary<string, Vector3> nodePositions = new Dictionary<string, Vector3>();
 
     private string currentTargetNode = null;
+    private string finalApproachLabel = null; // != null durante l'avvicinamento a un oggetto
     private Vector3 currentTargetPos;
     private bool isMoving = false;
 
@@ -88,44 +93,67 @@ public class TopologicalMovement : MovementModel
         agent.SetDestination(targetPos);
         Debug.Log($"[TopologicalMovement] Vado verso {nodeId} @ {targetPos}");
     }
-
-    void Update()
+    // Avvicinamento finale a una POSIZIONE libera (centro oggetto), non a un nodo.
+    // 'label' è ciò che verrà notificato come reached(place, label) all'arrivo.
+    public void GoToPosition(float x, float y, float z, string label)
     {
-        if (!isMoving || currentTargetNode == null) return;
-        if (agent.pathPending) return;
+        Vector3 targetPos = new Vector3(x, y, z);
 
-        // Distanza diretta al nodo (non remainingDistance, che resta alta se il
-        // nodo è un filo fuori dal NavMesh -> era questo che bloccava Corridoio1_A).
-        float dist = Vector3.Distance(transform.position, currentTargetPos);
+        if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
+            targetPos = hit.position;
+        else
+            Debug.LogWarning($"[TopologicalMovement] Posizione di '{label}' non proiettabile sul NavMesh, uso grezza.");
 
-        // "Attraversato": sei entrato nel raggio del nodo...
-        bool passedThrough = dist <= arrivalThreshold;
-        // ...oppure l'agente si è proprio fermato a fine percorso (fallback robusto,
-        // copre l'ultimo nodo che va fino in fondo e i casi di stop anticipato).
-        bool fullyStopped = agent.remainingDistance <= agent.stoppingDistance
-                            && agent.velocity.sqrMagnitude < 0.01f;
+        enabled = true;
+        isStopped = false;
+        if (agent != null) agent.isStopped = false;
 
-        if (passedThrough || fullyStopped)
-        {
-            string reached = currentTargetNode;
-            isMoving = false;
-            currentTargetNode = null;
-
-            Debug.Log($"[TopologicalMovement] Arrivata a {reached} (dist {dist:F2})");
-
-            // Notifica l'arrivo tramite il bridge (presente su entrambi gli agenti).
-            var bridge = GetComponent<AgentJacamoBridge>();
-            if (bridge != null)
-                bridge.SendMovementCompleted(reached);
-            else
-                Debug.LogWarning("[TopologicalMovement] Nessun AgentJacamoBridge: arrivo non notificato.");
-
-            // NON fermo l'agente: la destinazione resta il centro del nodo.
-            // - nodo intermedio: arriva subito il comando successivo (GoToNode) che
-            //   ridirige l'agente -> passa attraverso senza fermarsi al centro;
-            // - ultimo nodo: nessun comando dopo -> l'agente prosegue fino al centro.
-        }
+        currentTargetNode  = label;     // riusa la macchina di arrivo esistente
+        currentTargetPos   = targetPos;
+        finalApproachLabel = label;     // segnala che è un avvicinamento a oggetto
+        isMoving = true;
+        agent.SetDestination(targetPos);
+        Debug.Log($"[TopologicalMovement] Avvicinamento a '{label}' @ {targetPos}");
     }
+    void Update()
+{
+    if (!isMoving || currentTargetNode == null) return;
+    if (agent.pathPending) return;
+
+    float dist = Vector3.Distance(transform.position, currentTargetPos);
+
+    // oggetto -> raggio stretto; navigazione tra nodi -> raggio normale
+    float threshold = (finalApproachLabel != null) ? objectArrivalThreshold : arrivalThreshold;
+
+    bool passedThrough = dist <= threshold;
+    bool fullyStopped  = agent.remainingDistance <= agent.stoppingDistance
+                         && agent.velocity.sqrMagnitude < 0.01f;
+
+    if (passedThrough || fullyStopped)
+    {
+        string reached = currentTargetNode;
+        bool wasFinalApproach = finalApproachLabel != null;
+
+        isMoving = false;
+        currentTargetNode = null;
+        finalApproachLabel = null;
+
+        if (wasFinalApproach && agent != null) agent.isStopped = true; // fermo sull'oggetto
+
+        Debug.Log($"[TopologicalMovement] Arrivata a {reached} (dist {dist:F2})"
+                  + (wasFinalApproach ? " [oggetto]" : ""));
+
+        var bridge = GetComponent<AgentJacamoBridge>();
+        if (bridge != null)
+        {
+            if (wasFinalApproach)
+                bridge.SendObjectReached(reached);     // solo reached(place, Artifact), NIENTE current_room
+            else
+                bridge.SendMovementCompleted(reached); // nodo: reached + current_room (invariato)
+        }
+        else
+            Debug.LogWarning("[TopologicalMovement] Nessun AgentJacamoBridge: arrivo non notificato.");}
+}
 
     // ========================================================
     // CARICAMENTO POSIZIONI NODI (identico al tuo VesnaMover)

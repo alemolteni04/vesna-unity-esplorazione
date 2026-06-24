@@ -88,15 +88,33 @@
     !poll_target.
 
 +!try_navigate : at(Start) & not navigating <-
-    vesna.CheckTarget(Goal);
+    vesna.CheckTarget(Goal, X, Y, Z, Artifact);
     +navigating;
-    .print("[explorer] nuovo target dal bridge: ", Goal, " (da ", Start, ")");
+    .print("[explorer] target: ", Goal, " (da ", Start, "), oggetto=", Artifact);
     !navigate_to(Start, Goal);
+    !final_approach(Goal, Artifact, X, Y, Z);
     -navigating.
 
-+!try_navigate <- true.          // posizione sconosciuta o navigazione in corso → riprovo al giro dopo
+// rete di sicurezza: guardia falsa (non in at/_ o già navigating) → salta il giro
++!try_navigate <- true.
 
--!try_navigate <- -navigating.   // CheckTarget vuoto o errore in navigate_to → ripulisco il flag
+// CheckTarget ritorna false quando non c'è un nuovo target: normale, pulisci e continua
+-!try_navigate <- .abolish(navigating).
+
+// target-stanza puro (ai_bridge.py): Artifact = "" → ci si ferma alla stanza,
+// at(_) lo aggiorna già Unity con current_room.
++!final_approach(_, "", _, _, _) <- true.
+
+// target-artefatto: gamba finale verso l'oggetto, poi registra la SUA stanza (=Goal)
++!final_approach(Room, Artifact, X, Y, Z) <-
+    .print("[explorer] avvicinamento all'oggetto ", Artifact, " @ (", X, ",", Y, ",", Z, ")");
+    +movement_in_progress(Artifact);
+    vesna.walk(X, Y, Z, Artifact);
+    .wait({ +reached(place, Artifact) });
+    -movement_in_progress(Artifact);
+    .abolish(at(_));
+    +at(Room);
+    .print("[explorer] arrivato a ", Artifact, ", stanza corrente: ", Room).
 
 // ── Crea artefatti porte/varchi ───────────────────────────────────────────
 +!create_door_artifacts <-

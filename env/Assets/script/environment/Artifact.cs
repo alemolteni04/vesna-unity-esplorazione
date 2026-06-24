@@ -55,6 +55,10 @@ public class Artifact : AbstractArtifact
 
         if (Application.IsPlaying(gameObject))
         {
+            // Porta coerente con corridoi e porte: stesso PortAssigner, assegnata per nome.
+            // Sovrascrive il valore dell'Inspector (es. 8082) così non collide con i body.
+            port = PortAssigner.GetObjectPort(gameObject.name);
+
             // Play logic
             // Retrieve the property that belongs to the artifact       
             var artifactPropertyName = artifactType.ToString();
@@ -70,6 +74,8 @@ public class Artifact : AbstractArtifact
             }
 
             initializeWebSocketConnection(OnMessage);
+
+            _ = startServer();  
         }
         else
         {

@@ -6,32 +6,19 @@ import jason.asSyntax.*;
 import java.io.*;
 import java.nio.file.*;
 
-/**
- * Internal action: checkTarget(Target)
- *
- * Legge target.json (scritto da ai_bridge.py) e, se contiene un nuovo
- * target rispetto all'ultima volta, lo unifica con la variabile Target
- * e ritorna true. Se non c'è nessun nuovo target, fallisce (false).
- *
- * target.json formato: {"target": "Laboratorio3"}
- */
 public class CheckTarget extends DefaultInternalAction {
 
-    // Path del file scritto da ai_bridge.py (stessa cartella di building.json)
     private static final String TARGET_FILE =
             System.getProperty("user.home")
             + "\\AppData\\LocalLow\\DefaultCompany\\JaCaMoIntegration\\graph_snapshots\\target.json";
 
-    // Ricorda l'ultimo target già processato, per non ri-triggerare lo stesso goal
-    private String lastTarget = null;
+    private String lastSignature = null;
 
     @Override
     public Object execute(TransitionSystem ts, Unifier un, Term[] args) throws Exception {
 
         File f = new File(TARGET_FILE);
-        if (!f.exists()) {
-            return false; // nessun comando ancora arrivato
-        }
+        if (!f.exists()) return false;
 
         String content;
         try {
@@ -40,41 +27,58 @@ public class CheckTarget extends DefaultInternalAction {
             return false;
         }
 
-        // Parsing JSON minimale: estrae il valore di "target"
-        String target = extractTargetField(content);
-        if (target == null || target.isEmpty()) {
-            return false;
+        String target = extractStringField(content, "target");
+        if (target == null || target.isEmpty()) return false;
+
+        String artifact = extractStringField(content, "artifact");
+        if (artifact == null) artifact = "";
+        Double x = extractNumberField(content, "x");
+        Double y = extractNumberField(content, "y");
+        Double z = extractNumberField(content, "z");
+
+        String signature = target + "|" + artifact + "|" + x + "|" + y + "|" + z;
+        if (signature.equals(lastSignature)) return false;
+        lastSignature = signature;
+
+        boolean ok = un.unifies(args[0], ASSyntax.createString(target));
+        if (args.length >= 4) {
+            ok = ok
+                && un.unifies(args[1], ASSyntax.createNumber(x == null ? 0.0 : x))
+                && un.unifies(args[2], ASSyntax.createNumber(y == null ? 0.0 : y))
+                && un.unifies(args[3], ASSyntax.createNumber(z == null ? 0.0 : z));
         }
-
-        if (target.equals(lastTarget)) {
-            return false; // stesso comando di prima, niente di nuovo
+        if (args.length >= 5) {
+            ok = ok && un.unifies(args[4], ASSyntax.createString(artifact));
         }
-
-        lastTarget = target;
-
-        // args[0] = Target (variabile da unificare nel piano Jason)
-        //Term targetTerm = new Atom(target);
-        Term targetTerm = ASSyntax.createString(target);
-        return un.unifies(args[0], targetTerm);
+        return ok;
     }
 
-    /**
-     * Estrae il valore della chiave "target" da un JSON semplice del tipo
-     * {"target": "NomeStanza"}.
-     */
-    private String extractTargetField(String json) {
-        int keyIdx = json.indexOf("\"target\"");
+    private String extractStringField(String json, String key) {
+        int keyIdx = json.indexOf("\"" + key + "\"");
         if (keyIdx < 0) return null;
-
         int colonIdx = json.indexOf(':', keyIdx);
         if (colonIdx < 0) return null;
-
         int firstQuote = json.indexOf('"', colonIdx + 1);
         if (firstQuote < 0) return null;
-
         int secondQuote = json.indexOf('"', firstQuote + 1);
         if (secondQuote < 0) return null;
-
         return json.substring(firstQuote + 1, secondQuote);
+    }
+
+    private Double extractNumberField(String json, String key) {
+        int keyIdx = json.indexOf("\"" + key + "\"");
+        if (keyIdx < 0) return null;
+        int colonIdx = json.indexOf(':', keyIdx);
+        if (colonIdx < 0) return null;
+        int i = colonIdx + 1, n = json.length();
+        while (i < n && Character.isWhitespace(json.charAt(i))) i++;
+        int start = i;
+        while (i < n && "+-0123456789.eE".indexOf(json.charAt(i)) >= 0) i++;
+        if (i == start) return null;
+        try {
+            return Double.parseDouble(json.substring(start, i));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

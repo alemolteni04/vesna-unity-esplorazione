@@ -47,6 +47,17 @@ public abstract class VesnaAvatarBase : AgentAvatarSocial
             var message = JsonConvert.DeserializeObject<WsMessage>(e.Data);
             if (message != null && message.Type == MessageTypes.Walk)
             {
+                var innerType = message.Data?["type"]?.ToString();
+                if (innerType == "goto_pos" && topoMover != null)
+                {
+                    var d = message.Data;
+                    float px = (float)d["x"];
+                    float py = (float)d["y"];
+                    float pz = (float)d["z"];
+                    string label = (string)d["target"];
+                    UnityMainThreadDispatcher.Instance().Enqueue(() => topoMover.GoToPosition(px, py, pz, label));
+                    return;
+                }
                 var walkData = message.Data.ToObject<WalkData>();
                  Debug.Log($"[VesnaAvatarBase] Walk verso '{walkData?.Target}', topoMover null: {topoMover == null}, HasNode: {topoMover?.HasNode(walkData?.Target)}");
                 if (walkData != null

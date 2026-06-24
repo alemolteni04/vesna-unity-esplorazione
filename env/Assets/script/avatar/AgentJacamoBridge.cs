@@ -65,6 +65,13 @@ public class AgentJacamoBridge : MonoBehaviour
         avatar?.SendMessageToJaCaMoBrain(fullMsg);
         Debug.Log($"[AgentJacamoBridge] current_room inviata: {toSend}");
     }
+        // Arrivo a un OGGETTO: reached(place, Label) SENZA toccare current_room.
+    public void SendObjectReached(string label)
+    {
+        avatar?.SendMessageToJaCaMoBrain(
+            UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
+                "destinationReached", null, "reached_destination", jacamoReceiver, label));
+    }
 
     [System.Serializable]
     private class BeliefMessage

@@ -14,6 +14,7 @@ public class walk extends DefaultInternalAction {
     private static final String TYPE_STEP = "step";
     private static final String TYPE_GOTO = "goto";
     private static final String TYPE_NONE = "none";
+    private static final String TYPE_GOTO_POS = "goto_pos";
 
     // walk()               performs a step
     // walk( n )            performs a step of length n
@@ -36,6 +37,9 @@ public class walk extends DefaultInternalAction {
             type = TYPE_GOTO;
         else if ( args.length == 2 && (args[0].isLiteral() || args[0].isString()) && !args[1].isGround() )
             type = TYPE_GOTO;
+        else if ( args.length == 4
+                  && args[0].isNumeric() && args[1].isNumeric() && args[2].isNumeric() )
+            type = TYPE_GOTO_POS;
         else
             return false;
 
@@ -49,6 +53,11 @@ public class walk extends DefaultInternalAction {
             data.put( "target", cleanString(args[0].toString()));
             if ( args.length == 2 && args[1].isGround() )
                 data.put( "id", ( ( NumberTerm ) args[1] ).solve() );
+        } else if ( type.equals( TYPE_GOTO_POS ) ) {
+            data.put( "x", ( ( NumberTerm ) args[0] ).solve() );
+            data.put( "y", ( ( NumberTerm ) args[1] ).solve() );
+            data.put( "z", ( ( NumberTerm ) args[2] ).solve() );
+            data.put( "target", cleanString(args[3].toString()) );
         }
 
         JSONObject action = new JSONObject();
