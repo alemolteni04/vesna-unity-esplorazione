@@ -5,7 +5,7 @@ mas exploration {
                  port(8080)
         join: main
     }
-    agent vesna_agent : vesna.asl {
+    agent vesna_agent : vesnaConARTEFATTI.asl {
         ag-class: vesna.VesnaAgent
         beliefs: address(localhost)
                  port(8081)

@@ -88,6 +88,11 @@ public class LocalizationTest : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
 
+        // *** AGGIUNTA: campiona collider iniziale prima della rotazione ***
+        Collider[] overlapping = Physics.OverlapSphere(
+            transform.position, 0.1f, roomColliderMask, QueryTriggerInteraction.Collide);
+        string insideCollider = overlapping.Length > 0 ? overlapping[0].gameObject.name : null;
+
         // 360° per far entrare nel cono tutte le stanze intorno
         float rotated = 0f;
         float speed = 90f;
@@ -107,9 +112,17 @@ public class LocalizationTest : MonoBehaviour
             yield return null;
         }
 
-        if (seenRooms.Count == 0) yield break;
-
-        currentRoom = NearestVisibleRoomByCollider();
+        // *** AGGIUNTA: se era dentro un collider usa quello, altrimenti comportamento originale ***
+        if (insideCollider != null)
+        {
+            currentRoom = insideCollider;
+            Debug.Log($"[Localization] dentro collider: {currentRoom}");
+        }
+        else
+        {
+            if (seenRooms.Count == 0) yield break;
+            currentRoom = NearestVisibleRoomByCollider();
+        }
 
         if (currentRoom == null) yield break;
     
@@ -175,6 +188,4 @@ public class LocalizationTest : MonoBehaviour
             elapsed += 3f;
         }
     }
-
-
 }

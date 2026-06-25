@@ -25611,6 +25611,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: finalavatarWithEyes Esploratore
       objectReference: {fileID: 0}
+    - target: {fileID: 2803511079346570231, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6748385173456011789, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -68233,7 +68237,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2341087531120083934, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -11.9
+      value: -10.82
       objectReference: {fileID: 0}
     - target: {fileID: 2341087531120083934, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_LocalPosition.y
@@ -68241,7 +68245,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2341087531120083934, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.65
+      value: 3.63
       objectReference: {fileID: 0}
     - target: {fileID: 2341087531120083934, guid: 99599b0370991254ba7496a8a1fa8816, type: 3}
       propertyPath: m_LocalRotation.w
@@ -68429,7 +68433,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   objInUse: {fileID: 1604139953}
   port: 8081
-  agentFile: vesna.asl
+  agentFile: vesnaConARTEFATTI.asl
   focusedArtifacts: []
   goals: 
 --- !u!114 &1604139965
@@ -91173,7 +91177,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 6309744331904992486, guid: b8729f123e53997438a161d2a919a6ce, type: 3}
       propertyPath: m_Size.y
-      value: 3
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 7771627014958444478, guid: b8729f123e53997438a161d2a919a6ce, type: 3}
       propertyPath: m_LocalPosition.x

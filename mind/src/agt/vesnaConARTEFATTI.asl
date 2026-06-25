@@ -55,8 +55,18 @@
     .print("[vesna] da ", Start, " verso ", Target);
     computePath(Start, Target, ResolvedGoal, Path, Cost)[artifact_id(EnvId)];
     if (Path == []) {
-        .print("[vesna] ERRORE: nessun percorso verso ", Target);
+        if (not path_attempts(_)) { +path_attempts(0) };
+        ?path_attempts(N);
+        if (N >= 15) {
+            -path_attempts(_);
+            .print("[vesna] ERRORE: nessun percorso verso ", Target, " dopo ", N, " tentativi");
+        } else {
+            M = N + 1; -+path_attempts(M);
+            .wait(1000);
+            !go_to(Target, X, Y, Z, Artifact);
+        };
     } else {
+        -path_attempts(_);                   // reset al successo
         .print("[vesna] percorso verso ", ResolvedGoal, " (", Cost, "m): ", Path);
         Path = [_First|StepsToWalk];
         !follow_path(StepsToWalk);
