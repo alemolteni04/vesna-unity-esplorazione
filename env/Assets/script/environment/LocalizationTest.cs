@@ -42,6 +42,20 @@ public class LocalizationTest : MonoBehaviour
         seenRooms.Clear();   // Pulisce le stanze viste in precedenza
         StartCoroutine(LocalizeRoutine());
     }
+    // Forza la stanza nota (da ExplorationManager) e la re-invia subito.
+    // Bypassa cono + coroutine di retry, così nessun LastArrivedNode stantio
+    // può sovrascrivere il nodo corretto a fine esplorazione.
+    public void ForceCurrentRoomAndSend(string roomId)
+    {
+        if (string.IsNullOrEmpty(roomId)) return;
+
+        StopAllCoroutines();   // ferma eventuali invii precedenti (quello dell'avvio)
+        seenRooms.Clear();
+        currentRoom = roomId;
+
+        Debug.Log($"[Localization] current_room aggiornata a fine esplorazione = {roomId}");
+        _bridge?.SendCurrentRoom(roomId);
+    }
 
     private void OnRoomSeen(string roomName, Vector3 position)
     {
@@ -161,4 +175,6 @@ public class LocalizationTest : MonoBehaviour
             elapsed += 3f;
         }
     }
+
+
 }

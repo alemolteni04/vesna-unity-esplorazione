@@ -114,6 +114,33 @@ public class ComputePath extends DefaultInternalAction {
                 }
             }
         }
+
+        // ── Aggiungi nodi CONNETTORE (scale/ascensori) ────────────────────
+        // Belief: connector_link(Id, FloorA, FloorB, Bidir, PosAx,PosAy,PosAz, PosBx,PosBy,PosBz)
+        // Il connettore è trasmesso SOLO come connector_link (mai come node),
+        // quindi senza questo loop il nodo manca da `nodes` e A* scarta gli archi
+        // che lo referenziano (if !nodes.containsKey(edge.to)) → grafi-piano scollegati.
+        Iterator<Literal> connIt = bb.iterator();
+        int connCount = 0;
+        if (connIt != null) {
+            while (connIt.hasNext()) {
+                Literal bel = connIt.next();
+                if (bel.getFunctor().equals("connector_link") && bel.getArity() == 10) {
+                    try {
+                        String id     = ((StringTerm) bel.getTerm(0)).getString();
+                        int    floorA = (int) ((NumberTerm) bel.getTerm(1)).solve();
+                        double x      = ((NumberTerm) bel.getTerm(4)).solve(); // posA: lato floorA
+                        double y      = ((NumberTerm) bel.getTerm(5)).solve();
+                        double z      = ((NumberTerm) bel.getTerm(6)).solve();
+                        pathfinder.addNode(id, "Connector", floorA, x, y, z);
+                        connCount++;
+                    } catch (Exception e) {
+                        // skip connettore malformato
+                    }
+                }
+            }
+        }
+        System.out.println("[ComputePath] Connettori caricati: " + connCount);
         System.out.println("[ComputePath] Archi caricati: " + edgeCount); // ← aggiungi
         System.out.println("[ComputePath] Vicini di Ufficio1: " + pathfinder.getAdjacency("Ufficio1"));
         System.out.println("[ComputePath] Vicini di Laboratorio3: " + pathfinder.getAdjacency("Laboratorio3"));

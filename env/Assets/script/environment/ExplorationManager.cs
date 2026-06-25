@@ -1972,6 +1972,9 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
     var bt = GetComponent<BeliefTransmitter>();
     bt?.TransmitSnapshot(snapshot);
 
+     // ── 7. Aggiorna current_room col nodo reale di fine esplorazione ──
+    var loc = navAgent.GetComponent<LocalizationTest>();  
+    loc?.ForceCurrentRoomAndSend(NormalizeRoomId(currentNodeId));
     Debug.Log($"[ExplMgr] Edificio '{buildingId}' esplorato. " +
             $"Piani: {floorGraphs.Count}  Link: {ConnectorLinks.Count}  " +
             $"Distanze: {roomPairs.Count}  Snapshot salvato: {saved}");
@@ -2004,6 +2007,13 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
         }
         return null;
     }
+    private string NormalizeRoomId(string nodeId)
+{
+    if (string.IsNullOrEmpty(nodeId)) return nodeId;
+    if (nodeId.EndsWith("_A") || nodeId.EndsWith("_B"))
+        return nodeId.Substring(0, nodeId.Length - 2);   // corridoio2_B → corridoio2
+    return nodeId;
+}
 
     private DoorVarcoScript FindDoorScript(string name)
     {
