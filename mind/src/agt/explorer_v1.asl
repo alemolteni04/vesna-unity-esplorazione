@@ -143,20 +143,27 @@
         .print("[explorer] Percorso (", Cost, "m): ", Path);
         Path = [_First | StepsToWalk];   // scarta il nodo di partenza (ci sono già)
         !follow_path(StepsToWalk);
-        .print("[explorer] arrivato a: ", GoalId)
+        .print("[explorer] Percorso completato.")
     }.
 
 
-// ── Segui il percorso nodo per nodo (movimento fisico reale) ─────────────
-+!follow_path([]) <-
-    .print("[explorer] Percorso completato.").
-
-+!follow_path([Next | Rest]) <-
+// nodo intermedio: c'è ancora del percorso dopo
++!follow_path([Next | Rest]) : Rest \== [] <-
     .print("[explorer] -> ", Next);
-    !!reach_dest(Next);                  // invia walk(goto,Next) a Unity
-    .wait({ +reached(place, Next) });    // aspetta conferma arrivo dal framework
+    !!reach_dest(Next);
+    .wait({ +reached(place, Next) });
     -movement_in_progress(Next);
-    .abolish(at(_)); 
-    +at(Next);  
+    .abolish(at(_)); +at(Next);
     .print("[explorer] arrivato in: ", Next);
     !follow_path(Rest).
+
+// ultimo nodo: dopo non c'è più nulla → è la destinazione
++!follow_path([Last]) <-
+    .print("[explorer] -> ", Last);
+    !!reach_dest(Last);
+    .wait({ +reached(place, Last) });
+    -movement_in_progress(Last);
+    .abolish(at(_)); +at(Last);
+    .print("[explorer] sei a destinazione: ", Last).
+
++!follow_path([]).
