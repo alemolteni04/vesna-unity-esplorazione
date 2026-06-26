@@ -147,10 +147,6 @@
         .print("[explorer] arrivato a: ", GoalId)
     }.
 
-+!navigate_to_artifact(StartId, ArtifactId) <-
-    ?new_object(ArtifactId, RoomId, _, _, _, _, _);
-    .print("[explorer] Artefatto '", ArtifactId, "' in stanza '", RoomId, "'");
-    !navigate_to(StartId, RoomId).
 
 // ── Segui il percorso nodo per nodo (movimento fisico reale) ─────────────
 +!follow_path([]) <-

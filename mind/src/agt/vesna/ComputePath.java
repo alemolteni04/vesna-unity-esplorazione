@@ -117,7 +117,7 @@ public class ComputePath extends DefaultInternalAction {
 
         // ── Aggiungi nodi CONNETTORE (scale/ascensori) ────────────────────
         // Belief: connector_link(Id, FloorA, FloorB, Bidir, PosAx,PosAy,PosAz, PosBx,PosBy,PosBz)
-        // Il connettore è trasmesso SOLO come connector_link (mai come node),
+        // Il connettore è trasmesso come connector_link,
         // quindi senza questo loop il nodo manca da `nodes` e A* scarta gli archi
         // che lo referenziano (if !nodes.containsKey(edge.to)) → grafi-piano scollegati.
         Iterator<Literal> connIt = bb.iterator();
@@ -141,9 +141,7 @@ public class ComputePath extends DefaultInternalAction {
             }
         }
         System.out.println("[ComputePath] Connettori caricati: " + connCount);
-        System.out.println("[ComputePath] Archi caricati: " + edgeCount); // ← aggiungi
-        System.out.println("[ComputePath] Vicini di Ufficio1: " + pathfinder.getAdjacency("Ufficio1"));
-        System.out.println("[ComputePath] Vicini di Laboratorio3: " + pathfinder.getAdjacency("Laboratorio3"));
+        System.out.println("[ComputePath] Archi caricati: " + edgeCount);
 
         // ── Risolvi il goal: se non è un nodo reale (es. "Corridoio2"),
         //    provo i poli _A e _B e scelgo il percorso più economico ───────

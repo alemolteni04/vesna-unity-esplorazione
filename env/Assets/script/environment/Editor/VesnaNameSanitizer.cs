@@ -5,12 +5,12 @@ using UnityEngine;
 public static class VesnaNameSanitizer
 {
     [MenuItem("VESNA/Sanitizza nomi porte")]
-    static void SanitizeDoors()
+    static void Sanitize()
     {
         int n = 0;
         foreach (var d in Object.FindObjectsOfType<DoorVarcoScript>(true))
         {
-            string clean = Clean(d.gameObject.name);
+            string clean = d.gameObject.name.Replace(' ', '_').Replace('-', '_');
             if (clean != d.gameObject.name)
             {
                 Undo.RecordObject(d.gameObject, "Sanitize door name");
