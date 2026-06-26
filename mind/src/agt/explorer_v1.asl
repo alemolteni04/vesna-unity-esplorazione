@@ -75,11 +75,12 @@
     !create_door_artifacts;
     !poll_target.
 
-// ── Posizione corrente: belief singola, aggiornata da Unity ad ogni arrivo ─
+
++current_room(_) : at(_) <- true.            // già nota → ignora (anti-stale)
 +current_room(Where) <-
-    .abolish(at(_));
     +at(Where);
-    .print("[explorer] posizione corrente: ", Where).
+    .print("[explorer] posizione iniziale: ", Where).
+
 
 // ── Polling del target dal bridge (ai_bridge.py → target.json) ────────────
 +!poll_target <-
@@ -88,11 +89,11 @@
     !poll_target.
 
 +!try_navigate : at(Start) & not navigating <-
-    vesna.CheckTarget(Goal, X, Y, Z, Artifact);
+    vesna.CheckTarget(Goal, Artifact);
     +navigating;
-    .print("[explorer] target: ", Goal, " (da ", Start, "), oggetto=", Artifact);
+    .print("[explorer] target: ", Goal);
     !navigate_to(Start, Goal);
-    !final_approach(Goal, Artifact, X, Y, Z);
+    !final_approach(Goal, Artifact);
     -navigating.
 
 // rete di sicurezza: guardia falsa (non in at/_ o già navigating) → salta il giro
@@ -104,17 +105,15 @@
 // target-stanza puro (ai_bridge.py): Artifact = "" → ci si ferma alla stanza,
 // at(_) lo aggiorna già Unity con current_room.
 +!final_approach(_, "", _, _, _) <- true.
++!final_approach(_, "") <- true.
 
-// target-artefatto: gamba finale verso l'oggetto, poi registra la SUA stanza (=Goal)
-+!final_approach(Room, Artifact, X, Y, Z) <-
-    .print("[explorer] avvicinamento all'oggetto ", Artifact, " @ (", X, ",", Y, ",", Z, ")");
-    +movement_in_progress(Artifact);
-    vesna.walk(X, Y, Z, Artifact);
-    .wait({ +reached(place, Artifact) });
++!final_approach(Room, Artifact) <-
+    !!reach_dest(Artifact);
     -movement_in_progress(Artifact);
     .abolish(at(_));
     +at(Room);
     .print("[explorer] arrivato a ", Artifact, ", stanza corrente: ", Room).
+
 
 // ── Crea artefatti porte/varchi ───────────────────────────────────────────
 +!create_door_artifacts <-
@@ -157,4 +156,7 @@
     !!reach_dest(Next);                  // invia walk(goto,Next) a Unity
     .wait({ +reached(place, Next) });    // aspetta conferma arrivo dal framework
     -movement_in_progress(Next);
+    .abolish(at(_)); 
+    +at(Next);  
+    .print("[explorer] arrivato in: ", Next);
     !follow_path(Rest).

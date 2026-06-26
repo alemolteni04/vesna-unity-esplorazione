@@ -32,24 +32,17 @@ public class CheckTarget extends DefaultInternalAction {
 
         String artifact = extractStringField(content, "artifact");
         if (artifact == null) artifact = "";
-        Double x = extractNumberField(content, "x");
-        Double y = extractNumberField(content, "y");
-        Double z = extractNumberField(content, "z");
 
-        String signature = target + "|" + artifact + "|" + x + "|" + y + "|" + z;
+        String signature = target + "|" + artifact;
         if (signature.equals(lastSignature)) return false;
         lastSignature = signature;
 
         boolean ok = un.unifies(args[0], ASSyntax.createString(target));
-        if (args.length >= 4) {
-            ok = ok
-                && un.unifies(args[1], ASSyntax.createNumber(x == null ? 0.0 : x))
-                && un.unifies(args[2], ASSyntax.createNumber(y == null ? 0.0 : y))
-                && un.unifies(args[3], ASSyntax.createNumber(z == null ? 0.0 : z));
+
+        if (args.length >= 2) {
+            ok = ok && un.unifies(args[1], ASSyntax.createString(artifact));
         }
-        if (args.length >= 5) {
-            ok = ok && un.unifies(args[4], ASSyntax.createString(artifact));
-        }
+
         return ok;
     }
 

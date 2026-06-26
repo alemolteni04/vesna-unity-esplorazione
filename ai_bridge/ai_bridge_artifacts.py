@@ -155,25 +155,25 @@ def ask_llm_for_target(user_input, valid_names, rooms):
 
 def write_target(artifact_id, info):
     """Scrive target.json per raggiungere un ARTEFATTO.
-       'target'   = STANZA dell'artefatto (nodo navigabile: il path lo fa A* nella mente)
-       'artifact' = quale oggetto stiamo raggiungendo
-       'x/y/z'    = posizione dell'oggetto per l'avvicinamento finale dell'avatar
-    Ritorna la stanza usata come destinazione del path.
+
+    target   = STANZA dell'artefatto, usata per il percorso A*
+    artifact = ID dell'artefatto, usato dopo per reach_dest(ArtifactId)
+
+    Non scriviamo più x/y/z, perché l'avvicinamento finale
+    deve avvenire usando solo il nome dell'artefatto.
     """
     meta = info.get(artifact_id, {})
     room = meta.get("roomId", "")
+
     if not room:
         raise ValueError(
-            f"L'artefatto '{artifact_id}' non ha una stanza (roomId) nel json: "
+            f"L'artefatto '{artifact_id}' non ha una stanza roomId nel json: "
             f"impossibile calcolare il percorso."
         )
 
     payload = {
-        "target":   room,          # destinazione navigabile (stanza = nodo)
-        "artifact": artifact_id,    # oggetto da raggiungere (per dedup + log)
-        "x": meta.get("x"),
-        "y": meta.get("y"),
-        "z": meta.get("z"),
+        "target": room,
+        "artifact": artifact_id
     }
 
     with open(TARGET_JSON, "w", encoding="utf-8") as f:

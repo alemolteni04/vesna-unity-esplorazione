@@ -80,6 +80,13 @@ public class TopologicalMovement : MovementModel
             Debug.LogWarning($"[TopologicalMovement] Nodo '{nodeId}' non trovato nelle posizioni caricate.");
             return;
         }
+         if (TryResolveArtifactPosition(nodeId, out Vector3 artifactPos))
+    {
+        MoveToTarget(nodeId, artifactPos, true);
+        return;
+    }
+
+    Debug.LogWarning($"[TopologicalMovement] Nodo/artefatto '{nodeId}' non trovato.");
 
         // Riattiva il movimento nel caso un targeted-walk verso un artefatto
         // avesse disabilitato il MovementModel.
@@ -115,6 +122,39 @@ public class TopologicalMovement : MovementModel
         agent.SetDestination(targetPos);
         Debug.Log($"[TopologicalMovement] Avvicinamento a '{label}' @ {targetPos}");
     }
+    private void MoveToTarget(string label, Vector3 targetPos, bool isArtifact)
+{
+    if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
+        targetPos = hit.position;
+
+    enabled = true;
+    isStopped = false;
+    if (agent != null) agent.isStopped = false;
+
+    currentTargetNode = label;
+    currentTargetPos = targetPos;
+    finalApproachLabel = isArtifact ? label : null;
+    isMoving = true;
+
+    agent.SetDestination(targetPos);
+
+    Debug.Log(isArtifact
+        ? $"[TopologicalMovement] Avvicinamento artefatto '{label}'"
+        : $"[TopologicalMovement] Vado verso nodo '{label}'");
+}
+private bool TryResolveArtifactPosition(string artifactId, out Vector3 pos)
+{
+    GameObject obj = GameObject.Find(artifactId);
+
+    if (obj != null)
+    {
+        pos = obj.transform.position;
+        return true;
+    }
+
+    pos = Vector3.zero;
+    return false;
+}
     void Update()
 {
     if (!isMoving || currentTargetNode == null) return;
@@ -139,9 +179,6 @@ public class TopologicalMovement : MovementModel
         finalApproachLabel = null;
 
         if (wasFinalApproach && agent != null) agent.isStopped = true; // fermo sull'oggetto
-
-        Debug.Log($"[TopologicalMovement] Arrivata a {reached} (dist {dist:F2})"
-                  + (wasFinalApproach ? " [oggetto]" : ""));
 
         var bridge = GetComponent<AgentJacamoBridge>();
         if (bridge != null)
