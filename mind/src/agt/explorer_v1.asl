@@ -4,6 +4,7 @@
 
 // Piani di movimento della libreria (reach_dest -> walk(goto,Next) a Unity)
 { include("libraryPlans.asl") }
+{ include("initialGoalsPlan.asl") }
 
 // L'explorer non vaga: sopprime l'eventuale start_walking della libreria
 +!start_walking <- true.
