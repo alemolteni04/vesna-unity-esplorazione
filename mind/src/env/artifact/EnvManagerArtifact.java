@@ -20,7 +20,7 @@ public class EnvManagerArtifact extends AbstractMasElementArtifact {
     private final List<Object[]> rawEdges    = new ArrayList<>();
     private final List<Object[]> rawDoorDist = new ArrayList<>();
     private final List<Object[]> rawObjects  = new ArrayList<>();
-
+    private AStarPathfinder cachedPathfinder = null;
     private static final String STATE_FILE =
             System.getProperty("user.home")
             + "\\AppData\\LocalLow\\DefaultCompany\\JaCaMoIntegration\\graph_snapshots\\pathfinder_state.json";
@@ -35,6 +35,7 @@ protected void init(String artifactName) {
     defineObsProperty("graphReady", false);
     System.out.println("[envManager] inizializzato (no WebSocket).");
     if (loadFromDisk()) {
+         cachedPathfinder = buildGraph(); 
         getObsProperty("graphReady").updateValue(true);
         signal("graphReady");   // <-- AGGIUNTO: notifica vesna anche se il grafo viene da disco
         System.out.println("[envManager] Grafo caricato da disco (" + rawNodes.size() + " nodi).");
@@ -149,6 +150,7 @@ protected void init(String artifactName) {
     @OPERATION
     public void graphReady() {
         saveToDisk();
+        cachedPathfinder = buildGraph();
         getObsProperty("graphReady").updateValue(true);
         signal("graphReady");
     }
@@ -158,7 +160,7 @@ protected void init(String artifactName) {
                             OpFeedbackParam<String> resolvedGoalOut,
                             OpFeedbackParam<Object>  pathOut,
                             OpFeedbackParam<Double>  costOut) {
-        AStarPathfinder pf = buildGraph();
+        AStarPathfinder pf = (cachedPathfinder != null) ? cachedPathfinder : buildGraph();
 
         String resolvedGoal = goalId;
         if (!pf.getNodeIds().contains(goalId)) {
