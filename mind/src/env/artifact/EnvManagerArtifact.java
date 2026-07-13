@@ -126,33 +126,161 @@ protected void init(String artifactName) {
     // PATHFINDING
     // ===================================================================
 
+    // -------------------------------------------------------------------
+    // Ricezione atomica del grafo completo.
+    // Jason/CArtAgO converte le liste AgentSpeak in Object[], non in
+    // String[]/int[]/double[]: per questo la firma usa Object[].
+    // -------------------------------------------------------------------
     @OPERATION
-    public void addNode(String id, String type, int floor, double x, double y, double z) {
-        rawNodes.add(new Object[]{id, type, floor, x, y, z});
+    public synchronized void setCompleteGraph(
+            Object[] ids, Object[] types, Object[] floors,
+            Object[] xs, Object[] ys, Object[] zs,
+            Object[] froms, Object[] tos, Object[] edgeTypes, Object[] dirs,
+            Object[] distAs, Object[] distBs,
+            Object[] roomAs, Object[] roomBs, Object[] doorDists,
+            Object[] artifactIds, Object[] roomIds) {
+
+        try {
+            System.out.println("[envManager] Inizio setCompleteGraph");
+
+            requireSameLength("nodes", ids, types, floors, xs, ys, zs);
+            requireSameLength("edges", froms, tos, edgeTypes, dirs, distAs, distBs);
+            requireSameLength("door distances", roomAs, roomBs, doorDists);
+            requireSameLength("objects", artifactIds, roomIds);
+
+            System.out.println("[envManager] Ricevuti "
+                    + ids.length + " nodi, "
+                    + froms.length + " archi, "
+                    + roomAs.length + " distanze porta, "
+                    + artifactIds.length + " oggetti.");
+
+            rawNodes.clear();
+            rawEdges.clear();
+            rawDoorDist.clear();
+            rawObjects.clear();
+            cachedPathfinder = null;
+
+            for (int i = 0; i < ids.length; i++) {
+                try {
+                    rawNodes.add(new Object[]{
+                            cleanString(ids[i]), cleanString(types[i]), toInt(floors[i]),
+                            toDouble(xs[i]), toDouble(ys[i]), toDouble(zs[i])
+                    });
+                } catch (Exception ex) {
+                    throw new IllegalArgumentException(
+                            "Errore nel nodo indice " + i
+                                    + ": id=" + ids[i]
+                                    + ", type=" + types[i]
+                                    + ", floor=" + floors[i]
+                                    + ", x=" + xs[i]
+                                    + ", y=" + ys[i]
+                                    + ", z=" + zs[i], ex);
+                }
+            }
+            System.out.println("[envManager] Nodi convertiti correttamente.");
+
+            for (int i = 0; i < froms.length; i++) {
+                try {
+                    rawEdges.add(new Object[]{
+                            cleanString(froms[i]), cleanString(tos[i]),
+                            cleanString(edgeTypes[i]), cleanString(dirs[i]),
+                            toDouble(distAs[i]), toDouble(distBs[i])
+                    });
+                } catch (Exception ex) {
+                    throw new IllegalArgumentException(
+                            "Errore nell'arco indice " + i
+                                    + ": from=" + froms[i]
+                                    + ", to=" + tos[i]
+                                    + ", type=" + edgeTypes[i]
+                                    + ", dir=" + dirs[i]
+                                    + ", distA=" + distAs[i]
+                                    + ", distB=" + distBs[i], ex);
+                }
+            }
+            System.out.println("[envManager] Archi convertiti correttamente.");
+
+            for (int i = 0; i < roomAs.length; i++) {
+                rawDoorDist.add(new Object[]{
+                        cleanString(roomAs[i]), cleanString(roomBs[i]),
+                        toDouble(doorDists[i])
+                });
+            }
+
+            for (int i = 0; i < artifactIds.length; i++) {
+                rawObjects.add(new Object[]{
+                        cleanString(artifactIds[i]), cleanString(roomIds[i])
+                });
+            }
+
+            System.out.println("[envManager] Costruzione del grafo A*...");
+            cachedPathfinder = buildGraph();
+            System.out.println("[envManager] Grafo A* costruito correttamente.");
+
+            saveToDisk();
+            getObsProperty("graphReady").updateValue(true);
+            signal("graphReady");
+
+            System.out.println("[envManager] Grafo completo ricevuto: "
+                    + rawNodes.size() + " nodi, "
+                    + rawEdges.size() + " archi, "
+                    + rawDoorDist.size() + " distanze porta, "
+                    + rawObjects.size() + " oggetti.");
+
+        } catch (Exception ex) {
+            System.err.println("[envManager] ERRORE setCompleteGraph:");
+            ex.printStackTrace();
+            failed("Errore durante setCompleteGraph: "
+                    + ex.getClass().getSimpleName() + " - " + ex.getMessage());
+        }
     }
 
-    @OPERATION
-    public void addEdge(String from, String to, String edgeType, String dir,
-                        double distA, double distB) {
-        rawEdges.add(new Object[]{from, to, edgeType, dir, distA, distB});
+    private static void requireSameLength(String group, Object[] first, Object[]... others) {
+        if (first == null) {
+            throw new IllegalArgumentException("Lista nulla per " + group);
+        }
+        int expected = first.length;
+        for (Object[] values : others) {
+            if (values == null || values.length != expected) {
+                throw new IllegalArgumentException(
+                        "Lunghezze non coerenti per " + group
+                                + ": attesi " + expected
+                                + ", ricevuti " + (values == null ? "null" : values.length));
+            }
+        }
     }
 
-    @OPERATION
-    public void addDoorDist(String roomA, String roomB, double dist) {
-        rawDoorDist.add(new Object[]{roomA, roomB, dist});
+    private static String cleanString(Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Valore stringa nullo");
+        }
+
+        String result = value.toString();
+        if (result.length() >= 2
+                && result.startsWith("\"")
+                && result.endsWith("\"")) {
+            result = result.substring(1, result.length() - 1);
+        }
+        return result;
     }
 
-    @OPERATION
-    public void addNewObject(String artifactId, String roomId) {
-        rawObjects.add(new Object[]{artifactId, roomId});
+    private static int toInt(Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Valore intero nullo");
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        return (int) Double.parseDouble(cleanString(value));
     }
 
-    @OPERATION
-    public void graphReady() {
-        saveToDisk();
-        cachedPathfinder = buildGraph();
-        getObsProperty("graphReady").updateValue(true);
-        signal("graphReady");
+    private static double toDouble(Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Valore double nullo");
+        }
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        return Double.parseDouble(cleanString(value));
     }
 
     @OPERATION
@@ -210,19 +338,39 @@ protected void init(String artifactName) {
 
     private AStarPathfinder buildGraph() {
         AStarPathfinder pf = new AStarPathfinder();
+        List<String> nodeIds = new ArrayList<>();
 
         for (Object[] n : rawNodes) {
-            pf.addNode((String) n[0], (String) n[1], (int) n[2],
-                       (double) n[3], (double) n[4], (double) n[5]);
+            String id = (String) n[0];
+            pf.addNode(
+                    id,
+                    (String) n[1],
+                    ((Number) n[2]).intValue(),
+                    ((Number) n[3]).doubleValue(),
+                    ((Number) n[4]).doubleValue(),
+                    ((Number) n[5]).doubleValue()
+            );
+            nodeIds.add(id);
         }
 
-        for (Object[] e : rawEdges) {
-            String from     = (String) e[0];
-            String to       = (String) e[1];
+        for (int i = 0; i < rawEdges.size(); i++) {
+            Object[] e = rawEdges.get(i);
+
+            String from = (String) e[0];
+            String to = (String) e[1];
             String edgeType = (String) e[2];
-            String dir      = (String) e[3];
-            double distA    = (double) e[4];
-            double distB    = (double) e[5];
+            String dir = (String) e[3];
+            double distA = ((Number) e[4]).doubleValue();
+            double distB = ((Number) e[5]).doubleValue();
+
+            if (!nodeIds.contains(from)) {
+                throw new IllegalArgumentException(
+                        "Arco " + i + ": nodo FROM inesistente: " + from);
+            }
+            if (!nodeIds.contains(to)) {
+                throw new IllegalArgumentException(
+                        "Arco " + i + ": nodo TO inesistente: " + to);
+            }
 
             double weight;
             switch (dir) {
@@ -231,7 +379,9 @@ protected void init(String artifactName) {
                 case "seg"     -> weight = distA > 0 ? distA : distB;
                 case "central" -> weight = distA;
                 case "none"    -> weight = getDoorDist(from, to);
-                default        -> weight = 0.0;
+                default -> throw new IllegalArgumentException(
+                        "Direzione non riconosciuta nell'arco " + i
+                                + ": " + dir + " (" + from + " -> " + to + ")");
             }
 
             pf.addEdge(from, to, weight, edgeType);

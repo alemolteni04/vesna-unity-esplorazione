@@ -101,22 +101,22 @@
     
 // nodo intermedio: c'è ancora del percorso dopo
 +!follow_path([Next | Rest]) : Rest \== [] <-
-    .print("[explorer] -> ", Next);
+    .print("[vesna] -> ", Next);
     !!reach_dest(Next);
     .wait({ +reached(place, Next) });
     -movement_in_progress(Next);
     .abolish(at(_)); +at(Next);
-    .print("[explorer] arrivato in: ", Next);
+    .print("[vesna] arrivato in: ", Next);
     !follow_path(Rest).
 
 // ultimo nodo: dopo non c'è più nulla → è la destinazione
 +!follow_path([Last]) <-
-    .print("[explorer] -> ", Last);
+    .print("[vesna] -> ", Last);
     !!reach_dest(Last);
     .wait({ +reached(place, Last) });
     -movement_in_progress(Last);
     .abolish(at(_)); +at(Last);
-    .print("[explorer] sei a destinazione. Percorso completato").
+    .print("[vesna] sei a destinazione. Percorso completato").
 +!follow_path([]).
 
 

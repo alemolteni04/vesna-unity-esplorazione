@@ -96,6 +96,7 @@ public class EdgeSnapshot
     public string doorState;            // DoorState.ToString()
     
     public bool   isCorridorLink;
+    public bool   isPhysical;          // ← da DoorVarcoScript.elementType (Door=true, Varco=false)
    // Campi solo corridoio — nullable
     public string side;
     public float? distance; // solo per Central

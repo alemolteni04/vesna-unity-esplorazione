@@ -81,13 +81,13 @@ public class ComputePath extends DefaultInternalAction {
 
         // ── Aggiungi archi ────────────────────────────────────────────────
         // Belief: edge(GoName, From, To, Floor, EdgeType, DoorState,
-        //              Side, Dir, DistA, DistB, WsPort)
+        //              Side, Dir, DistA, DistB, WsPort, IsPhysical)
         Iterator<Literal> edgeIt = bb.iterator();
         int edgeCount = 0;
         if (edgeIt != null) {
             while (edgeIt.hasNext()) {
                 Literal bel = edgeIt.next();
-                if (bel.getFunctor().equals("edge") && bel.getArity() == 11) {
+                if (bel.getFunctor().equals("edge") && bel.getArity() == 12) {
                     try {
                         String from     = ((StringTerm) bel.getTerm(1)).getString();
                         String to       = ((StringTerm) bel.getTerm(2)).getString();

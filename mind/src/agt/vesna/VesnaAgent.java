@@ -305,7 +305,7 @@ private void handle_edge(JSONObject data) {
         else if (edgeId.startsWith("central_")) { goName = edgeId.substring(8); direction = "central"; }
 
         String lit = String.format(
-            "edge(\"%s\", \"%s\", \"%s\", %d, \"%s\", \"%s\", \"%s\", \"%s\", %s, %s, %d)",
+            "edge(\"%s\", \"%s\", \"%s\", %d, \"%s\", \"%s\", \"%s\", \"%s\", %s, %s, %d, %s)",
             goName,
             p.getString("from"),
             p.getString("to"),
@@ -316,7 +316,8 @@ private void handle_edge(JSONObject data) {
             direction,
             p.optDouble("distFromA", 0.0),
             p.optDouble("distFromB", 0.0),
-            p.optInt("wsPort", 0)
+            p.optInt("wsPort", 0),
+            p.optBoolean("isPhysical", false)
         );
         addBel(parseLiteral(lit));
     } catch (Exception e) { e.printStackTrace(); }

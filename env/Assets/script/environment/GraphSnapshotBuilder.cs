@@ -164,6 +164,10 @@ public static class GraphSnapshotBuilder
         s.isCorridorLink = edge.isCorridorLink;
     }
 
+    // isPhysical riflette l'elementType reale (Door/Varco) impostato in
+    // Inspector su DoorVarcoScript, non il nome del GameObject.
+    s.isPhysical = edge.isPhysical;
+
     // Campi solo per archi corridoio
     if (edge.edgeType == EdgeType.DoorFW ||
         edge.edgeType == EdgeType.DoorBW)

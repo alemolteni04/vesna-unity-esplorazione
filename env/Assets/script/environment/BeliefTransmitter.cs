@@ -221,6 +221,7 @@ private bool IsClientConnected()  => avatar != null && avatar.WsChannel != null 
                         { "edgeState",       edge.edgeState        },
                         { "doorState",       edge.doorState        },
                         { "isCorridorLink",  edge.isCorridorLink   },
+                        { "isPhysical",      edge.isPhysical       },
                         { "side",            edge.side ?? ""       },
                         { "distFromA",       edge.distFromA        },
                         { "distFromB",       edge.distFromB        },
