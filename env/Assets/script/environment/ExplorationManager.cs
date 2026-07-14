@@ -1973,7 +1973,7 @@ private bool IsCurrentFloorFullyExplored(FloorNode floorData)
     bt?.TransmitSnapshot(snapshot);
 
      // ── 7. Aggiorna current_room col nodo reale di fine esplorazione ──
-    var loc = navAgent.GetComponent<LocalizationTest>();  
+    var loc = GetComponent<LocalizationTest>();  
     loc?.ForceCurrentRoomAndSend(NormalizeRoomId(currentNodeId));
     Debug.Log($"[ExplMgr] Edificio '{buildingId}' esplorato. " +
             $"Piani: {floorGraphs.Count}  Link: {ConnectorLinks.Count}  " +

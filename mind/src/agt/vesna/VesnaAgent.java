@@ -173,28 +173,7 @@ public class VesnaAgent extends Agent{
         System.out.println( "Received message: " + msg );
         JSONObject log = new JSONObject( msg );
         String sender = log.getString( "sender" );
-        String receiver = log.isNull("receiver") ? null : log.optString("receiver", null);
         String type = log.getString( "type" );
-
-        // broadcast (receiver null): arriva dal ramo base del relatore
-        // (es. place verso ArtifactObject_*), non è destinato a un agente
-        // specifico né è un nodo del grafo → ignora senza crashare.
-        if ( receiver == null ) {
-            System.out.println( "[" + my_name + "] messaggio broadcast di tipo '"
-                    + type + "', ignorato." );
-            return;
-        }
-        // AGGIUNTA: ignora i messaggi non destinati a questo agente.
-        // Il body manda tutti i messaggi su entrambi i canali; qui ogni
-        // agente scarta quelli il cui "receiver" non corrisponde al
-        // proprio nome (es. explorer ignora i messaggi per vesna_agent
-        // e viceversa), così le belief di un agente non vengono
-        // "inquinate" con dati destinati all'altro.
-        if ( !receiver.contains( my_name ) && !my_name.contains( receiver ) ) {
-            System.out.println( "[" + my_name + "] messaggio di tipo '" + type
-                    + "' destinato a '" + receiver + "', ignorato." );
-            return;
-        }
 
        JSONObject data;
         Object rawData = log.isNull("data") ? null : log.get("data");

@@ -23,7 +23,7 @@ public class LocalizationTest : MonoBehaviour
 
     void Start()
     {
-        VisionCone.OnRoomNodeVisible += OnRoomSeen;
+        if (visionCone != null) visionCone.OnRoomNodeVisible += OnRoomSeen;
         _bridge = GetComponent<AgentJacamoBridge>();
         
         // Esegue la localizzazione una volta all'avvio
@@ -32,7 +32,7 @@ public class LocalizationTest : MonoBehaviour
 
     void OnDestroy()
     {
-        VisionCone.OnRoomNodeVisible -= OnRoomSeen;
+        if (visionCone != null) visionCone.OnRoomNodeVisible -= OnRoomSeen;
     }
 
     // Metodo pubblico: puoi chiamarlo da altri script se serve ri-localizzare a comando

@@ -42,7 +42,7 @@ public class AgentJacamoBridge : MonoBehaviour
 
         avatar?.SendMessageToJaCaMoBrain(
             UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
-                "destinationReached", null, "reached_destination", jacamoReceiver, targetNode));
+                "destinationReached", null, "reached_destination", null, targetNode));
 
         SendCurrentRoom(targetNode);
     }
@@ -60,7 +60,7 @@ public class AgentJacamoBridge : MonoBehaviour
 
         string json = Newtonsoft.Json.JsonConvert.SerializeObject(msg);
         string fullMsg = UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
-            msg.beliefType, null, null, jacamoReceiver, json);
+            msg.beliefType, null, null, null, json);
 
         avatar?.SendMessageToJaCaMoBrain(fullMsg);
         Debug.Log($"[AgentJacamoBridge] current_room inviata: {toSend}");
@@ -70,7 +70,7 @@ public class AgentJacamoBridge : MonoBehaviour
     {
         avatar?.SendMessageToJaCaMoBrain(
             UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
-                "destinationReached", null, "reached_destination", jacamoReceiver, label));
+                "destinationReached", null, "reached_destination", null, label));
     }
 
     [System.Serializable]

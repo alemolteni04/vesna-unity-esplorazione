@@ -21,7 +21,7 @@ public class VisionCone : MonoBehaviour
 
     public LayerMask roomNodeLayers;
 
-    public static event Action<string, Vector3> OnRoomNodeVisible;
+    public event Action<string, Vector3> OnRoomNodeVisible;
     bool reachedArtifact = false;
     public bool ReachedArtifact
     {

@@ -125,8 +125,9 @@
     !poll_target.
 
 
-+current_room(_) : at(_) <- true.            // già nota → ignora (anti-stale)
++current_room(Where) : at(Where) <- true.           // già nota → ignora (anti-stale)
 +current_room(Where) <-
+	 .abolish(at(_));
     +at(Where);
     .print("[explorer] posizione iniziale: ", Where).
 

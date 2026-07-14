@@ -297,18 +297,17 @@ private bool IsClientConnected()  => avatar != null && avatar.WsChannel != null 
     // --------------------------------------------------------
     // INVIO SINGOLO MESSAGGIO
     // --------------------------------------------------------
-private void SendBeliefTo(BeliefMessage msg, string receiver)
+private void SendBelief(BeliefMessage msg)
 {
     string json = JsonConvert.SerializeObject(msg);
     string fullMsg = UnityJacamoIntegrationUtil.CreateAndConvertJacamoMessageIntoJsonString(
-        msg.beliefType, null, null, receiver, json
+        msg.beliefType, null, null, null, json
     );
 
-    // Il grafo viaggia sul canale dell'avatar (un solo server per body).
+    // Il canale esclusivo dell'avatar è già il destinatario.
     avatar?.SendMessageToJaCaMoBrain(fullMsg);
 }
 
-private void SendBelief(BeliefMessage msg) => SendBeliefTo(msg, "explorer");
     // --------------------------------------------------------
 // OGGETTI SCOPERTI A RUNTIME
 // Chiamato da RoomObjectBridge quando il cono visivo vede
